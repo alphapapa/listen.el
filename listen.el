@@ -110,7 +110,7 @@
                                   "/"
                                   (format-time (listen--length listen-player)))))
                      ") ")
-             (list "")))))
+             (list "■ ")))))
 
 (defun listen--update-lighter (&rest _ignore)
   "Update `listen-mode-lighter'."
