@@ -28,6 +28,7 @@
 ;;;; Types
 
 (cl-defstruct listen-player
+  ;; TODO: Add queue slot.
   process command args etc)
 
 (cl-defstruct listen-queue
