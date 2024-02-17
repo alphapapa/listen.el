@@ -116,7 +116,6 @@
   (save-excursion
     (goto-char (point-min))
     (when (re-search-forward "▶" nil t)
-      (message "yep")
       (setf listen-queue-overlay (make-overlay (pos-bol) (pos-eol)))
       (overlay-put listen-queue-overlay 'face 'highlight))))
 

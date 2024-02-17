@@ -124,7 +124,7 @@
 (defun listen-next (player)
   "Play next track in PLAYER's queue."
   (interactive (list listen-player))
-  (listen-queue-next (map-elt (listen-player-etc listen-player) :queue)))
+  (listen-queue-next (map-elt (listen-player-etc player) :queue)))
 
 (defun listen-pause (player)
   (interactive (list listen-player))
@@ -141,25 +141,27 @@
          (read-file-name "Play file: " listen-directory nil t)))
   (listen--play player file))
 
-(defun listen-volume (volume)
-  "Set volume to VOLUME %."
+(defun listen-volume (player volume)
+  "Set PLAYER's volume to VOLUME %."
   (interactive
-   (let ((volume (floor (listen--volume (listen--player)))))
-     (list (read-number "Volume %: " volume))))
-  (listen--volume (listen--player) volume))
+   (let* ((player (listen--player))
+          (volume (floor (listen--volume player))))
+     (list player (read-number "Volume %: " volume))))
+  (listen--volume player volume))
 
-(defun listen-seek (seconds)
-  "Seek to SECONDS.
+(defun listen-seek (player seconds)
+  "Seek PLAYER to SECONDS.
 Interactively, read a position timestamp, like \"23\" or
 \"1:23\", with optional -/+ prefix for relative seek."
   (interactive
-   (let* ((position (read-string "Seek to position: "))
+   (let* ((player (listen--player))
+          (position (read-string "Seek to position: "))
           (prefix (when (string-match (rx bos (group (any "-+")) (group (1+ anything))) position)
                     (prog1 (match-string 1 position)
                       (setf position (match-string 2 position)))))
           (seconds (listen-read-time position)))
-     (list (concat prefix (number-to-string seconds)))))
-  (listen--seek (listen--player) seconds))
+     (list player (concat prefix (number-to-string seconds)))))
+  (listen--seek player seconds))
 
 (defun listen-read-time (time)
   "Return TIME in seconds.
@@ -180,7 +182,8 @@ TIME is an HH:MM:SS string."
   (interactive
    (list (listen--player)))
   (delete-process (listen-player-process player))
-  (setf listen-player nil))
+  (when (eq player listen-player)
+    (setf listen-player nil)))
 
 ;;;; Transient
 
