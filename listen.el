@@ -28,10 +28,8 @@
 
 (require 'cl-lib)
 
-;;;; Types
-
-(cl-defstruct listen-player
-  process command args)
+(require 'listen-lib)
+(require 'listen-vlc)
 
 ;;;; Variables
 
@@ -39,9 +37,13 @@
 
 (defvar listen-mode-update-mode-line-timer nil)
 
-;;;; Functions
+;;;; Customization
 
-(cl-defmethod listen-play ((player listen-vlc) &key file))
+(defgroup listen nil
+  "Music player."
+  :group 'applications)
+
+;;;; Functions
 
 (cl-defmethod listen-running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
