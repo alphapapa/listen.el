@@ -116,11 +116,12 @@
   "Play QUEUE and optionally TRACK in it.
 Interactively, selected queue with completion; and with prefix,
 select track as well."
-  (interactive (let* ((queue (listen-queue-complete))
-                      (track (if current-prefix-arg
-                                 (listen-queue-complete-track queue)
-                               (car (listen-queue-tracks queue)))))
-                 (list queue track)))
+  (interactive
+   (let* ((queue (listen-queue-complete))
+          (track (if current-prefix-arg
+                     (listen-queue-complete-track queue)
+                   (car (listen-queue-tracks queue)))))
+     (list queue track)))
   (let ((player (listen--player)))
     (listen-play player (listen-track-filename track))
     (setf (listen-queue-current queue) track
@@ -153,10 +154,8 @@ PROMPT is passed to `completing-read', which see."
     (0 (call-interactively #'listen-queue-new))
     (1 (car listen-queues))
     (_ (let* ((queue-names (mapcar #'listen-queue-name listen-queues))
-              (selected (completing-read prompt queue-names)))
-         (if (member selected queue-names)
-             (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)
-           (push (make-listen-queue :name selected) listen-queues))))))
+              (selected (completing-read prompt queue-names nil  t)))
+         (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)))))
 
 ;;;###autoload
 (defun listen-queue-new (name)
@@ -195,11 +194,20 @@ PROMPT is passed to `completing-read', which see."
                        :genre (map-elt metadata "genre"))))
 
 (defun listen-queue-shuffle (queue)
-  "Toggle shuffle for QUEUE."
-  (setf (alist-get 'next-track-function queue)
-        (pcase (alist-get 'next-track-function queue)
-          ('listen-queue-random-track nil)
-          (_ 'listen-queue-random-track))))
+  "Shuffle QUEUE."
+  (interactive (list (listen-queue-complete)))
+  ;; Copied from `elfeed-shuffle'.
+  (let* ((tracks (listen-queue-tracks queue))
+         (current-track (listen-queue-current queue))
+         n)
+    (cl-callf2 delete current-track tracks)
+    (setf n (length tracks))
+    ;; Don't use dotimes result (bug#16206)
+    (dotimes (i n)
+      (cl-rotatef (elt tracks i) (elt tracks (+ i (cl-random (- n i))))))
+    (push current-track tracks)
+    (setf (listen-queue-tracks queue) tracks))
+  (listen-queue--update-buffer queue))
 
 (defun listen-queue-random-track (queue)
   "Return a random track in QUEUE."

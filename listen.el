@@ -58,7 +58,7 @@
 
 ;;;###autoload
 (define-minor-mode listen-mode
-  "Show Listen player status in the mode line."
+  "Listen to queues of tracks and show status in mode line."
   :global t
   (let ((lighter '(listen-mode listen-mode-lighter)))
     (if listen-mode
@@ -111,7 +111,9 @@
 (declare-function listen-queue-next-track "listen-queue")
 (defun listen--update-lighter (&rest _ignore)
   "Update `listen-mode-lighter'."
-  (unless (listen--playing-p listen-player)
+  (unless (or (listen--playing-p listen-player)
+              ;; FIXME: Can we tidy this distinction?
+              (equal "stopped" (listen--status listen-player)))
     (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
                (next-track (listen-queue-next-track queue))) 
       (listen-queue-play queue next-track)))
@@ -120,6 +122,11 @@
           (listen-mode-lighter))))
 
 ;;;; Commands
+
+(defun listen-next (player)
+  "Play next track in PLAYER's queue."
+  (interactive (list listen-player))
+  (listen-queue-next (map-elt (listen-player-etc listen-player) :queue)))
 
 (defun listen-pause (player)
   (interactive (list listen-player))
@@ -175,7 +182,7 @@ TIME is an HH:MM:SS string."
 (require 'transient)
 
 ;;;###autoload
-(transient-define-prefix listen-menu ()
+(transient-define-prefix listen ()
   "Show Listen menu."
   :refresh-suffixes t
   [["Listen"
@@ -186,31 +193,26 @@ TIME is an HH:MM:SS string."
         "Not listening"))
     ("SPC" "Pause" listen-pause)
     ("p" "Play" listen-play)
-    ("s" "Stop" listen-stop)
-    ]
-   
-   ]
-  [[
-    ]
-   
-   ]
+    ("ESC" "Stop" listen-stop)
+    ("n" "Next" listen-next)]]
+  [[]]
   ["Queue mode"
    :description
    (lambda ()
      (if-let ((queue (map-elt (listen-player-etc listen-player) :queue)))
          (concat "Queue: " (listen-queue-name queue))
        "No queue"))
-   ("Q" "Play another queue" listen-queue-play)
-   ("q" "Show queue" listen-queue)
-   ("a" "Add files" listen-queue-add-files)
-   ("t" "Select track" (lambda ()
+   ("Q" "Show" listen-queue)
+   ("P" "Play another queue" listen-queue-play)
+   ("N" "New" listen-queue-new)
+   ("A" "Add files" listen-queue-add-files)
+   ("T" "Select track" (lambda ()
                          "Call `listen-queue-play' with prefix."
                          (interactive)
                          (let ((current-prefix-arg '(4)))
                            (call-interactively #'listen-queue-play))))
-   ]
-  
-  )
+   ("D" "Discard" listen-queue-discard)
+   ])
 
 (provide 'listen)
 
