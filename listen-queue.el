@@ -75,13 +75,16 @@
                              (cl-position track (listen-queue-tracks queue))))
              (list :name "Artist" :max-width 20
                    :getter (lambda (track _table)
-                             (listen-track-artist track)))
+                             (propertize (or (listen-track-artist track) "")
+                                         'face 'font-lock-variable-name-face)))
              (list :name "Title" :max-width 35
                    :getter (lambda (track _table)
-                             (listen-track-title track)))
+                             (propertize (or (listen-track-title track) "")
+                                         'face 'font-lock-function-name-face)))
              (list :name "Album" :max-width 30
                    :getter (lambda (track _table)
-                             (listen-track-album track)))
+                             (propertize (or (listen-track-album track) "")
+                                         'face 'font-lock-type-face)))
              (list :name "#"
                    :getter (lambda (track _table)
                              (listen-track-number track)))
