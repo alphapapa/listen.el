@@ -95,6 +95,9 @@
              (list :name "Date"
                    :getter (lambda (track _table)
                              (or (listen-track-date track) "")))
+             (list :name "Genre"
+                   :getter (lambda (track _table)
+                             (or (listen-track-genre track) "")))
              (list :name "File"
                    :getter (lambda (track _table)
                              (listen-track-filename track))))
