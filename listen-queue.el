@@ -110,6 +110,7 @@
                       "N" (lambda (track) (listen-queue-track-forward track queue))
                       "P" (lambda (track) (listen-queue-track-backward track queue))
                       "RET" (listen-queue-command listen-queue-play)
+                      "SPC" (lambda (&rest _) (call-interactively #'listen-pause))
                       "S" (lambda (&rest _) (listen-queue-shuffle listen-queue))))
       (pop-to-buffer (current-buffer))
       (goto-char (point-min))
