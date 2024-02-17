@@ -112,10 +112,8 @@
 
 (defun listen--mode-line-update (&rest _ignore)
   "Force updating of all mode lines when EMP is active."
-  (when (and listen-player (listen-running-p listen-player))
-    (setf listen-mode-lighter (listen-mode-lighter ))
-    ;; (force-mode-line-update 'all)
-    ))
+  (when (and listen-player (listen--running-p listen-player))
+    (setf listen-mode-lighter (listen-mode-lighter))))
 
 ;;;; Commands
 
