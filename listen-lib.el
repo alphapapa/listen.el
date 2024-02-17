@@ -28,7 +28,7 @@
 ;;;; Types
 
 (cl-defstruct listen-player
-  process command args)
+  process command args etc)
 
 (cl-defstruct listen-queue
   name tracks current etc)
@@ -38,8 +38,19 @@
 
 ;;;; Variables
 
+(defvar listen-player nil)
+
 (defvar listen-debug-p nil
   "When non-nil, don't erase process buffer after sending commands.")
+
+;;;; Functions
+
+;; FIXME: Declare this differently or something.
+(declare-function make-listen-player-vlc "listen-vlc")
+(defun listen--player ()
+  "Return variable `listen-player' or a newly set one if nil."
+  (or listen-player
+      (setf listen-player (make-listen-player-vlc))))
 
 ;;;; Footer
 

@@ -101,6 +101,10 @@
           (unless listen-debug-p
             (erase-buffer)))))))
 
+(cl-defmethod listen--seek ((player listen-player-vlc) seconds)
+  "Seek PLAYER to SECONDS."
+  (listen--send player (format "seek %s" seconds)))
+
 (cl-defmethod listen--volume ((player listen-player-vlc) &optional volume)
   "Return or set PLAYER's VOLUME.
 VOLUME is an integer percentage."

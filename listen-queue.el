@@ -23,11 +23,16 @@
 
 ;;; Code:
 
+(require 'emms-info-native)
 (require 'vtable)
 
 (require 'listen-lib)
 
 (defvar listen-queues nil)
+(defvar listen-directory)
+
+(defvar-local listen-queue nil
+  "Queue in this buffer.")
 
 (defgroup listen-queue nil
   "Queues."
@@ -51,6 +56,7 @@
   (interactive (list (listen-queue-complete)))
   (with-current-buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue)))
     (let ((inhibit-read-only t))
+      (setf listen-queue queue)
       (read-only-mode)
       (erase-buffer)
       (toggle-truncate-lines 1)
@@ -63,13 +69,13 @@
              (list :name "At" :primary 'descend
                    :getter (lambda (track _table)
                              (cl-position track (listen-queue-tracks queue))))
-             (list :name "Artist"
+             (list :name "Artist" :max-width 20
                    :getter (lambda (track _table)
                              (listen-track-artist track)))
-             (list :name "Title"
+             (list :name "Title" :max-width 35
                    :getter (lambda (track _table)
                              (listen-track-title track)))
-             (list :name "Album"
+             (list :name "Album" :max-width 30
                    :getter (lambda (track _table)
                              (listen-track-album track)))
              (list :name "#"
@@ -93,9 +99,21 @@
       (re-search-forward "▶" nil t)
       (hl-line-mode))))
 
+(defun listen-queue--update-buffer (queue)
+  "Update QUEUE's buffer, if any."
+  (when-let ((buffer (cl-loop for buffer in (buffer-list)
+                              when (eq queue (buffer-local-value 'listen-queue buffer))
+                              return buffer)))
+    (with-current-buffer buffer
+      (vtable-revert-command))))
+
+(declare-function listen-play "listen")
 (defun listen-queue-play (queue track)
-  (listen-play (listen--player) (listen-track-filename track))
-  (setf (listen-queue-current queue) track))
+  (let ((player (listen--player)))
+    (listen-play player (listen-track-filename track))
+    (setf (listen-queue-current queue) track
+          (map-elt (listen-player-etc player) :queue) queue)
+    (listen-queue--update-buffer queue)))
 
 (defun listen-queue--format-time (time)
   "Return TIME formatted according to `listen-queue-time-format', which see."
@@ -104,7 +122,8 @@
     "never"))
 
 (cl-defun listen-queue-complete (&key (prompt "Queue: "))
-  "Return a Listen queue selected with completion."
+  "Return a Listen queue selected with completion.
+PROMPT is passed to `completing-read', which see."
   (pcase (length listen-queues)
     (0 (call-interactively #'listen-queue-new))
     (1 (car listen-queues))
@@ -135,8 +154,6 @@
              (list path)))))
   (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files))))
 
-(require 'emms-info-native)
-
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
   (when-let ((metadata (emms-info-native--decode-info-fields filename)))
@@ -148,9 +165,11 @@
                        :date (map-elt metadata "date")
                        :genre (map-elt metadata "genre"))))
 
-(defun listen-queue-next-p (queue)
-  "Return non-nil if QUEUE has a track after current."
-  (cl-subseq (listen-queue-tracks queue) (listen-queue-track-number queue)))
+(defun listen-queue-next (queue)
+  "Return QUEUE's next track after current."
+  (seq-elt (listen-queue-tracks queue)
+           (1+ (seq-position (listen-queue-tracks queue)
+                             (listen-queue-current queue)))))
 
 (provide 'listen-queue)
 ;;; listen-queue.el ends here

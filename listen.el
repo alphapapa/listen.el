@@ -3,7 +3,8 @@
 ;; Copyright (C) 2024  Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net>
-;; Keywords: 
+;; Keywords:
+;; Package-Requires: ((emacs "29.1") (emms "11"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -33,8 +34,6 @@
 
 ;;;; Variables
 
-(defvar listen-player nil)
-
 (defvar listen-mode-update-mode-line-timer nil)
 
 ;;;; Customization
@@ -52,11 +51,6 @@
 (cl-defmethod listen--running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
   (process-live-p (listen-player-process player)))
-
-(defun listen--player ()
-  "Return `listen-player' or a newly set one if nil."
-  (or listen-player
-      (setf listen-player (make-listen-player-vlc))))
 
 ;;;; Mode
 
@@ -88,7 +82,7 @@
 (defun listen-mode-lighter ()
   "Return lighter for `listen-mode'."
   (cl-labels ((format-time (seconds)
-                (format-seconds "%h:%.2m:%.2s%z" seconds))
+                (format-seconds "%h:%z%.2m:%.2s" seconds))
               (format-track ()
                 (let ((info (listen--info listen-player)))
                   (format "%s: %s" (alist-get "artist" info nil nil #'equal)
@@ -112,8 +106,14 @@
                      ") ")
              (list "■ ")))))
 
+(declare-function listen-queue-play "listen-queue")
+(declare-function listen-queue-next "listen-queue")
 (defun listen--update-lighter (&rest _ignore)
   "Update `listen-mode-lighter'."
+  (unless (listen--playing-p listen-player)
+    (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
+               (next-track (listen-queue-next queue))) 
+      (listen-queue-play queue next-track)))
   (setf listen-mode-lighter
         (when (and listen-player (listen--running-p listen-player))
           (listen-mode-lighter))))
@@ -140,6 +140,26 @@
    (let ((volume (floor (listen--volume (listen--player)))))
      (list (read-number "Volume %: " volume))))
   (listen--volume (listen--player) volume))
+
+(defun listen-seek (seconds)
+  "Seek to SECONDS."
+  (interactive
+   (list (listen-read-time (read-string "Seek to position: "))))
+  (listen--seek (listen--player) seconds))
+
+(defun listen-read-time (time)
+  "Return TIME in seconds.
+TIME is an HH:MM:SS string."
+  (string-match (rx (group (1+ num)) (optional ":" (group (1+ num)) (optional ":" (group (1+ num))))) time)
+  (let ((fields (nreverse
+                 (remq nil
+                       (list (match-string 1 time)
+                             (match-string 2 time)
+                             (match-string 3 time)))))
+        (factors '(1 60 3600)))
+    (cl-loop for field in fields
+             for factor in factors
+             sum (* (string-to-number field) factor))))
 
 (defun listen-quit (player)
   "Quit PLAYER."
