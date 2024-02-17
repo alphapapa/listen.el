@@ -47,11 +47,78 @@
   "Default music directory."
   :type 'directory)
 
-;;;; Functions
+;;;; Commands
 
-(cl-defmethod listen--running-p ((player listen-player))
-  "Return non-nil if PLAYER is running."
-  (process-live-p (listen-player-process player)))
+(defun listen-quit (player)
+  "Quit PLAYER.
+Interactively, uses the default player."
+  (interactive
+   (list (listen--player)))
+  (delete-process (listen-player-process player))
+  (when (eq player listen-player)
+    (setf listen-player nil)))
+
+(declare-function listen-queue-next "listen-queue")
+(defun listen-next (player)
+  "Play next track in PLAYER's queue.
+Interactively, uses the default player."
+  (interactive (list listen-player))
+  (listen-queue-next (map-elt (listen-player-etc player) :queue)))
+
+(defun listen-pause (player)
+  "Pause/unpause PLAYER.
+Interactively, uses the default player."
+  (interactive (list listen-player))
+  (listen--pause player))
+
+;; (defun listen-stop (player)
+;;   (interactive (list listen-player))
+;;   (listen--stop player))
+
+;;;###autoload
+(defun listen-play (player file)
+  "Play FILE with PLAYER.
+Interactively, uses the default player."
+  (interactive
+   (list (listen--player)
+         (read-file-name "Play file: " listen-directory nil t)))
+  (listen--play player file))
+
+(defun listen-volume (player volume)
+  "Set PLAYER's volume to VOLUME %.
+Interactively, uses the default player."
+  (interactive
+   (let* ((player (listen--player))
+          (volume (floor (listen--volume player))))
+     (list player (read-number "Volume %: " volume))))
+  (listen--volume player volume))
+
+(defun listen-seek (player seconds)
+  "Seek PLAYER to SECONDS.
+Interactively, use the default player, and read a position
+timestamp, like \"23\" or \"1:23\", with optional -/+ prefix for
+relative seek."
+  (interactive
+   (let* ((player (listen--player))
+          (position (read-string "Seek to position: "))
+          (prefix (when (string-match (rx bos (group (any "-+")) (group (1+ anything))) position)
+                    (prog1 (match-string 1 position)
+                      (setf position (match-string 2 position)))))
+          (seconds (listen-read-time position)))
+     (list player (concat prefix (number-to-string seconds)))))
+  (listen--seek player seconds))
+
+(cl-defun listen-shell-command (command filename)
+  "Run shell COMMAND on FILENAME.
+Interactively, use the current player's current track, and read
+command with completion."
+  (interactive
+   (let* ((player (listen--player))
+          (filename (abbreviate-file-name (listen--filename player)))
+          (command (read-shell-command (format "Run command on %S: " filename))))
+     (list command filename)))
+  (let ((command (format "%s %s" command (shell-quote-argument (expand-file-name filename)))))
+    (async-shell-command command)))
 
 ;;;; Mode
 
@@ -67,7 +134,7 @@
           (when (timerp listen-mode-update-mode-line-timer)
             ;; Cancel any existing timer.  Generally shouldn't happen, but not impossible.
             (cancel-timer listen-mode-update-mode-line-timer))
-          (setf listen-mode-update-mode-line-timer (run-with-timer nil 1 #'listen--update-lighter))
+          (setf listen-mode-update-mode-line-timer (run-with-timer nil 1 #'listen-mode--update))
           ;; Avoid adding the lighter multiple times if the mode is activated again.
           (cl-pushnew lighter global-mode-string :test #'equal))
       (when listen-mode-update-mode-line-timer
@@ -77,9 +144,10 @@
             (remove lighter global-mode-string)))))
 
 (defcustom listen-lighter-format 'remaining
-  "Time elapsed/remaining format."
-  :type '(choice (const remaining)
-                 (const elapsed)))
+  "Time elapsed/remaining format.
+For the currently playing track."
+  :type '(choice (const :tag "Time remaining" remaining)
+                 (const :tag "Time elapsed/total" elapsed)))
 
 (defun listen-mode-lighter ()
   "Return lighter for `listen-mode'."
@@ -110,12 +178,12 @@
 
 (declare-function listen-queue-play "listen-queue")
 (declare-function listen-queue-next-track "listen-queue")
-(defun listen--update-lighter (&rest _ignore)
-  "Update `listen-mode-lighter'."
+(defun listen-mode--update (&rest _ignore)
+  "Play next track and/or update variable `listen-mode-lighter'."
   (let (playing-next-p)
     (unless (listen--playing-p listen-player)
       (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
-                 (next-track (listen-queue-next-track queue))) 
+                 (next-track (listen-queue-next-track queue)))
         (listen-queue-play queue next-track)
         (setf playing-next-p t)))
     (setf listen-mode-lighter
@@ -124,49 +192,7 @@
     (when playing-next-p
       (force-mode-line-update 'all))))
 
-;;;; Commands
-
-(defun listen-next (player)
-  "Play next track in PLAYER's queue."
-  (interactive (list listen-player))
-  (listen-queue-next (map-elt (listen-player-etc player) :queue)))
-
-(defun listen-pause (player)
-  (interactive (list listen-player))
-  (listen--pause player))
-
-;; (defun listen-stop (player)
-;;   (interactive (list listen-player))
-;;   (listen--stop player))
-
-;;;###autoload
-(defun listen-play (player file)
-  (interactive
-   (list (listen--player)
-         (read-file-name "Play file: " listen-directory nil t)))
-  (listen--play player file))
-
-(defun listen-volume (player volume)
-  "Set PLAYER's volume to VOLUME %."
-  (interactive
-   (let* ((player (listen--player))
-          (volume (floor (listen--volume player))))
-     (list player (read-number "Volume %: " volume))))
-  (listen--volume player volume))
-
-(defun listen-seek (player seconds)
-  "Seek PLAYER to SECONDS.
-Interactively, read a position timestamp, like \"23\" or
-\"1:23\", with optional -/+ prefix for relative seek."
-  (interactive
-   (let* ((player (listen--player))
-          (position (read-string "Seek to position: "))
-          (prefix (when (string-match (rx bos (group (any "-+")) (group (1+ anything))) position)
-                    (prog1 (match-string 1 position)
-                      (setf position (match-string 2 position)))))
-          (seconds (listen-read-time position)))
-     (list player (concat prefix (number-to-string seconds)))))
-  (listen--seek player seconds))
+;;;; Functions
 
 (defun listen-read-time (time)
   "Return TIME in seconds.
@@ -181,14 +207,6 @@ TIME is an HH:MM:SS string."
     (cl-loop for field in fields
              for factor in factors
              sum (* (string-to-number field) factor))))
-
-(defun listen-quit (player)
-  "Quit PLAYER."
-  (interactive
-   (list (listen--player)))
-  (delete-process (listen-player-process player))
-  (when (eq player listen-player)
-    (setf listen-player nil)))
 
 ;;;; Transient
 

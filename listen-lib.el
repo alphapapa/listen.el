@@ -52,6 +52,12 @@
   (or listen-player
       (setf listen-player (make-listen-player-vlc))))
 
+;;;; Methods
+
+(cl-defmethod listen--running-p ((player listen-player))
+  "Return non-nil if PLAYER is running."
+  (process-live-p (listen-player-process player)))
+
 ;;;; Footer
 
 (provide 'listen-lib)

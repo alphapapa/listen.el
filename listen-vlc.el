@@ -46,6 +46,12 @@
                                           (group (1+ (not (any ""))))) nil t)
              collect (cons (match-string 1) (match-string 2)))))
 
+(cl-defmethod listen--filename ((player listen-player-vlc))
+  "Return filename of PLAYER's current track."
+  (let ((status (listen--send player "status")))
+    (when (string-match (rx bol "( new input: file://" (group (1+ nonl)) " )" ) status)
+      (match-string 1 status))))
+
 (cl-defmethod listen--title ((player listen-player-vlc))
   (listen--send player "get_title"))
 
