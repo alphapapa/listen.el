@@ -111,9 +111,7 @@
 (declare-function listen-queue-next-track "listen-queue")
 (defun listen--update-lighter (&rest _ignore)
   "Update `listen-mode-lighter'."
-  (unless (or (listen--playing-p listen-player)
-              ;; FIXME: Can we tidy this distinction?
-              (equal "stopped" (listen--status listen-player)))
+  (unless (listen--playing-p listen-player)
     (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
                (next-track (listen-queue-next-track queue))) 
       (listen-queue-play queue next-track)))
@@ -132,9 +130,9 @@
   (interactive (list listen-player))
   (listen--pause player))
 
-(defun listen-stop (player)
-  (interactive (list listen-player))
-  (listen--stop player))
+;; (defun listen-stop (player)
+;;   (interactive (list listen-player))
+;;   (listen--stop player))
 
 ;;;###autoload
 (defun listen-play (player file)
@@ -151,9 +149,16 @@
   (listen--volume (listen--player) volume))
 
 (defun listen-seek (seconds)
-  "Seek to SECONDS."
+  "Seek to SECONDS.
+Interactively, read a position timestamp, like \"23\" or
+\"1:23\", with optional -/+ prefix for relative seek."
   (interactive
-   (list (listen-read-time (read-string "Seek to position: "))))
+   (let* ((position (read-string "Seek to position: "))
+          (prefix (when (string-match (rx bos (group (any "-+")) (group (1+ anything))) position)
+                    (prog1 (match-string 1 position)
+                      (setf position (match-string 2 position)))))
+          (seconds (listen-read-time position)))
+     (list (concat prefix (number-to-string seconds)))))
   (listen--seek (listen--player) seconds))
 
 (defun listen-read-time (time)
@@ -193,14 +198,16 @@ TIME is an HH:MM:SS string."
         "Not listening"))
     ("SPC" "Pause" listen-pause)
     ("p" "Play" listen-play)
-    ("ESC" "Stop" listen-stop)
+    ;; ("ESC" "Stop" listen-stop)
     ("n" "Next" listen-next)]]
   [[]]
   ["Queue mode"
    :description
    (lambda ()
      (if-let ((queue (map-elt (listen-player-etc listen-player) :queue)))
-         (concat "Queue: " (listen-queue-name queue))
+         (format "Queue: %s (track %s/%s)" (listen-queue-name queue)
+                 (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
+                 (length (listen-queue-tracks queue)))
        "No queue"))
    ("Q" "Show" listen-queue)
    ("P" "Play another queue" listen-queue-play)

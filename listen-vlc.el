@@ -62,9 +62,9 @@
   (dolist (command `("stop" "clear" ,(format "add %s" (expand-file-name file)) "play"))
     (listen--send player command)))
 
-(cl-defmethod listen--stop ((player listen-player-vlc))
-  "Stop playing with PLAYER."
-  (listen--send player "stop"))
+;; (cl-defmethod listen--stop ((player listen-player-vlc))
+;;   "Stop playing with PLAYER."
+;;   (listen--send player "stop"))
 
 (cl-defmethod listen--status ((player listen-player-vlc))
   (let ((status (listen--send player "status")))
