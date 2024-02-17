@@ -87,6 +87,7 @@ Interactively, uses the default player."
 (defun listen-volume (player volume)
   "Set PLAYER's volume to VOLUME %.
 Interactively, uses the default player."
+  ;; TODO: Relative volume (at least for VLC).
   (interactive
    (let* ((player (listen--player))
           (volume (floor (listen--volume player))))
@@ -225,7 +226,8 @@ TIME is an HH:MM:SS string."
     ("SPC" "Pause" listen-pause)
     ("p" "Play" listen-play)
     ;; ("ESC" "Stop" listen-stop)
-    ("n" "Next" listen-next)]]
+    ("n" "Next" listen-next)
+    ("v" "Volume" listen-volume)]]
   [[]]
   ["Queue mode"
    :description
