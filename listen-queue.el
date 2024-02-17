@@ -27,8 +27,7 @@
 
 (require 'listen-lib)
 
-(defvar listen-queue (make-listen-queue)
-  "Default queue.")
+(defvar listen-queues nil)
 
 ;;;###autoload
 (defun listen-queue ()

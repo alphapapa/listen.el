@@ -49,7 +49,7 @@
   (pcase-let (((cl-struct listen-player command args process) player))
     (unless (and process (process-live-p process))
       (setf (listen-player-process player)
-            (apply #'start-process "listen-player-vlc" (get-buffer-create " *listen-player-vlc*")
+            (apply #'start-process "listen-player-vlc" (generate-new-buffer " *listen-player-vlc*")
                    command args)))))
 
 (cl-defmethod listen--play ((player listen-player-vlc) file)
