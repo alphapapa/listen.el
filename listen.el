@@ -99,7 +99,7 @@
     (apply #'concat "🎵:"
            (if (and (listen--running-p listen-player)
                     (listen--playing-p listen-player))
-               (list (format-track)
+               (list (format-status) " " (format-track)
                      " ("
                      (pcase listen-lighter-format
                        ('remaining (concat "-" (format-time (- (listen--length listen-player)
@@ -107,7 +107,7 @@
                        (_ (concat (format-time (listen--elapsed listen-player))
                                   "/"
                                   (format-time (listen--length listen-player)))))
-                     ")" (format-status) " ")
+                     ") ")
              (list "")))))
 
 (defun listen--mode-line-update (&rest _ignore)
