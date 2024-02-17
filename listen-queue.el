@@ -104,15 +104,36 @@
        :objects-function (lambda ()
                            (listen-queue-tracks queue))
        :sort-by '((1 . ascend))
-       :actions `("q" (lambda (&rest _) (bury-buffer))
-                  "n" (lambda (&rest _) (forward-line 1))
-                  "p" (lambda (&rest _) (forward-line -1))
-                  "RET" ,(listen-queue-command listen-queue-play)
-                  "S" (lambda (&rest _) (listen-queue-shuffle listen-queue))))
+       :actions (list "q" (lambda (&rest _) (bury-buffer))
+                      "n" (lambda (&rest _) (forward-line 1))
+                      "p" (lambda (&rest _) (forward-line -1))
+                      "N" (lambda (track) (listen-queue-track-forward track queue))
+                      "P" (lambda (track) (listen-queue-track-backward track queue))
+                      "RET" (listen-queue-command listen-queue-play)
+                      "S" (lambda (&rest _) (listen-queue-shuffle listen-queue))))
       (pop-to-buffer (current-buffer))
       (goto-char (point-min))
       (listen-queue--highlight-current)
       (hl-line-mode 1))))
+
+(cl-defun listen-queue-track-forward (track queue &key backwardp)
+  "Move TRACK forward in QUEUE.
+If BACKWARDP, move it backward."
+  (interactive)
+  (let* ((fn (if backwardp #'1- #'1+))
+         (position (seq-position (listen-queue-tracks queue) track))
+         (_ (when (= (funcall fn position) (length (listen-queue-tracks queue)))
+              (user-error "Track at end of queue")))
+         (next-position (funcall fn position))
+         (next-track (seq-elt (listen-queue-tracks queue) next-position)))
+    (setf (seq-elt (listen-queue-tracks queue) next-position) track
+          (seq-elt (listen-queue-tracks queue) position) next-track)
+    (listen-queue--update-buffer queue)))
+
+(cl-defun listen-queue-track-backward (track queue)
+  "Move TRACK backward in QUEUE."
+  (interactive)
+  (listen-queue-track-forward track queue :backwardp t))
 
 (defun listen-queue--highlight-current ()
   (when listen-queue-overlay
