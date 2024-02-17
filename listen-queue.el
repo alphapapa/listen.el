@@ -23,6 +23,7 @@
 
 ;;; Code:
 
+(require 'map)
 (require 'vtable)
 
 (require 'emms-info-native)
@@ -170,8 +171,11 @@ PROMPT is passed to `completing-read', which see."
   (pcase (length listen-queues)
     (0 (call-interactively #'listen-queue-new))
     (1 (car listen-queues))
-    (_ (let* ((queue-names (mapcar #'listen-queue-name listen-queues))
-              (selected (completing-read prompt queue-names nil  t)))
+    (_ (let* ((player (listen--player))
+              (playing-queue-name (when (listen--playing-p player)
+                                    (listen-queue-name (map-elt (listen-player-etc player) :queue))))
+              (queue-names (mapcar #'listen-queue-name listen-queues))
+              (selected (completing-read prompt queue-names nil t nil nil playing-queue-name)))
          (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)))))
 
 ;;;###autoload
