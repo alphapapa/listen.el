@@ -1,4 +1,4 @@
-;;; emp.el --- Emacs Music Player                    -*- lexical-binding: t; -*-
+;;; listen.el --- Music player                    -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024  Adam Porter
 
@@ -30,87 +30,87 @@
 
 ;;;; Types
 
-(cl-defstruct emp-player
+(cl-defstruct listen-player
   process command args)
 
 ;;;; Variables
 
-(defvar emp-player nil)
+(defvar listen-player nil)
 
-(defvar emp-mode-update-mode-line-timer nil)
+(defvar listen-mode-update-mode-line-timer nil)
 
 ;;;; Functions
 
-(cl-defmethod emp-play ((player emp-vlc) &key file))
+(cl-defmethod listen-play ((player listen-vlc) &key file))
 
-(cl-defmethod emp-running-p ((player emp-player))
+(cl-defmethod listen-running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
-  (process-live-p (emp-player-process player)))
+  (process-live-p (listen-player-process player)))
 
-(defvar emp-mode-lighter nil)
+(defvar listen-mode-lighter nil)
 
-(define-minor-mode emp-mode
+(define-minor-mode listen-mode
   "Show EMP player status in the mode line."
   :global t
-  (let ((lighter '(emp-mode emp-mode-lighter)))
-    (if emp-mode
+  (let ((lighter '(listen-mode listen-mode-lighter)))
+    (if listen-mode
         (progn
-          (when (timerp emp-mode-update-mode-line-timer)
+          (when (timerp listen-mode-update-mode-line-timer)
             ;; Cancel any existing timer.  Generally shouldn't happen, but not impossible.
-            (cancel-timer emp-mode-update-mode-line-timer))
-          (setf emp-mode-update-mode-line-timer (run-with-timer 1 1 #'emp--mode-line-update))
+            (cancel-timer listen-mode-update-mode-line-timer))
+          (setf listen-mode-update-mode-line-timer (run-with-timer 1 1 #'listen--mode-line-update))
           ;; Avoid adding the lighter multiple times if the mode is activated again.
           (cl-pushnew lighter global-mode-string :test #'equal))
-      (when emp-mode-update-mode-line-timer
-        (cancel-timer emp-mode-update-mode-line-timer)
-        (setf emp-mode-update-mode-line-timer nil))
+      (when listen-mode-update-mode-line-timer
+        (cancel-timer listen-mode-update-mode-line-timer)
+        (setf listen-mode-update-mode-line-timer nil))
       (setf global-mode-string
             (remove lighter global-mode-string)))))
 
-(defcustom emp-lighter-format 'remaining
+(defcustom listen-lighter-format 'remaining
   "Time elapsed/remaining format."
   :type '(choice (const remaining)
                  (const elapsed)))
 
-(defun emp-mode-lighter ()
-  "Return lighter for `emp-mode'."
+(defun listen-mode-lighter ()
+  "Return lighter for `listen-mode'."
   (cl-labels ((format-time (seconds)
                 (format-seconds "%h:%.2m:%.2s%z" seconds))
               (format-track ()
-                (emp-title emp-player))
+                (listen-title listen-player))
               (format-status ()
-                (pcase (emp--status emp-player)
+                (pcase (listen--status listen-player)
                   ("playing" "▶")
                   ("paused" "⏸")
                   ("stopped" "■"))))
-    (if (emp-playing-p emp-player)
+    (if (listen-playing-p listen-player)
         (concat "🎵 "
                 (format-track)
                 " ("
-                (pcase emp-lighter-format
-                  ('remaining (concat "-" (format-time (- (emp-length emp-player)
-                                                          (emp-elapsed emp-player)))))
-                  (_ (concat (format-time (emp-elapsed emp-player))
+                (pcase listen-lighter-format
+                  ('remaining (concat "-" (format-time (- (listen-length listen-player)
+                                                          (listen-elapsed listen-player)))))
+                  (_ (concat (format-time (listen-elapsed listen-player))
                              "/"
-                             (format-time (emp-length emp-player)))))
+                             (format-time (listen-length listen-player)))))
                 ")" (format-status) " ")
       "")))
 
-(defun emp--mode-line-update (&rest _ignore)
+(defun listen--mode-line-update (&rest _ignore)
   "Force updating of all mode lines when EMP is active."
-  (when (and emp-player (emp-running-p emp-player))
-    (setf emp-mode-lighter (emp-mode-lighter ))
+  (when (and listen-player (listen-running-p listen-player))
+    (setf listen-mode-lighter (listen-mode-lighter ))
     ;; (force-mode-line-update 'all)
     ))
 
-(defun emp-pause (player)
-  (interactive (list emp-player))
-  (emp--pause player))
+(defun listen-pause (player)
+  (interactive (list listen-player))
+  (listen--pause player))
 
-(defun emp-stop (player)
-  (interactive (list emp-player))
-  (emp--stop player))
+(defun listen-stop (player)
+  (interactive (list listen-player))
+  (listen--stop player))
 
-(provide 'emp)
+(provide 'listen)
 
-;;; emp.el ends here
+;;; listen.el ends here

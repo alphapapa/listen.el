@@ -1,4 +1,4 @@
-;;; emp-vlc.el --- VLC support for Emacs Music Player                    -*- lexical-binding: t; -*-
+;;; listen-vlc.el --- VLC support for Emacs Music Player                    -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024  Adam Porter
 
@@ -31,61 +31,61 @@
 
 ;;;; Types
 
-(cl-defstruct (emp-player-vlc
-               (:include emp-player
+(cl-defstruct (listen-player-vlc
+               (:include listen-player
                          (command "vlc")
                          (args '("-I" "rc")))))
 
 ;;;; Functions
 
-(cl-defmethod emp-info ((player emp-player-vlc))
-  (emp-send player "info"))
+(cl-defmethod listen-info ((player listen-player-vlc))
+  (listen-send player "info"))
 
-(cl-defmethod emp-title ((player emp-player-vlc))
-  (emp-send player "get_title"))
+(cl-defmethod listen-title ((player listen-player-vlc))
+  (listen-send player "get_title"))
 
-(cl-defmethod emp-ensure ((player emp-player-vlc))
+(cl-defmethod listen-ensure ((player listen-player-vlc))
   "Ensure PLAYER is ready."
-  (pcase-let (((cl-struct emp-player command args process) player))
+  (pcase-let (((cl-struct listen-player command args process) player))
     (unless (and process (process-live-p process))
-      (setf (emp-player-process player)
-            (apply #'start-process "emp-player-vlc" (get-buffer-create " *emp-player-vlc*")
+      (setf (listen-player-process player)
+            (apply #'start-process "listen-player-vlc" (get-buffer-create " *listen-player-vlc*")
                    command args)))))
 
-(cl-defmethod emp--play ((player emp-player-vlc) file)
+(cl-defmethod listen--play ((player listen-player-vlc) file)
   "Play FILE with PLAYER."
   (dolist (command `("clear" ,(format "add %s" (expand-file-name file)) "play"))
-    (emp-send player command)))
+    (listen-send player command)))
 
-(cl-defmethod emp--stop ((player emp-player-vlc))
+(cl-defmethod listen--stop ((player listen-player-vlc))
   "Stop playing with PLAYER."
-  (emp-send player "stop"))
+  (listen-send player "stop"))
 
-(cl-defmethod emp--status ((player emp-player-vlc))
-  (let ((status (emp-send player "status")))
+(cl-defmethod listen--status ((player listen-player-vlc))
+  (let ((status (listen-send player "status")))
     (when (string-match (rx "( state " (group (1+ alnum)) " )") status)
       (match-string 1 status))))
 
-(cl-defmethod emp--pause ((player emp-player-vlc))
+(cl-defmethod listen--pause ((player listen-player-vlc))
   "Pause playing with PLAYER."
-  (emp-send player "pause"))
+  (listen-send player "pause"))
 
-(cl-defmethod emp-playing-p ((player emp-player-vlc))
+(cl-defmethod listen-playing-p ((player listen-player-vlc))
   "Return non-nil if PLAYER is playing."
-  (equal "1" (emp-send player "is_playing")))
+  (equal "1" (listen-send player "is_playing")))
 
-(cl-defmethod emp-elapsed ((player emp-player-vlc))
+(cl-defmethod listen-elapsed ((player listen-player-vlc))
   "Return seconds elapsed for PLAYER's track."
-  (cl-parse-integer (emp-send player "get_time")))
+  (cl-parse-integer (listen-send player "get_time")))
 
-(cl-defmethod emp-length ((player emp-player-vlc))
+(cl-defmethod listen-length ((player listen-player-vlc))
   "Return length of  PLAYER's track."
-  (cl-parse-integer (emp-send player "get_length")))
+  (cl-parse-integer (listen-send player "get_length")))
 
-(cl-defmethod emp-send ((player emp-player-vlc) command)
+(cl-defmethod listen-send ((player listen-player-vlc) command)
   "Send COMMAND to PLAYER and return output."
-  (emp-ensure player)
-  (pcase-let (((cl-struct emp-player process) player))
+  (listen-ensure player)
+  (pcase-let (((cl-struct listen-player process) player))
     (with-current-buffer (process-buffer process)
       (let ((pos (marker-position (process-mark process))))
         (process-send-string process command)
@@ -94,6 +94,6 @@
           (accept-process-output process))
         (buffer-substring pos (- (process-mark process) 4))))))
 
-(provide 'emp-vlc)
+(provide 'listen-vlc)
 
-;;; emp-vlc.el ends here
+;;; listen-vlc.el ends here
