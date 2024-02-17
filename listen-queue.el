@@ -213,10 +213,6 @@ PROMPT is passed to `completing-read', which see."
     (setf (listen-queue-tracks queue) tracks))
   (listen-queue--update-buffer queue))
 
-(defun listen-queue-random-track (queue)
-  "Return a random track in QUEUE."
-  (seq-random-elt (listen-queue-tracks queue)))
-
 (defun listen-queue-next (queue)
   "Play next track in QUEUE."
   (interactive (list (listen-queue-complete)))
@@ -224,11 +220,9 @@ PROMPT is passed to `completing-read', which see."
 
 (defun listen-queue-next-track (queue)
   "Return QUEUE's next track after current."
-  (if-let ((fn (alist-get 'next-track-function (listen-queue-etc   queue))))
-      (funcall fn queue)
-    (seq-elt (listen-queue-tracks queue)
-             (1+ (seq-position (listen-queue-tracks queue)
-                               (listen-queue-current queue))))))
+  (seq-elt (listen-queue-tracks queue)
+           (1+ (seq-position (listen-queue-tracks queue)
+                             (listen-queue-current queue)))))
 
 (provide 'listen-queue)
 ;;; listen-queue.el ends here
