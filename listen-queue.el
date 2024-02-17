@@ -38,6 +38,8 @@
 (defvar-local listen-queue nil
   "Queue in this buffer.")
 
+(defvar-local listen-queue-overlay nil)
+
 (defgroup listen-queue nil
   "Queues."
   :group 'listen)
@@ -52,7 +54,8 @@
      (let ((list-buffer (current-buffer)))
        (apply #',command queue args)
        (with-current-buffer list-buffer
-         (vtable-revert)))))
+         (vtable-revert-command)
+         (listen-queue--highlight-current)))))
 
 ;;;###autoload
 (defun listen-queue (queue)
@@ -104,8 +107,18 @@
                   "S" (lambda (&rest _) (listen-queue-shuffle listen-queue))))
       (pop-to-buffer (current-buffer))
       (goto-char (point-min))
-      (re-search-forward "▶" nil t)
+      (listen-queue--highlight-current)
       (hl-line-mode 1))))
+
+(defun listen-queue--highlight-current ()
+  (when listen-queue-overlay
+    (delete-overlay listen-queue-overlay))
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "▶" nil t)
+      (message "yep")
+      (setf listen-queue-overlay (make-overlay (pos-bol) (pos-eol)))
+      (overlay-put listen-queue-overlay 'face 'highlight))))
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
@@ -113,7 +126,8 @@
                               when (eq queue (buffer-local-value 'listen-queue buffer))
                               return buffer)))
     (with-current-buffer buffer
-      (vtable-revert-command))))
+      (vtable-revert-command)
+      (listen-queue--highlight-current))))
 
 (declare-function listen-play "listen")
 (defun listen-queue-play (queue &optional track)
