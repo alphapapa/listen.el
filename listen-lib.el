@@ -30,6 +30,13 @@
 (cl-defstruct listen-player
   process command args)
 
+;;;; Variables
+
+(defvar listen-debug-p nil
+  "When non-nil, don't erase process buffer after sending commands.")
+
+;;;; Footer
+
 (provide 'listen-lib)
 
 ;;; listen-lib.el ends here

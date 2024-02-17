@@ -43,16 +43,27 @@
   "Music player."
   :group 'applications)
 
+(defcustom listen-directory "~/Music"
+  "Default music directory."
+  :type 'directory)
+
 ;;;; Functions
 
 (cl-defmethod listen-running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
   (process-live-p (listen-player-process player)))
 
+(defun listen--player ()
+  "Return `listen-player' or a newly set one if nil."
+  (or listen-player
+      (setf listen-player (make-listen-player-vlc))))
+
+;;;; Mode
+
 (defvar listen-mode-lighter nil)
 
 (define-minor-mode listen-mode
-  "Show EMP player status in the mode line."
+  "Show Listen player status in the mode line."
   :global t
   (let ((lighter '(listen-mode listen-mode-lighter)))
     (if listen-mode
@@ -79,23 +90,23 @@
   (cl-labels ((format-time (seconds)
                 (format-seconds "%h:%.2m:%.2s%z" seconds))
               (format-track ()
-                (listen-title listen-player))
+                (listen--title listen-player))
               (format-status ()
                 (pcase (listen--status listen-player)
                   ("playing" "▶")
                   ("paused" "⏸")
                   ("stopped" "■"))))
-    (if (listen-playing-p listen-player)
+    (if (listen--playing-p listen-player)
         (concat "🎵 "
                 (format-track)
                 " ("
                 (pcase listen-lighter-format
-                  ('remaining (concat "-" (format-time (- (listen-length listen-player)
-                                                          (listen-elapsed listen-player)))))
-                  (_ (concat (format-time (listen-elapsed listen-player))
+                  ('remaining (concat "-" (format-time (- (listen--length listen-player)
+                                                          (listen--elapsed listen-player)))))
+                  (_ (concat (format-time (listen--elapsed listen-player))
                              "/"
-                             (format-time (listen-length listen-player)))))
-                ")" (format-status) " ")
+                             (format-time (listen--length listen-player)))))
+                ") " (format-status) " ")
       "")))
 
 (defun listen--mode-line-update (&rest _ignore)
@@ -105,6 +116,8 @@
     ;; (force-mode-line-update 'all)
     ))
 
+;;;; Commands
+
 (defun listen-pause (player)
   (interactive (list listen-player))
   (listen--pause player))
@@ -112,6 +125,38 @@
 (defun listen-stop (player)
   (interactive (list listen-player))
   (listen--stop player))
+
+(defun listen-play (player file)
+  (interactive
+   (list (listen--player)
+         (read-file-name "Play file: " listen-directory nil t)))
+  (listen--play player file))
+
+(defun listen-volume (volume)
+  "Set volume to VOLUME %."
+  (interactive
+   (let ((volume (floor (listen--volume (listen--player)))))
+     (list (read-number "Volume %: " volume))))
+  (listen--volume (listen--player) volume))
+
+;;;; Transient
+
+(require 'transient)
+
+(transient-define-prefix listen-menu ()
+  "Show Listen menu."
+  :refresh-suffixes t
+  [["Listen"
+    :description
+    (lambda ()
+      (if listen-player
+          (concat "Listening: " (listen-mode-lighter))
+        "Not listening"))
+    ("SPC" "Pause" listen-pause)
+    ("p" "Play" listen-play)
+    ("s" "Stop" listen-stop)
+    ]]
+  )
 
 (provide 'listen)
 
