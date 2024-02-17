@@ -97,7 +97,7 @@
       (pop-to-buffer (current-buffer))
       (goto-char (point-min))
       (re-search-forward "▶" nil t)
-      (hl-line-mode))))
+      (hl-line-mode 1))))
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
@@ -133,6 +133,7 @@ PROMPT is passed to `completing-read', which see."
              (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)
            (push (make-listen-queue :name selected) listen-queues))))))
 
+;;;###autoload
 (defun listen-queue-new (name)
   "Add and return a new queue having NAME."
   (interactive (list (read-string "New queue name: ")))
@@ -143,6 +144,7 @@ PROMPT is passed to `completing-read', which see."
   (interactive (list (listen-queue-complete :prompt "Discard queue: ")))
   (cl-callf2 delete queue listen-queues))
 
+;;;###autoload
 (cl-defun listen-queue-add (queue files)
   "Add FILES to QUEUE."
   (interactive

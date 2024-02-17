@@ -56,6 +56,7 @@
 
 (defvar listen-mode-lighter nil)
 
+;;;###autoload
 (define-minor-mode listen-mode
   "Show Listen player status in the mode line."
   :global t
@@ -128,6 +129,7 @@
   (interactive (list listen-player))
   (listen--stop player))
 
+;;;###autoload
 (defun listen-play (player file)
   (interactive
    (list (listen--player)
@@ -172,6 +174,7 @@ TIME is an HH:MM:SS string."
 
 (require 'transient)
 
+;;;###autoload
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
   :refresh-suffixes t
@@ -184,7 +187,18 @@ TIME is an HH:MM:SS string."
     ("SPC" "Pause" listen-pause)
     ("p" "Play" listen-play)
     ("s" "Stop" listen-stop)
-    ]]
+    ]
+   
+   ]
+  ["Queue"
+   :description
+   (lambda ()
+     (if-let ((queue (map-elt (listen-player-etc listen-player) :queue)))
+         (concat "Queue: " (listen-queue-name queue))
+       "No queue"))
+   ("a" "Add" listen-queue-add)
+   ]
+  
   )
 
 (provide 'listen)
