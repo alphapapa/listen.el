@@ -30,6 +30,12 @@
 (cl-defstruct listen-player
   process command args)
 
+(cl-defstruct listen-queue
+  tracks (track-number 0) etc)
+
+(cl-defstruct listen-track
+  filename artist title genre length rating etc)
+
 ;;;; Variables
 
 (defvar listen-debug-p nil
