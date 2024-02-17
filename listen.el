@@ -96,18 +96,18 @@
                   ("playing" "▶")
                   ("paused" "⏸")
                   ("stopped" "■"))))
-    (if (listen--playing-p listen-player)
-        (concat "🎵 "
-                (format-track)
-                " ("
-                (pcase listen-lighter-format
-                  ('remaining (concat "-" (format-time (- (listen--length listen-player)
-                                                          (listen--elapsed listen-player)))))
-                  (_ (concat (format-time (listen--elapsed listen-player))
-                             "/"
-                             (format-time (listen--length listen-player)))))
-                ") " (format-status) " ")
-      "")))
+    (apply #'concat "🎵:"
+           (if (listen--playing-p listen-player)
+               (list (format-track)
+                     " ("
+                     (pcase listen-lighter-format
+                       ('remaining (concat "-" (format-time (- (listen--length listen-player)
+                                                               (listen--elapsed listen-player)))))
+                       (_ (concat (format-time (listen--elapsed listen-player))
+                                  "/"
+                                  (format-time (listen--length listen-player)))))
+                     ")" (format-status) " ")
+             (list "")))))
 
 (defun listen--mode-line-update (&rest _ignore)
   "Force updating of all mode lines when EMP is active."
