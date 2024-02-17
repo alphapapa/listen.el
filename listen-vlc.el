@@ -39,7 +39,12 @@
 ;;;; Functions
 
 (cl-defmethod listen--info ((player listen-player-vlc))
-  (listen--send player "info"))
+  (with-temp-buffer
+    (save-excursion
+      (insert (listen--send player "info")))
+    (cl-loop while (re-search-forward (rx bol "| " (group (1+ (not blank))) ": "
+                                          (group (1+ (not (any ""))))) nil t)
+             collect (cons (match-string 1) (match-string 2)))))
 
 (cl-defmethod listen--title ((player listen-player-vlc))
   (listen--send player "get_title"))

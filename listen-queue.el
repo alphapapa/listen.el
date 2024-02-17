@@ -83,12 +83,15 @@
                              (listen-track-filename track))))
        :objects-function (lambda ()
                            (listen-queue-tracks queue))
-       :sort-by '((1 . descend))
+       :sort-by '((1 . ascend))
        :actions `("q" (lambda (&rest _) (bury-buffer))
                   "n" (lambda (&rest _) (forward-line 1))
                   "p" (lambda (&rest _) (forward-line -1))
                   "RET" ,(listen-queue-command listen-queue-play)))
-      (pop-to-buffer (current-buffer)))))
+      (pop-to-buffer (current-buffer))
+      (goto-char (point-min))
+      (re-search-forward "▶" nil t)
+      (hl-line-mode))))
 
 (defun listen-queue-play (queue track)
   (listen-play (listen--player) (listen-track-filename track))
@@ -100,15 +103,29 @@
       (format-time-string listen-queue-time-format time)
     "never"))
 
-(defun listen-queue-complete ()
+(cl-defun listen-queue-complete (&key (prompt "Queue: "))
   "Return a Listen queue selected with completion."
-  (let* ((queue-names (mapcar #'listen-queue-name listen-queues))
-         (selected (completing-read "Queue (or enter new name): " queue-names)))
-    (if (member selected queue-names)
-        (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)
-      (push (make-listen-queue :name selected) listen-queues))))
+  (pcase (length listen-queues)
+    (0 (call-interactively #'listen-queue-new))
+    (1 (car listen-queues))
+    (_ (let* ((queue-names (mapcar #'listen-queue-name listen-queues))
+              (selected (completing-read prompt queue-names)))
+         (if (member selected queue-names)
+             (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)
+           (push (make-listen-queue :name selected) listen-queues))))))
+
+(defun listen-queue-new (name)
+  "Add and return a new queue having NAME."
+  (interactive (list (read-string "New queue name: ")))
+  (push (make-listen-queue :name name) listen-queues))
+
+(defun listen-queue-discard (queue)
+  "Discard QUEUE."
+  (interactive (list (listen-queue-complete :prompt "Discard queue: ")))
+  (cl-callf2 delete queue listen-queues))
 
 (cl-defun listen-queue-add (queue files)
+  "Add FILES to QUEUE."
   (interactive
    (let ((queue (listen-queue-complete))
          (path (expand-file-name (read-file-name "Enqueue file/directory: " listen-directory nil t))))
@@ -116,13 +133,13 @@
            (if (file-directory-p path)
                (directory-files-recursively path ".")
              (list path)))))
-  (cl-callf append (listen-queue-tracks queue) (mapcar #'listen-queue-track files)))
+  (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files))))
 
 (require 'emms-info-native)
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
-  (let* ((metadata (emms-info-native--decode-info-fields filename)))
+  (when-let ((metadata (emms-info-native--decode-info-fields filename)))
     (make-listen-track :filename filename
                        :artist (map-elt metadata "artist")
                        :title (map-elt metadata "title")
