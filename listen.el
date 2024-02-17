@@ -28,6 +28,7 @@
 ;;;; Requirements
 
 (require 'cl-lib)
+(require 'map)
 
 (require 'listen-lib)
 (require 'listen-vlc)
@@ -111,13 +112,17 @@
 (declare-function listen-queue-next-track "listen-queue")
 (defun listen--update-lighter (&rest _ignore)
   "Update `listen-mode-lighter'."
-  (unless (listen--playing-p listen-player)
-    (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
-               (next-track (listen-queue-next-track queue))) 
-      (listen-queue-play queue next-track)))
-  (setf listen-mode-lighter
-        (when (and listen-player (listen--running-p listen-player))
-          (listen-mode-lighter))))
+  (let (playing-next-p)
+    (unless (listen--playing-p listen-player)
+      (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
+                 (next-track (listen-queue-next-track queue))) 
+        (listen-queue-play queue next-track)
+        (setf playing-next-p t)))
+    (setf listen-mode-lighter
+          (when (and listen-player (listen--running-p listen-player))
+            (listen-mode-lighter)))
+    (when playing-next-p
+      (force-mode-line-update 'all))))
 
 ;;;; Commands
 

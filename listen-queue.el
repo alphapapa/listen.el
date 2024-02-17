@@ -76,7 +76,7 @@
              (list :name "At" :primary 'descend
                    :getter (lambda (track _table)
                              (cl-position track (listen-queue-tracks queue))))
-             (list :name "Artist" :max-width 20
+             (list :name "Artist" :max-width 20 :align 'right
                    :getter (lambda (track _table)
                              (propertize (or (listen-track-artist track) "")
                                          'face 'font-lock-variable-name-face)))
@@ -90,10 +90,10 @@
                                          'face 'font-lock-type-face)))
              (list :name "#"
                    :getter (lambda (track _table)
-                             (listen-track-number track)))
+                             (or (listen-track-number track) "")))
              (list :name "Date"
                    :getter (lambda (track _table)
-                             (listen-track-date track)))
+                             (or (listen-track-date track) "")))
              (list :name "File"
                    :getter (lambda (track _table)
                              (listen-track-filename track))))
@@ -129,7 +129,7 @@
       (listen-queue--highlight-current))))
 
 (declare-function listen-play "listen")
-(defun listen-queue-play (queue &optional track)
+(cl-defun listen-queue-play (queue &optional (track (car (listen-queue-tracks queue))))
   "Play QUEUE and optionally TRACK in it.
 Interactively, selected queue with completion; and with prefix,
 select track as well."
@@ -179,6 +179,7 @@ PROMPT is passed to `completing-read', which see."
   "Add and return a new queue having NAME."
   (interactive (list (read-string "New queue name: ")))
   (let ((queue (make-listen-queue :name name)))
+    ;; FIXME: Nothing prevents duplicate queue names.
     (push queue listen-queues)
     queue))
 
@@ -188,7 +189,7 @@ PROMPT is passed to `completing-read', which see."
   (cl-callf2 delete queue listen-queues))
 
 ;;;###autoload
-(cl-defun listen-queue-add-files (queue files)
+(cl-defun listen-queue-add-files (files queue)
   "Add FILES to QUEUE."
   (interactive
    (let ((queue (listen-queue-complete))
@@ -197,7 +198,8 @@ PROMPT is passed to `completing-read', which see."
            (if (file-directory-p path)
                (directory-files-recursively path ".")
              (list path)))))
-  (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files))))
+  (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files)))
+  queue)
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
