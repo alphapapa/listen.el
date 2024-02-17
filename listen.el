@@ -4,7 +4,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Keywords:
-;; Package-Requires: ((emacs "29.1") (emms "11"))
+;; Package-Requires: ((emacs "29.1") (emms "11") (persist "0.6"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -108,12 +108,12 @@
              (list "■ ")))))
 
 (declare-function listen-queue-play "listen-queue")
-(declare-function listen-queue-next "listen-queue")
+(declare-function listen-queue-next-track "listen-queue")
 (defun listen--update-lighter (&rest _ignore)
   "Update `listen-mode-lighter'."
   (unless (listen--playing-p listen-player)
     (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
-               (next-track (listen-queue-next queue))) 
+               (next-track (listen-queue-next-track queue))) 
       (listen-queue-play queue next-track)))
   (setf listen-mode-lighter
         (when (and listen-player (listen--running-p listen-player))
@@ -190,13 +190,24 @@ TIME is an HH:MM:SS string."
     ]
    
    ]
-  ["Queue"
+  [[
+    ]
+   
+   ]
+  ["Queue mode"
    :description
    (lambda ()
      (if-let ((queue (map-elt (listen-player-etc listen-player) :queue)))
          (concat "Queue: " (listen-queue-name queue))
        "No queue"))
-   ("a" "Add" listen-queue-add)
+   ("Q" "Play another queue" listen-queue-play)
+   ("q" "Show queue" listen-queue)
+   ("a" "Add files" listen-queue-add-files)
+   ("t" "Select track" (lambda ()
+                         "Call `listen-queue-play' with prefix."
+                         (interactive)
+                         (let ((current-prefix-arg '(4)))
+                           (call-interactively #'listen-queue-play))))
    ]
   
   )
