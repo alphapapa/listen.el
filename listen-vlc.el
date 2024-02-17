@@ -54,7 +54,7 @@
 
 (cl-defmethod listen--play ((player listen-player-vlc) file)
   "Play FILE with PLAYER."
-  (dolist (command `("clear" ,(format "add %s" (expand-file-name file)) "play"))
+  (dolist (command `("stop" "clear" ,(format "add %s" (expand-file-name file)) "play"))
     (listen--send player command)))
 
 (cl-defmethod listen--stop ((player listen-player-vlc))

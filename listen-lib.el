@@ -31,10 +31,10 @@
   process command args)
 
 (cl-defstruct listen-queue
-  tracks (track-number 0) etc)
+  name tracks current etc)
 
 (cl-defstruct listen-track
-  filename artist title genre length rating etc)
+  filename artist title album number genre length date rating etc)
 
 ;;;; Variables
 

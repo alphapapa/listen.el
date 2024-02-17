@@ -139,6 +139,13 @@
      (list (read-number "Volume %: " volume))))
   (listen--volume (listen--player) volume))
 
+(defun listen-quit (player)
+  "Quit PLAYER."
+  (interactive
+   (list (listen--player)))
+  (delete-process (listen-player-process player))
+  (setf listen-player nil))
+
 ;;;; Transient
 
 (require 'transient)
