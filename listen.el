@@ -49,7 +49,7 @@
 
 ;;;; Functions
 
-(cl-defmethod listen-running-p ((player listen-player))
+(cl-defmethod listen--running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
   (process-live-p (listen-player-process player)))
 
@@ -97,7 +97,8 @@
                   ("paused" "⏸")
                   ("stopped" "■"))))
     (apply #'concat "🎵:"
-           (if (listen--playing-p listen-player)
+           (if (and (listen--running-p listen-player)
+                    (listen--playing-p listen-player))
                (list (format-track)
                      " ("
                      (pcase listen-lighter-format
