@@ -71,7 +71,7 @@
           (when (timerp listen-mode-update-mode-line-timer)
             ;; Cancel any existing timer.  Generally shouldn't happen, but not impossible.
             (cancel-timer listen-mode-update-mode-line-timer))
-          (setf listen-mode-update-mode-line-timer (run-with-timer 1 1 #'listen--mode-line-update))
+          (setf listen-mode-update-mode-line-timer (run-with-timer nil 1 #'listen--update-lighter))
           ;; Avoid adding the lighter multiple times if the mode is activated again.
           (cl-pushnew lighter global-mode-string :test #'equal))
       (when listen-mode-update-mode-line-timer
@@ -110,10 +110,11 @@
                      ") ")
              (list "")))))
 
-(defun listen--mode-line-update (&rest _ignore)
-  "Force updating of all mode lines when EMP is active."
-  (when (and listen-player (listen--running-p listen-player))
-    (setf listen-mode-lighter (listen-mode-lighter))))
+(defun listen--update-lighter (&rest _ignore)
+  "Update `listen-mode-lighter'."
+  (setf listen-mode-lighter
+        (when (and listen-player (listen--running-p listen-player))
+          (listen-mode-lighter))))
 
 ;;;; Commands
 
