@@ -151,7 +151,8 @@ command with completion."
               (format-track ()
                 (let ((info (listen--info listen-player)))
                   (format "%s: %s" (alist-get "artist" info nil nil #'equal)
-                          (alist-get "title" info nil nil #'equal))))
+                          (truncate-string-to-width (alist-get "title" info nil nil #'equal)
+                                                    listen-mode-title-max-length nil nil t))))
               (format-status ()
                 (pcase (listen--status listen-player)
                   ("playing" "▶")
@@ -169,7 +170,11 @@ command with completion."
                                   "/"
                                   (format-time (listen--length listen-player)))))
                      ") ")
-             (list "■ ")))))
+             '("■ ")))))
+
+(defcustom listen-mode-title-max-length 15
+  "Truncate track titles to this many characters."
+  :type 'natnum)
 
 (defcustom listen-lighter-format 'remaining
   "Time elapsed/remaining format.
