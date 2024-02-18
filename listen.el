@@ -144,12 +144,6 @@ command with completion."
       (setf global-mode-string
             (remove lighter global-mode-string)))))
 
-(defcustom listen-lighter-format 'remaining
-  "Time elapsed/remaining format.
-For the currently playing track."
-  :type '(choice (const :tag "Time remaining" remaining)
-                 (const :tag "Time elapsed/total" elapsed)))
-
 (defun listen-mode-lighter ()
   "Return lighter for `listen-mode'."
   (cl-labels ((format-time (seconds)
@@ -176,6 +170,12 @@ For the currently playing track."
                                   (format-time (listen--length listen-player)))))
                      ") ")
              (list "■ ")))))
+
+(defcustom listen-lighter-format 'remaining
+  "Time elapsed/remaining format.
+For the currently playing track."
+  :type '(choice (const :tag "Time remaining" remaining)
+                 (const :tag "Time elapsed/total" elapsed)))
 
 (declare-function listen-queue-play "listen-queue")
 (declare-function listen-queue-next-track "listen-queue")

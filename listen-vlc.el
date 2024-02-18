@@ -87,11 +87,11 @@
 
 (cl-defmethod listen--elapsed ((player listen-player-vlc))
   "Return seconds elapsed for PLAYER's track."
-  (cl-parse-integer (listen--send player "get_time")))
+  (string-to-number (listen--send player "get_time")))
 
 (cl-defmethod listen--length ((player listen-player-vlc))
   "Return length of  PLAYER's track."
-  (cl-parse-integer (listen--send player "get_length")))
+  (string-to-number (listen--send player "get_length")))
 
 (cl-defmethod listen--send ((player listen-player-vlc) command)
   "Send COMMAND to PLAYER and return output."
