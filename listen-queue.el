@@ -107,8 +107,8 @@
        :actions (list "q" (lambda (&rest _) (bury-buffer))
                       "n" (lambda (&rest _) (forward-line 1))
                       "p" (lambda (&rest _) (forward-line -1))
-                      "N" (lambda (track) (listen-queue-track-forward track queue))
-                      "P" (lambda (track) (listen-queue-track-backward track queue))
+                      "N" (lambda (track) (listen-queue-transpose-forward track queue))
+                      "P" (lambda (track) (listen-queue-transpose-backward track queue))
                       "RET" (listen-queue-command listen-queue-play)
                       "SPC" (lambda (&rest _) (call-interactively #'listen-pause))
                       "S" (lambda (&rest _) (listen-queue-shuffle listen-queue))))
@@ -117,8 +117,8 @@
       (listen-queue--highlight-current)
       (hl-line-mode 1))))
 
-(cl-defun listen-queue-track-forward (track queue &key backwardp)
-  "Move TRACK forward in QUEUE.
+(cl-defun listen-queue-transpose-forward (track queue &key backwardp)
+  "Transpose TRACK forward in QUEUE.
 If BACKWARDP, move it backward."
   (interactive)
   (let* ((fn (if backwardp #'1- #'1+))
@@ -131,10 +131,10 @@ If BACKWARDP, move it backward."
           (seq-elt (listen-queue-tracks queue) position) next-track)
     (listen-queue--update-buffer queue)))
 
-(cl-defun listen-queue-track-backward (track queue)
-  "Move TRACK backward in QUEUE."
+(cl-defun listen-queue-transpose-backward (track queue)
+  "Transpose TRACK backward in QUEUE."
   (interactive)
-  (listen-queue-track-forward track queue :backwardp t))
+  (listen-queue-transpose-forward track queue :backwardp t))
 
 (defun listen-queue--highlight-current ()
   (when listen-queue-overlay
