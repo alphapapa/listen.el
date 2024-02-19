@@ -19,7 +19,7 @@
 
 ;;; Commentary:
 
-;; THis library provides a function to select filenames from an MPD
+;; This library provides a function to select filenames from an MPD
 ;; server's library.  It requires that the user has set the option
 ;; `mpc-mpd-music-directory', or that `listen-directory' be the MPD
 ;; server's music directory.
