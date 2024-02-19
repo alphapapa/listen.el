@@ -35,7 +35,7 @@
   "Return files selected from MPD library.
 Searches by TAG; or if SELECT-TAG-P, tag is selected with
 completion."
-  (cl-assert (file-directory-p mpc-mpd-music-directory))
+  (cl-assert (file-directory-p (or mpc-mpd-music-directory listen-directory)))
   (cl-labels ((search-any (queries)
                 (mpc-proc-buf-to-alists
                  (mpc-proc-cmd (cl-loop for query in queries
