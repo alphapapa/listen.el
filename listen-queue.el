@@ -67,52 +67,51 @@
       (read-only-mode)
       (erase-buffer)
       (toggle-truncate-lines 1)
-      (if (listen-queue-tracks queue)
-          (make-vtable
-           :columns
-           (list (list :name "*" :primary 'descend
-                       :getter (lambda (track _table)
-                                 (if (eq track (listen-queue-current queue))
-                                     "▶" " ")))
-                 (list :name "At" :primary 'descend
-                       :getter (lambda (track _table)
-                                 (cl-position track (listen-queue-tracks queue))))
-                 (list :name "Artist" :max-width 20 :align 'right
-                       :getter (lambda (track _table)
-                                 (propertize (or (listen-track-artist track) "")
-                                             'face 'font-lock-variable-name-face)))
-                 (list :name "Title" :max-width 35
-                       :getter (lambda (track _table)
-                                 (propertize (or (listen-track-title track) "")
-                                             'face 'font-lock-function-name-face)))
-                 (list :name "Album" :max-width 30
-                       :getter (lambda (track _table)
-                                 (propertize (or (listen-track-album track) "")
-                                             'face 'font-lock-type-face)))
-                 (list :name "#"
-                       :getter (lambda (track _table)
-                                 (or (listen-track-number track) "")))
-                 (list :name "Date"
-                       :getter (lambda (track _table)
-                                 (or (listen-track-date track) "")))
-                 (list :name "Genre"
-                       :getter (lambda (track _table)
-                                 (or (listen-track-genre track) "")))
-                 (list :name "File"
-                       :getter (lambda (track _table)
-                                 (listen-track-filename track))))
-           :objects-function (lambda ()
-                               (listen-queue-tracks queue))
-           :sort-by '((1 . ascend))
-           :actions (list "q" (lambda (_) (bury-buffer))
-                          "n" (lambda (_) (forward-line 1))
-                          "p" (lambda (_) (forward-line -1))
-                          "N" (lambda (track) (listen-queue-transpose-forward track queue))
-                          "P" (lambda (track) (listen-queue-transpose-backward track queue))
-                          "RET" (lambda (track) (listen-queue-play queue track))
-                          "SPC" (lambda (_) (call-interactively #'listen-pause))
-                          "S" (lambda (_) (listen-queue-shuffle listen-queue))))
-        (insert "Queue is empty."))
+      (make-vtable
+       :columns
+       (list (list :name "*" :primary 'descend
+                   :getter (lambda (track _table)
+                             (if (eq track (listen-queue-current queue))
+                                 "▶" " ")))
+             (list :name "At" :primary 'descend
+                   :getter (lambda (track _table)
+                             (cl-position track (listen-queue-tracks queue))))
+             (list :name "Artist" :max-width 20 :align 'right
+                   :getter (lambda (track _table)
+                             (propertize (or (listen-track-artist track) "")
+                                         'face 'font-lock-variable-name-face)))
+             (list :name "Title" :max-width 35
+                   :getter (lambda (track _table)
+                             (propertize (or (listen-track-title track) "")
+                                         'face 'font-lock-function-name-face)))
+             (list :name "Album" :max-width 30
+                   :getter (lambda (track _table)
+                             (propertize (or (listen-track-album track) "")
+                                         'face 'font-lock-type-face)))
+             (list :name "#"
+                   :getter (lambda (track _table)
+                             (or (listen-track-number track) "")))
+             (list :name "Date"
+                   :getter (lambda (track _table)
+                             (or (listen-track-date track) "")))
+             (list :name "Genre"
+                   :getter (lambda (track _table)
+                             (or (listen-track-genre track) "")))
+             (list :name "File"
+                   :getter (lambda (track _table)
+                             (listen-track-filename track))))
+       :objects-function (lambda ()
+                           (or (listen-queue-tracks listen-queue)
+                               (list (make-listen-track :artist "[Empty queue]"))))
+       :sort-by '((1 . ascend))
+       :actions (list "q" (lambda (_) (bury-buffer))
+                      "n" (lambda (_) (forward-line 1))
+                      "p" (lambda (_) (forward-line -1))
+                      "N" (lambda (track) (listen-queue-transpose-forward track queue))
+                      "P" (lambda (track) (listen-queue-transpose-backward track queue))
+                      "RET" (lambda (track) (listen-queue-play queue track))
+                      "SPC" (lambda (_) (call-interactively #'listen-pause))
+                      "S" (lambda (_) (listen-queue-shuffle listen-queue))))
       (pop-to-buffer (current-buffer))
       (goto-char (point-min))
       (listen-queue--highlight-current)
