@@ -247,13 +247,18 @@ PROMPT is passed to `completing-read', which see."
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
   (when-let ((metadata (emms-info-native--decode-info-fields filename)))
-    (make-listen-track :filename filename
-                       :artist (map-elt metadata "artist")
-                       :title (map-elt metadata "title")
-                       :album (map-elt metadata "album")
-                       :number (map-elt metadata "tracknumber")
-                       :date (map-elt metadata "date")
-                       :genre (map-elt metadata "genre"))))
+    (cl-assert metadata nil "Track has no metadata: %S" filename)
+    (make-listen-track
+     ;; Abbreviate the filename so as to not include the user's
+     ;; homedir path (so queues could be portable with music
+     ;; libraries).
+     :filename (abbreviate-file-name filename)
+     :artist (map-elt metadata "artist")
+     :title (map-elt metadata "title")
+     :album (map-elt metadata "album")
+     :number (map-elt metadata "tracknumber")
+     :date (map-elt metadata "date")
+     :genre (map-elt metadata "genre"))))
 
 (defun listen-queue-shuffle (queue)
   "Shuffle QUEUE."
