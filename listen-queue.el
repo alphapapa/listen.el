@@ -53,10 +53,6 @@
   "Queues."
   :group 'listen)
 
-(defcustom listen-queue-time-format "%Y-%m-%d %H:%M:%S"
-  "Time format for `listen-queue' buffer."
-  :type 'string)
-
 ;; (defmacro listen-queue-command (command)
 ;;   "Expand to a lambda that applies its args to COMMAND and reverts the list buffer."
 ;;   `(lambda (&rest args)
@@ -154,7 +150,7 @@ If BACKWARDP, move it backward."
   (listen-queue--update-buffer queue))
 
 (defun listen-queue-yank (track position queue)
-  "Yank track into QUEUE at POSITION."
+  "Yank TRACK into QUEUE at POSITION."
   (interactive
    (list (ring-ref listen-queue-kill-ring 0)
          (seq-position (listen-queue-tracks listen-queue) (vtable-current-object))
@@ -166,6 +162,7 @@ If BACKWARDP, move it backward."
   (listen-queue--update-buffer queue))
 
 (defun listen-queue--highlight-current ()
+  "Draw highlight onto current track."
   (when listen-queue-overlay
     (delete-overlay listen-queue-overlay))
   (save-excursion
@@ -199,12 +196,6 @@ select track as well."
     (setf (listen-queue-current queue) track
           (map-elt (listen-player-etc player) :queue) queue)
     (listen-queue--update-buffer queue)))
-
-(defun listen-queue--format-time (time)
-  "Return TIME formatted according to `listen-queue-time-format', which see."
-  (if time
-      (format-time-string listen-queue-time-format time)
-    "never"))
 
 (defun listen-queue-complete-track (queue)
   "Return track selected from QUEUE with completion."
