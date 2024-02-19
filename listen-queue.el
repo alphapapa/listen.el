@@ -190,9 +190,9 @@ select track as well."
                                       map nil t)))
       (alist-get selected map nil nil #'equal))))
 
-(cl-defun listen-queue-complete (&key (prompt "Queue: "))
+(cl-defun listen-queue-complete (&key (prompt "Queue"))
   "Return a Listen queue selected with completion.
-PROMPT is passed to `completing-read', which see."
+PROMPT is passed to `format-prompt', which see."
   (pcase (length listen-queues)
     (0 (call-interactively #'listen-queue-new))
     (1 (car listen-queues))
@@ -202,7 +202,7 @@ PROMPT is passed to `completing-read', which see."
                                       (when (listen--playing-p player)
                                         (listen-queue-name (map-elt (listen-player-etc player) :queue)))))
               (queue-names (mapcar #'listen-queue-name listen-queues))
-              (prompt (format-prompt "Queue" default-queue-name))
+              (prompt (format-prompt prompt default-queue-name))
               (selected (completing-read prompt queue-names nil t nil nil default-queue-name)))
          (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)))))
 
