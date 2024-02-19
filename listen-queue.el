@@ -23,7 +23,12 @@
 
 ;;; Code:
 
+;; FIXME: A track may be present in a queue multiple times, but the
+;; commands don't operate on positions but the first instance of a
+;; track found in the queue.
+
 (require 'map)
+(require 'ring)
 (require 'vtable)
 
 (require 'emms-info-native)
@@ -40,6 +45,9 @@
   "Queue in this buffer.")
 
 (defvar-local listen-queue-overlay nil)
+
+(defvar-local listen-queue-kill-ring (make-ring 16)
+  "Killed tracks.")
 
 (defgroup listen-queue nil
   "Queues."
@@ -109,6 +117,8 @@
                       "p" (lambda (_) (forward-line -1))
                       "N" (lambda (track) (listen-queue-transpose-forward track queue))
                       "P" (lambda (track) (listen-queue-transpose-backward track queue))
+                      "C-k" (lambda (track) (listen-queue-kill-track track queue))
+                      "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
                       "RET" (lambda (track) (listen-queue-play queue track))
                       "SPC" (lambda (_) (call-interactively #'listen-pause))
                       "S" (lambda (_) (listen-queue-shuffle listen-queue))))
@@ -135,6 +145,25 @@ If BACKWARDP, move it backward."
   "Transpose TRACK backward in QUEUE."
   (interactive)
   (listen-queue-transpose-forward track queue :backwardp t))
+
+(defun listen-queue-kill-track (track queue)
+  "Remove TRACK from QUEUE."
+  (interactive)
+  (ring-insert listen-queue-kill-ring track)
+  (cl-callf2 remove track (listen-queue-tracks queue))
+  (listen-queue--update-buffer queue))
+
+(defun listen-queue-yank (track position queue)
+  "Yank track into QUEUE at POSITION."
+  (interactive
+   (list (ring-ref listen-queue-kill-ring 0)
+         (seq-position (listen-queue-tracks listen-queue) (vtable-current-object))
+         listen-queue))
+  (setf (listen-queue-tracks queue)
+        (nconc (seq-take (listen-queue-tracks queue) position)
+               (list track)
+               (seq-subseq (listen-queue-tracks queue) position)))
+  (listen-queue--update-buffer queue))
 
 (defun listen-queue--highlight-current ()
   (when listen-queue-overlay
