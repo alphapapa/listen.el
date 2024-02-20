@@ -188,7 +188,10 @@ For the currently playing track."
 (defun listen-mode--update (&rest _ignore)
   "Play next track and/or update variable `listen-mode-lighter'."
   (let (playing-next-p)
-    (unless (listen--playing-p listen-player)
+    (unless (or (listen--playing-p listen-player)
+                ;; HACK: It seems that sometimes the player gets restarted
+                ;; even when paused: this extra check should prevent that.
+                (member (listen--status listen-player) '("playing" "paused")))
       (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
                  (next-track (listen-queue-next-track queue)))
         (listen-queue-play queue next-track)
