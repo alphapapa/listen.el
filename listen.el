@@ -235,50 +235,65 @@ TIME is an HH:MM:SS string."
       (if listen-player
           (concat "Listening: " (listen-mode-lighter))
         "Not listening"))
+    ("q" "Quit" listen-quit)]]
+
+  [["Player"
     ("SPC" "Pause" listen-pause)
     ("p" "Play" listen-play)
     ;; ("ESC" "Stop" listen-stop)
     ("n" "Next" listen-next)
-    ]
+    ("s" "Seek" listen-seek)]
    ["Volume"
-    ("v" "Volume" listen-volume)
-    ("-" "Volume down" (lambda ()
-                         (interactive)
-                         (let ((player (listen--player)))
-                           (listen-volume player (max 0 (- (listen--volume player) 5)))))
+    :description
+    (lambda ()
+      (if listen-player
+          (format "Volume: %.0f%%" (listen--volume listen-player))
+        "Volume: N/A"))
+    ("=" "Set" listen-volume)
+    ("v" "Down" (lambda ()
+                  (interactive)
+                  (let ((player (listen--player)))
+                    (listen-volume player (max 0 (- (listen--volume player) 5)))))
      :transient t)
-    ("+" "Volume up" (lambda ()
-                       (interactive)
-                       (let ((player (listen--player)))
-                         (listen-volume player (min 100 (+ (listen--volume player) 5)))))
+    ("V" "Up" (lambda ()
+                (interactive)
+                (let ((player (listen--player)))
+                  (listen-volume player (min 100 (+ (listen--volume player) 5)))))
      :transient t)]]
-  []
-  ["Queue mode"
-   :description
-   (lambda ()
-     (if-let ((player listen-player)
-              (queue (map-elt (listen-player-etc player) :queue)))
-         (format "Queue: %s (track %s/%s)" (listen-queue-name queue)
-                 (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
-                 (length (listen-queue-tracks queue)))
-       "No queue"))
-   ("Q" "Show" listen-queue
-    :transient t)
-   ("P" "Play another queue" listen-queue-play
-    :transient t)
-   ("N" "New" listen-queue-new
-    :transient t)
-   ("A" "Add files" listen-queue-add-files
-    :transient t)
-   ("T" "Select track" (lambda ()
-                         "Call `listen-queue-play' with prefix."
-                         (interactive)
-                         (let ((current-prefix-arg '(4)))
-                           (call-interactively #'listen-queue-play)))
-    :transient t)
-   ("D" "Discard" listen-queue-discard
-    :transient t)
-   ])
+
+  [["Queue mode"
+    :description
+    (lambda ()
+      (if-let ((player listen-player)
+               (queue (map-elt (listen-player-etc player) :queue)))
+          (format "Queue: %s (track %s/%s)" (listen-queue-name queue)
+                  (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
+                  (length (listen-queue-tracks queue)))
+        "No queue"))
+    ("Q" "Show" listen-queue
+     :transient t)
+    ("P" "Play another queue" listen-queue-play
+     :transient t)
+    ("N" "New" listen-queue-new
+     :transient t)
+    ("D" "Discard" listen-queue-discard
+     :transient t)]
+   ["Tracks"
+    ("A" "Add files" listen-queue-add-files
+     :transient t)
+    ("M" "Add files from MPD" listen-queue-add-from-mpd
+     :transient t)
+    ("T" "Select track" (lambda ()
+                          "Call `listen-queue-play' with prefix."
+                          (interactive)
+                          (let ((current-prefix-arg '(4)))
+                            (call-interactively #'listen-queue-play)))
+     :transient t)
+    ("S" "Shuffle" (lambda ()
+                     "Shuffle queue."
+                     (interactive)
+                     (call-interactively #'listen-queue-shuffle))
+     :transient t)]])
 
 (provide 'listen)
 
