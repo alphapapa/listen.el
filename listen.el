@@ -150,7 +150,7 @@ command with completion."
   (cl-labels ((format-time (seconds)
                 (format-seconds "%h:%z%.2m:%.2s" seconds))
               (format-track ()
-                (let ((info (listen--info listen-player)))
+                (when-let ((info (listen--info listen-player)))
                   (format "%s: %s" (alist-get "artist" info nil nil #'equal)
                           (truncate-string-to-width (alist-get "title" info nil nil #'equal)
                                                     listen-mode-title-max-length nil nil t))))
@@ -188,14 +188,15 @@ For the currently playing track."
 (defun listen-mode--update (&rest _ignore)
   "Play next track and/or update variable `listen-mode-lighter'."
   (let (playing-next-p)
-    (unless (or (listen--playing-p listen-player)
-                ;; HACK: It seems that sometimes the player gets restarted
-                ;; even when paused: this extra check should prevent that.
-                (member (listen--status listen-player) '("playing" "paused")))
-      (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
-                 (next-track (listen-queue-next-track queue)))
-        (listen-queue-play queue next-track)
-        (setf playing-next-p t)))
+    (when listen-player
+      (unless (or (listen--playing-p listen-player)
+                  ;; HACK: It seems that sometimes the player gets restarted
+                  ;; even when paused: this extra check should prevent that.
+                  (member (listen--status listen-player) '("playing" "paused")))
+        (when-let ((queue (map-elt (listen-player-etc listen-player) :queue))
+                   (next-track (listen-queue-next-track queue)))
+          (listen-queue-play queue next-track)
+          (setf playing-next-p t))))
     (setf listen-mode-lighter
           (when (and listen-player (listen--running-p listen-player))
             (listen-mode-lighter)))

@@ -116,7 +116,7 @@
 VOLUME is an integer percentage."
   (if volume
       (listen--send player (format "volume %s" (* 255 (/ volume 100.0))))
-    (* 100 (/ (cl-parse-integer (listen--send player "volume")) 255.0))))
+    (* 100 (/ (string-to-number (listen--send player "volume")) 255.0))))
 
 (provide 'listen-vlc)
 
