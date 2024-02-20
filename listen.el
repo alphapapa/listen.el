@@ -47,6 +47,17 @@
   "Default music directory."
   :type 'directory)
 
+(defcustom listen-lighter-title-max-length 15
+  "Truncate track titles to this many characters.
+Used for mode line lighter and transient menu."
+  :type 'natnum)
+
+(defcustom listen-lighter-format 'remaining
+  "Time elapsed/remaining format.
+For the currently playing track."
+  :type '(choice (const :tag "Time remaining" remaining)
+                 (const :tag "Time elapsed/total" elapsed)))
+
 ;;;; Commands
 
 (defun listen-quit (player)
@@ -153,7 +164,7 @@ command with completion."
                 (when-let ((info (listen--info listen-player)))
                   (format "%s: %s" (alist-get "artist" info nil nil #'equal)
                           (truncate-string-to-width (alist-get "title" info nil nil #'equal)
-                                                    listen-mode-title-max-length nil nil t))))
+                                                    listen-lighter-title-max-length nil nil t))))
               (format-status ()
                 (pcase (listen--status listen-player)
                   ("playing" "▶")
@@ -172,16 +183,6 @@ command with completion."
                                   (format-time (listen--length listen-player)))))
                      ") ")
              '("■ ")))))
-
-(defcustom listen-mode-title-max-length 15
-  "Truncate track titles to this many characters."
-  :type 'natnum)
-
-(defcustom listen-lighter-format 'remaining
-  "Time elapsed/remaining format.
-For the currently playing track."
-  :type '(choice (const :tag "Time remaining" remaining)
-                 (const :tag "Time elapsed/total" elapsed)))
 
 (declare-function listen-queue-play "listen-queue")
 (declare-function listen-queue-next-track "listen-queue")
