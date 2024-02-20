@@ -92,7 +92,8 @@ Interactively, uses the default player."
    (let* ((player (listen--player))
           (volume (floor (listen--volume player))))
      (list player (read-number "Volume %: " volume))))
-  (listen--volume player volume))
+  (listen--volume player volume)
+  (message "Volume: %.0f%%" volume))
 
 (defun listen-seek (player seconds)
   "Seek PLAYER to SECONDS.
@@ -232,8 +233,20 @@ TIME is an HH:MM:SS string."
     ("p" "Play" listen-play)
     ;; ("ESC" "Stop" listen-stop)
     ("n" "Next" listen-next)
-    ("v" "Volume" listen-volume)]]
-  [[]]
+    ]
+   ["Volume"
+    ("v" "Volume" listen-volume)
+    ("-" "Volume down" (lambda ()
+                         (interactive)
+                         (let ((player (listen--player)))
+                           (listen-volume player (max 0 (- (listen--volume player) 5)))))
+     :transient t)
+    ("+" "Volume up" (lambda ()
+                       (interactive)
+                       (let ((player (listen--player)))
+                         (listen-volume player (min 100 (+ (listen--volume player) 5)))))
+     :transient t)]]
+  []
   ["Queue mode"
    :description
    (lambda ()
