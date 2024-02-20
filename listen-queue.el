@@ -65,63 +65,65 @@
 (defun listen-queue (queue)
   "Show listen QUEUE."
   (interactive (list (listen-queue-complete)))
-  (with-current-buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue)))
-    (let ((inhibit-read-only t))
-      (setf listen-queue queue)
-      (read-only-mode)
-      (erase-buffer)
-      (toggle-truncate-lines 1)
-      (make-vtable
-       :columns
-       (list (list :name "*" :primary 'descend
-                   :getter (lambda (track _table)
-                             (if (eq track (listen-queue-current queue))
-                                 "▶" " ")))
-             (list :name "At" :primary 'descend
-                   :getter (lambda (track _table)
-                             (cl-position track (listen-queue-tracks queue))))
-             (list :name "Artist" :max-width 20 :align 'right
-                   :getter (lambda (track _table)
-                             (propertize (or (listen-track-artist track) "")
-                                         'face 'font-lock-variable-name-face)))
-             (list :name "Title" :max-width 35
-                   :getter (lambda (track _table)
-                             (propertize (or (listen-track-title track) "")
-                                         'face 'font-lock-function-name-face)))
-             (list :name "Album" :max-width 30
-                   :getter (lambda (track _table)
-                             (propertize (or (listen-track-album track) "")
-                                         'face 'font-lock-type-face)))
-             (list :name "#"
-                   :getter (lambda (track _table)
-                             (or (listen-track-number track) "")))
-             (list :name "Date"
-                   :getter (lambda (track _table)
-                             (or (listen-track-date track) "")))
-             (list :name "Genre"
-                   :getter (lambda (track _table)
-                             (or (listen-track-genre track) "")))
-             (list :name "File"
-                   :getter (lambda (track _table)
-                             (listen-track-filename track))))
-       :objects-function (lambda ()
-                           (or (listen-queue-tracks listen-queue)
-                               (list (make-listen-track :artist "[Empty queue]"))))
-       :sort-by '((1 . ascend))
-       :actions (list "q" (lambda (_) (bury-buffer))
-                      "n" (lambda (_) (forward-line 1))
-                      "p" (lambda (_) (forward-line -1))
-                      "N" (lambda (track) (listen-queue-transpose-forward track queue))
-                      "P" (lambda (track) (listen-queue-transpose-backward track queue))
-                      "C-k" (lambda (track) (listen-queue-kill-track track queue))
-                      "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
-                      "RET" (lambda (track) (listen-queue-play queue track))
-                      "SPC" (lambda (_) (call-interactively #'listen-pause))
-                      "S" (lambda (_) (listen-queue-shuffle listen-queue))))
-      (pop-to-buffer (current-buffer))
-      (goto-char (point-min))
-      (listen-queue--highlight-current)
-      (hl-line-mode 1))))
+  (let ((buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue)))))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (setf listen-queue queue)
+        (read-only-mode)
+        (erase-buffer)
+        (toggle-truncate-lines 1)
+        (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record)
+        (make-vtable
+         :columns
+         (list (list :name "*" :primary 'descend
+                     :getter (lambda (track _table)
+                               (if (eq track (listen-queue-current queue))
+                                   "▶" " ")))
+               (list :name "At" :primary 'descend
+                     :getter (lambda (track _table)
+                               (cl-position track (listen-queue-tracks queue))))
+               (list :name "Artist" :max-width 20 :align 'right
+                     :getter (lambda (track _table)
+                               (propertize (or (listen-track-artist track) "")
+                                           'face 'font-lock-variable-name-face)))
+               (list :name "Title" :max-width 35
+                     :getter (lambda (track _table)
+                               (propertize (or (listen-track-title track) "")
+                                           'face 'font-lock-function-name-face)))
+               (list :name "Album" :max-width 30
+                     :getter (lambda (track _table)
+                               (propertize (or (listen-track-album track) "")
+                                           'face 'font-lock-type-face)))
+               (list :name "#"
+                     :getter (lambda (track _table)
+                               (or (listen-track-number track) "")))
+               (list :name "Date"
+                     :getter (lambda (track _table)
+                               (or (listen-track-date track) "")))
+               (list :name "Genre"
+                     :getter (lambda (track _table)
+                               (or (listen-track-genre track) "")))
+               (list :name "File"
+                     :getter (lambda (track _table)
+                               (listen-track-filename track))))
+         :objects-function (lambda ()
+                             (or (listen-queue-tracks listen-queue)
+                                 (list (make-listen-track :artist "[Empty queue]"))))
+         :sort-by '((1 . ascend))
+         :actions (list "q" (lambda (_) (bury-buffer))
+                        "n" (lambda (_) (forward-line 1))
+                        "p" (lambda (_) (forward-line -1))
+                        "N" (lambda (track) (listen-queue-transpose-forward track queue))
+                        "P" (lambda (track) (listen-queue-transpose-backward track queue))
+                        "C-k" (lambda (track) (listen-queue-kill-track track queue))
+                        "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
+                        "RET" (lambda (track) (listen-queue-play queue track))
+                        "SPC" (lambda (_) (call-interactively #'listen-pause))
+                        "S" (lambda (_) (listen-queue-shuffle listen-queue))))
+        (goto-char (point-min))
+        (listen-queue--highlight-current)
+        (hl-line-mode 1)))
+    (pop-to-buffer buffer)))
 
 (cl-defun listen-queue-transpose-forward (track queue &key backwardp)
   "Transpose TRACK forward in QUEUE.
@@ -308,5 +310,27 @@ PROMPT is passed to `format-prompt', which see."
            (1+ (seq-position (listen-queue-tracks queue)
                              (listen-queue-current queue)))))
 
+;;;;; Bookmark support
+
+(require 'bookmark)
+
+(defun listen-queue--bookmark-make-record ()
+  "Return a bookmark record for the current queue buffer."
+  (cl-assert listen-queue)
+  `(,(format "Listen: %s" (listen-queue-name listen-queue))
+    (handler . listen-queue--bookmark-handler)
+    (queue-name . ,(listen-queue-name listen-queue))))
+
+(defun listen-queue--bookmark-handler (bookmark)
+  "Set current buffer to BOOKMARK's listen queue."
+  (let* ((queue-name (bookmark-prop-get bookmark 'queue-name))
+         (queue (cl-find queue-name listen-queues :key #'listen-queue-name :test #'equal)))
+    (unless queue
+      (error "No Listen queue found named %S" queue-name))
+    (listen-queue queue)))
+
+;;;; Footer
+
 (provide 'listen-queue)
+
 ;;; listen-queue.el ends here
