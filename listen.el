@@ -207,15 +207,18 @@ For the currently playing track."
 (defun listen-read-time (time)
   "Return TIME in seconds.
 TIME is an HH:MM:SS string."
-  (string-match (rx (group (1+ num)) (optional ":" (group (1+ num)) (optional ":" (group (1+ num))))) time)
+  (string-match (rx (group (1+ num))
+                    (optional ":" (group (1+ num))
+                              (optional ":" (group (1+ num)))))
+                time)
   (let ((fields (nreverse
                  (remq nil
                        (list (match-string 1 time)
                              (match-string 2 time)
                              (match-string 3 time)))))
-        (factors '(1 60 3600)))
+        (factors [1 60 3600]))
     (cl-loop for field in fields
-             for factor in factors
+             for factor across factors
              sum (* (string-to-number field) factor))))
 
 ;;;; Transient
