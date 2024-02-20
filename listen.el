@@ -1,10 +1,12 @@
-;;; listen.el --- Music player                    -*- lexical-binding: t; -*-
+;;; listen.el --- Audio/Music player                    -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024  Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net>
-;; Keywords:
+;; Keywords: multimedia
 ;; Package-Requires: ((emacs "29.1") (emms "11") (persist "0.6"))
+;; Version: 0.1-pre
+;; URL: https://github.com/alphapapa/listen.el
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -21,9 +23,38 @@
 
 ;;; Commentary:
 
-;; 
+;; This library aims to provide a simple audio/music player for Emacs.
+;; It should "just work," with little-to-no configuration, have
+;; intuitive commands, and be easily extended and customized.
+;; (Contrast to setting up EMMS, or having to configure external
+;; players like MPD.)  A `transient' menu, under the command `listen',
+;; is the primary entry point.
+
+;; The only external dependency is VLC, which is currently the only
+;; player backend that is supported.  (Other backends may easily be
+;; added; see library `listen-vlc' for example.)  Track metadata is
+;; read using EMMS's native Elisp metadata library (the only library
+;; used from the EMMS package).
+
+;; Queues are provided as the means to play consecutive tracks, and
+;; they are shown in a `vtable'-based view buffer.  They are persisted
+;; between sessions using the `persist' library, and they may be
+;; bookmarked.
+
+;; The primary interface to one's music library is through the
+;; filesystem, by selecting a file to play, or by adding files and
+;; directories to a queue.  Although MPD is not required, support is
+;; provided for finding files from a local MPD server's library using
+;; MPD's metadata searching.
+
+;; Note a silly limitation: a track may be present in a queue only
+;; once (but who would want to have a track more than once in a
+;; playlist).
 
 ;;; Code:
+
+;; TODO: Copy the EMMS metadata library into this package and remove
+;; the dependency.
 
 ;;;; Requirements
 
@@ -40,8 +71,11 @@
 ;;;; Customization
 
 (defgroup listen nil
-  "Music player."
-  :group 'applications)
+  "Audio/Music player."
+  :group 'multimedia
+  :link '(url-link "https://github.com/alphapapa/listen.el")
+  :link '(emacs-commentary-link "listen")
+  :link '(emacs-library-link "listen"))
 
 (defcustom listen-directory "~/Music"
   "Default music directory."
