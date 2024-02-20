@@ -58,13 +58,14 @@
 (cl-defmethod listen--ensure ((player listen-player-vlc))
   "Ensure PLAYER is ready."
   (pcase-let (((cl-struct listen-player command args process) player))
-    (unless (and process (process-live-p process))
+    (unless (process-live-p process)
       (setf (listen-player-process player)
             (apply #'start-process "listen-player-vlc" (generate-new-buffer " *listen-player-vlc*")
                    command args)))))
 
 (cl-defmethod listen--play ((player listen-player-vlc) file)
-  "Play FILE with PLAYER."
+  "Play FILE with PLAYER.
+Stops playing, clears playlist, adds FILE, and plays it."
   (dolist (command `("stop" "clear" ,(format "add %s" (expand-file-name file)) "play"))
     (listen--send player command)))
 
@@ -90,7 +91,7 @@
   (string-to-number (listen--send player "get_time")))
 
 (cl-defmethod listen--length ((player listen-player-vlc))
-  "Return length of  PLAYER's track."
+  "Return length of PLAYER's track in seconds."
   (string-to-number (listen--send player "get_length")))
 
 (cl-defmethod listen--send ((player listen-player-vlc) command)
