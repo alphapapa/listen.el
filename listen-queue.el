@@ -182,6 +182,7 @@ If BACKWARDP, move it backward."
       (vtable-revert-command)
       (listen-queue--highlight-current))))
 
+(declare-function listen-mode "listen")
 (declare-function listen-play "listen")
 (cl-defun listen-queue-play (queue &optional (track (car (listen-queue-tracks queue))))
   "Play QUEUE and optionally TRACK in it.
@@ -197,7 +198,9 @@ select track as well."
     (listen-play player (listen-track-filename track))
     (setf (listen-queue-current queue) track
           (map-elt (listen-player-etc player) :queue) queue)
-    (listen-queue--update-buffer queue)))
+    (listen-queue--update-buffer queue))
+  (listen-mode 1)
+  queue)
 
 (defun listen-queue-complete-track (queue)
   "Return track selected from QUEUE with completion."
