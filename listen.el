@@ -237,21 +237,28 @@ TIME is an HH:MM:SS string."
   ["Queue mode"
    :description
    (lambda ()
-     (if-let ((queue (map-elt (listen-player-etc listen-player) :queue)))
+     (if-let ((player listen-player)
+              (queue (map-elt (listen-player-etc player) :queue)))
          (format "Queue: %s (track %s/%s)" (listen-queue-name queue)
                  (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
                  (length (listen-queue-tracks queue)))
        "No queue"))
-   ("Q" "Show" listen-queue)
-   ("P" "Play another queue" listen-queue-play)
-   ("N" "New" listen-queue-new)
-   ("A" "Add files" listen-queue-add-files)
+   ("Q" "Show" listen-queue
+    :transient t)
+   ("P" "Play another queue" listen-queue-play
+    :transient t)
+   ("N" "New" listen-queue-new
+    :transient t)
+   ("A" "Add files" listen-queue-add-files
+    :transient t)
    ("T" "Select track" (lambda ()
                          "Call `listen-queue-play' with prefix."
                          (interactive)
                          (let ((current-prefix-arg '(4)))
-                           (call-interactively #'listen-queue-play))))
-   ("D" "Discard" listen-queue-discard)
+                           (call-interactively #'listen-queue-play)))
+    :transient t)
+   ("D" "Discard" listen-queue-discard
+    :transient t)
    ])
 
 (provide 'listen)

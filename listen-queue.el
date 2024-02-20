@@ -286,12 +286,14 @@ PROMPT is passed to `format-prompt', which see."
   (let* ((tracks (listen-queue-tracks queue))
          (current-track (listen-queue-current queue))
          n)
-    (cl-callf2 delete current-track tracks)
+    (when current-track
+      (cl-callf2 delete current-track tracks))
     (setf n (length tracks))
     ;; Don't use dotimes result (bug#16206)
     (dotimes (i n)
       (cl-rotatef (elt tracks i) (elt tracks (+ i (cl-random (- n i))))))
-    (push current-track tracks)
+    (when current-track
+      (push current-track tracks))
     (setf (listen-queue-tracks queue) tracks))
   (listen-queue--update-buffer queue))
 
