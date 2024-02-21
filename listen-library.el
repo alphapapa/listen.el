@@ -57,11 +57,9 @@
                        :format-fn #'cl-prin1-to-string
                        args)))
     (make-fn
-     :name "Listen-Library"
-     :taxys (list (make-fn
-                   :name "Genres"
-                   :take (apply-partially #'taxy-take-keyed
-                                          (list #'genre #'artist #'date #'album #'track-string)))))))
+     :name "Genres"
+     :take (apply-partially #'taxy-take-keyed
+                            (list #'genre #'artist #'date #'album #'track-string)))))
 
 ;;;###autoload
 (defun listen-library (paths)
@@ -72,13 +70,15 @@ PATHS is a list of paths to files and/or directories."
                              if (file-directory-p path)
                              append (directory-files-recursively path "." t)
                              else collect path))
-         (tracks (remq nil (mapcar #'listen-queue-track filenames))))
-    (thread-last listen-library-taxy
-                 taxy-emptied
-                 (taxy-fill tracks)
-                 ;; (taxy-sort #'string< #'listen-queue-track-)
-                 (taxy-sort* #'string< #'taxy-name)
-                 taxy-magit-section-pp)))
+         (tracks (remq nil (mapcar #'listen-queue-track filenames)))
+         (buffer (thread-last listen-library-taxy
+                              taxy-emptied
+                              (taxy-fill tracks)
+                              ;; (taxy-sort #'string< #'listen-queue-track-)
+                              (taxy-sort* #'string< #'taxy-name)
+                              taxy-magit-section-pp)))
+    (pop-to-buffer buffer)
+    (rename-buffer (generate-new-buffer-name (format "*Listen Library*")))))
 
 (provide 'listen-library)
 
