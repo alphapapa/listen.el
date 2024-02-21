@@ -33,8 +33,8 @@
 ;; The only external dependency is VLC, which is currently the only
 ;; player backend that is supported.  (Other backends may easily be
 ;; added; see library `listen-vlc' for example.)  Track metadata is
-;; read using EMMS's native Elisp metadata library (the only library
-;; used from the EMMS package).
+;; read using EMMS's native Elisp metadata library, which has been
+;; imported into this package.
 
 ;; Queues are provided as the means to play consecutive tracks, and
 ;; they are shown in a `vtable'-based view buffer.  They are persisted

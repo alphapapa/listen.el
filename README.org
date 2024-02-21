@@ -2,7 +2,7 @@
 
 This library aims to provide a simple audio/music player for Emacs.  It should "just work," with little-to-no configuration, have intuitive commands, and be easily extended and customized.  (Contrast to setting up EMMS, or having to configure external players like MPD.)  A ~transient~ menu, under the command ~listen~, is the primary entry point.
 
-The only external dependency is VLC, which is currently the only player backend that is supported.  (Other backends may easily be added; see library ~listen-vlc~ for example.)  Track metadata is read using EMMS's native Elisp metadata library (the only library used from the EMMS package).
+The only external dependency is VLC, which is currently the only player backend that is supported.  (Other backends may easily be added; see library ~listen-vlc~ for example.)  Track metadata is read using EMMS's native Elisp metadata library, which has been imported into this package.
 
 Queues are provided as the means to play consecutive tracks, and they are shown in a ~vtable~-based view buffer.  They are persisted between sessions using the ~persist~ library, and they may be bookmarked.
 
