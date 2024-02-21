@@ -273,6 +273,7 @@ PROMPT is passed to `format-prompt', which see."
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
   (when-let ((metadata (listen-info--decode-info-fields filename)))
+    ;; FIXME: This assertion.
     (cl-assert metadata nil "Track has no metadata: %S" filename)
     (make-listen-track
      ;; Abbreviate the filename so as to not include the user's

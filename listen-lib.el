@@ -37,6 +37,9 @@
 (cl-defstruct listen-track
   filename artist title album number genre length date rating etc)
 
+(cl-defmethod cl-print-object ((track listen-track) stream)
+  (princ (listen-track-filename track) stream))
+
 ;;;; Variables
 
 (defvar listen-player nil)
