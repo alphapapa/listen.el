@@ -255,10 +255,10 @@ PROMPT is passed to `format-prompt', which see."
   (interactive
    (let ((queue (listen-queue-complete))
          (path (expand-file-name (read-file-name "Enqueue file/directory: " listen-directory nil t))))
-     (list queue
-           (if (file-directory-p path)
+     (list (if (file-directory-p path)
                (directory-files-recursively path ".")
-             (list path)))))
+             (list path))
+           queue)))
   (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files)))
   (listen-queue--update-buffer queue)
   queue)
