@@ -61,6 +61,7 @@
 ;;        (with-current-buffer list-buffer
 ;;          (vtable-revert)))))
 
+(declare-function listen-pause "listen")
 ;;;###autoload
 (defun listen-queue (queue)
   "Show listen QUEUE."
@@ -215,6 +216,7 @@ select track as well."
                                       map nil t)))
       (alist-get selected map nil nil #'equal))))
 
+(declare-function listen--playing-p "listen-vlc")
 (cl-defun listen-queue-complete (&key (prompt "Queue"))
   "Return a Listen queue selected with completion.
 PROMPT is passed to `format-prompt', which see."

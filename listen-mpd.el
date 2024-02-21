@@ -54,7 +54,7 @@ completion."
               (affix (completions)
                 (when completions
                   (let* ((artist-width (column-size 'Artist completions))
-                         (album-width (column-size 'Album completions))
+                         ;; (album-width (column-size 'Album completions))
                          (title-width (column-size 'Title completions))
                          (title-start (+ artist-width 2))
                          (album-start (+ title-start title-width 2)))
