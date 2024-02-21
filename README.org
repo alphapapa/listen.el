@@ -8,4 +8,6 @@ Queues are provided as the means to play consecutive tracks, and they are shown 
 
 The primary interface to one's music library is through the filesystem, by selecting a file to play, or by adding files and directories to a queue.  Although MPD is not required, support is provided for finding files from a local MPD server's library using MPD's metadata searching.
 
+A simple "library" view is provided that shows a list of files organized into a hierarchy by genre, date, artist, album, etc.  (This will be made more configurable and useful in the future.)
+
 Note a silly limitation: a track may be present in a queue only once (but who would want to have a track more than once in a playlist).
