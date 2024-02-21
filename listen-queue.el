@@ -31,10 +31,10 @@
 (require 'ring)
 (require 'vtable)
 
-(require 'emms-info-native)
 (require 'persist)
 
 (require 'listen-lib)
+(require 'listen-info)
 
 (persist-defvar listen-queues nil
   "Listen queues.")
@@ -270,7 +270,7 @@ PROMPT is passed to `format-prompt', which see."
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
-  (when-let ((metadata (emms-info-native--decode-info-fields filename)))
+  (when-let ((metadata (listen-info--decode-info-fields filename)))
     (cl-assert metadata nil "Track has no metadata: %S" filename)
     (make-listen-track
      ;; Abbreviate the filename so as to not include the user's

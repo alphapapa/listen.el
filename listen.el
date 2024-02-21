@@ -4,7 +4,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
-;; Package-Requires: ((emacs "29.1") (emms "11") (persist "0.6"))
+;; Package-Requires: ((emacs "29.1") (persist "0.6"))
 ;; Version: 0.1-pre
 ;; URL: https://github.com/alphapapa/listen.el
 
@@ -52,9 +52,6 @@
 ;; playlist).
 
 ;;; Code:
-
-;; TODO: Copy the EMMS metadata library into this package and remove
-;; the dependency.
 
 ;;;; Requirements
 
