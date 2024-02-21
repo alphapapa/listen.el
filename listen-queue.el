@@ -326,6 +326,7 @@ PROMPT is passed to `format-prompt', which see."
     (handler . listen-queue--bookmark-handler)
     (queue-name . ,(listen-queue-name listen-queue))))
 
+;;;###autoload
 (defun listen-queue--bookmark-handler (bookmark)
   "Set current buffer to BOOKMARK's listen queue."
   (let* ((queue-name (bookmark-prop-get bookmark 'queue-name))
