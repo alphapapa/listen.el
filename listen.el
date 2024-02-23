@@ -23,7 +23,7 @@
 
 ;;; Commentary:
 
-;; This library aims to provide a simple audio/music player for Emacs.
+;; This package aims to provide a simple audio/music player for Emacs.
 ;; It should "just work," with little-to-no configuration, have
 ;; intuitive commands, and be easily extended and customized.
 ;; (Contrast to setting up EMMS, or having to configure external
