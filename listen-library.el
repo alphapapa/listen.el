@@ -65,7 +65,7 @@
                             (list #'genre #'artist #'date #'album #'track-string)))))
 
 ;;;###autoload
-(cl-defun listen-library (paths &key name)
+(cl-defun listen-library (paths &key name buffer)
   "Show a library view of PATHS.
 PATHS is a list of paths to files and/or directories.
 Interactively, with prefix, NAME may be specified to show in the
@@ -79,20 +79,51 @@ mode line and bookmark name."
                              append (directory-files-recursively path "." t)
                              else collect path))
          (tracks (remq nil (mapcar #'listen-queue-track filenames)))
-         (buffer (thread-last listen-library-taxy
-                              taxy-emptied
-                              (taxy-fill tracks)
-                              ;; (taxy-sort #'string< #'listen-queue-track-)
-                              (taxy-sort* #'string< #'taxy-name)
-                              taxy-magit-section-pp))
          (buffer-name (if name
                           (format "*Listen library: %s" name)
-                        (generate-new-buffer-name (format "*Listen library*")))))
-    (pop-to-buffer buffer)
-    (rename-buffer buffer-name)
-    (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record)
-    (setf listen-library-paths paths
-          listen-library-name name)))
+                        (generate-new-buffer-name (format "*Listen library*"))))
+         (buffer (or buffer (get-buffer-create buffer-name)))
+         (inhibit-read-only t))
+    (with-current-buffer buffer
+      (listen-library-mode)
+      (setf listen-library-paths paths
+            listen-library-name name)
+      (erase-buffer)
+      (thread-last listen-library-taxy
+                   taxy-emptied
+                   (taxy-fill tracks)
+                   ;; (taxy-sort #'string< #'listen-queue-track-)
+                   (taxy-sort* #'string< #'taxy-name)
+                   taxy-magit-section-insert))
+    (pop-to-buffer buffer)))
+
+(defvar-keymap listen-library-mode-map
+  :parent magit-section-mode-map
+  "!" #'listen-library-shell-command
+  "g" #'listen-library-revert)
+
+(define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
+  (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record))
+
+(declare-function listen-shell-command "listen")
+(defun listen-library-shell-command (command filenames)
+  "Run COMMAND on FILENAMES.
+Interactively, read COMMAND and use tracks at point in
+`listen-library' buffer."
+  (interactive
+   (let* ((value (oref (magit-current-section) value))
+          (filenames (cl-typecase value
+                       (listen-track (list (listen-track-filename value)))
+                       (taxy-magit-section (mapcar #'listen-track-filename (taxy-flatten value)))))
+          (command (read-shell-command (format "Run command on %S: " filenames))))
+     (list command filenames)))
+  (listen-shell-command command filenames))
+
+(defun listen-library-revert ()
+  "Revert current listen library buffer."
+  (interactive)
+  (cl-assert listen-library-paths)
+  (listen-library listen-library-paths :name listen-library-name))
 
 ;;;;; Bookmark support
 

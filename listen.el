@@ -152,16 +152,20 @@ relative seek."
      (list player (concat prefix (number-to-string seconds)))))
   (listen--seek player seconds))
 
-(cl-defun listen-shell-command (command filename)
-  "Run shell COMMAND on FILENAME.
+(cl-defun listen-shell-command (command filenames)
+  "Run shell COMMAND on FILENAMES.
 Interactively, use the current player's current track, and read
 command with completion."
   (interactive
    (let* ((player (listen--player))
-          (filename (abbreviate-file-name (listen--filename player)))
-          (command (read-shell-command (format "Run command on %S: " filename))))
-     (list command filename)))
-  (let ((command (format "%s %s" command (shell-quote-argument (expand-file-name filename)))))
+          (filenames (list (abbreviate-file-name (listen--filename player))))
+          (command (read-shell-command (format "Run command on %S: " filenames))))
+     (list command filenames)))
+  (let ((command (format "%s %s" command
+                         (mapconcat (lambda (filename)
+                                      (shell-quote-argument (expand-file-name filename)))
+                                    filenames " ")))
+        (display-buffer-alist `((,(regexp-quote shell-command-buffer-name-async) display-buffer-no-window))))
     (async-shell-command command)))
 
 ;;;; Mode
