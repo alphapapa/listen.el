@@ -33,6 +33,9 @@
 (require 'listen-lib)
 (require 'listen-queue)
 
+(defvar-local listen-library-name nil)
+(defvar-local listen-library-paths nil)
+
 (defvar listen-library-taxy
   (cl-labels ((genre (track)
                 (or (listen-track-genre track) "[unknown genre]"))
@@ -62,10 +65,15 @@
                             (list #'genre #'artist #'date #'album #'track-string)))))
 
 ;;;###autoload
-(defun listen-library (paths)
+(cl-defun listen-library (paths &key name)
   "Show a library view of PATHS.
-PATHS is a list of paths to files and/or directories."
-  (interactive (list (list (read-file-name "View library for: "))))
+PATHS is a list of paths to files and/or directories.
+Interactively, with prefix, NAME may be specified to show in the
+mode line and bookmark name."
+  (interactive
+   (list (list (read-file-name "View library for: "))
+         :name (when current-prefix-arg
+                 (read-string "Library name: "))))
   (let* ((filenames (cl-loop for path in paths
                              if (file-directory-p path)
                              append (directory-files-recursively path "." t)
@@ -76,9 +84,34 @@ PATHS is a list of paths to files and/or directories."
                               (taxy-fill tracks)
                               ;; (taxy-sort #'string< #'listen-queue-track-)
                               (taxy-sort* #'string< #'taxy-name)
-                              taxy-magit-section-pp)))
+                              taxy-magit-section-pp))
+         (buffer-name (if name
+                          (format "*Listen library: %s" name)
+                        (generate-new-buffer-name (format "*Listen library*")))))
     (pop-to-buffer buffer)
-    (rename-buffer (generate-new-buffer-name (format "*Listen Library*")))))
+    (rename-buffer buffer-name)
+    (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record)
+    (setf listen-library-paths paths
+          listen-library-name name)))
+
+;;;;; Bookmark support
+
+(require 'bookmark)
+
+(defun listen-library--bookmark-make-record ()
+  "Return a bookmark record for the current library buffer."
+  (cl-assert listen-library-paths)
+  `(,(format "Listen library: %s" (or listen-library-name listen-library-paths))
+    (handler . listen-library--bookmark-handler)
+    (name . ,listen-library-name)
+    (paths . ,listen-library-paths)))
+
+;;;###autoload
+(defun listen-library--bookmark-handler (bookmark)
+  "Set current buffer to BOOKMARK's listen library."
+  (let* ((paths (bookmark-prop-get bookmark 'paths))
+         (name (bookmark-prop-get bookmark 'name)))
+    (listen-library paths :name name)))
 
 (provide 'listen-library)
 
