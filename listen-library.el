@@ -123,7 +123,7 @@ Interactively, read COMMAND and use tracks at point in
   "Revert current listen library buffer."
   (interactive)
   (cl-assert listen-library-paths)
-  (listen-library listen-library-paths :name listen-library-name))
+  (listen-library listen-library-paths :name listen-library-name :buffer (current-buffer)))
 
 ;;;;; Bookmark support
 
