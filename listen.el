@@ -196,10 +196,15 @@ command with completion."
   (cl-labels ((format-time (seconds)
                 (format-seconds "%h:%z%.2m:%.2s" seconds))
               (format-track ()
-                (when-let ((info (listen--info listen-player)))
-                  (format "%s: %s" (alist-get "artist" info nil nil #'equal)
-                          (truncate-string-to-width (alist-get "title" info nil nil #'equal)
-                                                    listen-lighter-title-max-length nil nil t))))
+                (when-let ((info (listen--info listen-player))
+                           ;; Sometimes when paused/stopped, the artist and/or
+                           ;; title are nil even if info isn't, so we must
+                           ;; check before treating them as strings.
+                           (artist (alist-get "artist" info nil nil #'equal))
+                           (title (alist-get "title" info nil nil #'equal)))
+                  (format "%s: %s" artist
+                          (truncate-string-to-width
+                           title listen-lighter-title-max-length nil nil t))))
               (format-status ()
                 (pcase (listen--status listen-player)
                   ("playing" "▶")
