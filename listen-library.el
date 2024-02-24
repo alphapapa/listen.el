@@ -100,7 +100,38 @@ mode line and bookmark name."
 (defvar-keymap listen-library-mode-map
   :parent magit-section-mode-map
   "!" #'listen-library-shell-command
-  "g" #'listen-library-revert)
+  "a" #'listen-library-add-tracks
+  "g" #'listen-library-revert
+  "RET" #'listen-library-play-or-add)
+
+(defun listen-library-add-tracks (queue tracks)
+  "Add TRACKS to QUEUE.
+Interactively, play tracks in sections at point and select QUEUE
+with completion."
+  (interactive
+   (list (listen-queue-complete) (listen-library--tracks-at-point)))
+  (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
+
+(declare-function listen-play "listen")
+(defun listen-library-play-or-add (tracks &optional queue)
+  "Play or add TRACKS.
+If TRACKS is a list of one track, play it immediately; otherwise
+prompt for a QUEUE to add them to."
+  (interactive
+   (let ((tracks (listen-library--tracks-at-point)))
+     (list tracks
+           (when (length> tracks 1)
+             (listen-queue-complete)))))
+  (if queue
+      (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
+    (listen-play (listen--player) (listen-track-filename (car tracks)))))
+
+(defun listen-library--tracks-at-point ()
+  "Return tracks in sections at point."
+  (let ((value(oref (magit-current-section) value)))
+    (cl-typecase value
+      (listen-track (list value))
+      (taxy-magit-section (taxy-flatten value)))))
 
 (define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
   (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record))
@@ -111,10 +142,7 @@ mode line and bookmark name."
 Interactively, read COMMAND and use tracks at point in
 `listen-library' buffer."
   (interactive
-   (let* ((value (oref (magit-current-section) value))
-          (filenames (cl-typecase value
-                       (listen-track (list (listen-track-filename value)))
-                       (taxy-magit-section (mapcar #'listen-track-filename (taxy-flatten value)))))
+   (let* ((filenames (mapcar #'listen-track-filename (listen-library--tracks-at-point)))
           (command (read-shell-command (format "Run command on %S: " filenames))))
      (list command filenames)))
   (listen-shell-command command filenames))
