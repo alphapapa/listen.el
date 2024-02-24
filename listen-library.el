@@ -27,11 +27,15 @@
 
 ;;; Code:
 
+;;;; Requirements
+
 (require 'taxy)
 (require 'taxy-magit-section)
 
 (require 'listen-lib)
 (require 'listen-queue)
+
+;;;; Variables
 
 (defvar-local listen-library-name nil)
 (defvar-local listen-library-paths nil)
@@ -64,12 +68,25 @@
      :take (apply-partially #'taxy-take-keyed
                             (list #'genre #'artist #'date #'album #'track-string)))))
 
+;;;; Mode
+
+(defvar-keymap listen-library-mode-map
+  :parent magit-section-mode-map
+  "!" #'listen-library-shell-command
+  "a" #'listen-library-add-tracks
+  "g" #'listen-library-revert
+  "RET" #'listen-library-play-or-add)
+
+(define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
+  (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record))
+
 ;;;###autoload
 (cl-defun listen-library (paths &key name buffer)
   "Show a library view of PATHS.
 PATHS is a list of paths to files and/or directories.
 Interactively, with prefix, NAME may be specified to show in the
-mode line and bookmark name."
+mode line and bookmark name.  BUFFER may be specified in which to
+show the view."
   (interactive
    (list (list (read-file-name "View library for: "))
          :name (when current-prefix-arg
@@ -97,12 +114,7 @@ mode line and bookmark name."
                    taxy-magit-section-insert))
     (pop-to-buffer buffer)))
 
-(defvar-keymap listen-library-mode-map
-  :parent magit-section-mode-map
-  "!" #'listen-library-shell-command
-  "a" #'listen-library-add-tracks
-  "g" #'listen-library-revert
-  "RET" #'listen-library-play-or-add)
+;;;; Commands
 
 (defun listen-library-add-tracks (queue tracks)
   "Add TRACKS to QUEUE.
@@ -119,22 +131,11 @@ If TRACKS is a list of one track, play it immediately; otherwise
 prompt for a QUEUE to add them to."
   (interactive
    (let ((tracks (listen-library--tracks-at-point)))
-     (list tracks
-           (when (length> tracks 1)
-             (listen-queue-complete)))))
+     (list tracks (when (length> tracks 1)
+                    (listen-queue-complete)))))
   (if queue
       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
     (listen-play (listen--player) (listen-track-filename (car tracks)))))
-
-(defun listen-library--tracks-at-point ()
-  "Return tracks in sections at point."
-  (let ((value(oref (magit-current-section) value)))
-    (cl-typecase value
-      (listen-track (list value))
-      (taxy-magit-section (taxy-flatten value)))))
-
-(define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
-  (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record))
 
 (declare-function listen-shell-command "listen")
 (defun listen-library-shell-command (command filenames)
@@ -152,6 +153,15 @@ Interactively, read COMMAND and use tracks at point in
   (interactive)
   (cl-assert listen-library-paths)
   (listen-library listen-library-paths :name listen-library-name :buffer (current-buffer)))
+
+;;;; Functions
+
+(defun listen-library--tracks-at-point ()
+  "Return tracks in sections at point."
+  (let ((value(oref (magit-current-section) value)))
+    (cl-typecase value
+      (listen-track (list value))
+      (taxy-magit-section (taxy-flatten value)))))
 
 ;;;;; Bookmark support
 
