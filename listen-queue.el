@@ -81,11 +81,11 @@
         (when (listen-queue-tracks listen-queue)
           (make-vtable
            :columns
-           (list (list :name "*" :primary 'descend
+           (list (list :name "▶" :primary 'descend
                        :getter (lambda (track _table)
                                  (if (eq track (listen-queue-current queue))
                                      "▶" " ")))
-                 (list :name "At" :primary 'descend
+                 (list :name "#" :primary 'descend
                        :getter (lambda (track _table)
                                  (cl-position track (listen-queue-tracks queue))))
                  (list :name "Artist" :max-width 20 :align 'right
