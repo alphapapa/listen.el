@@ -124,6 +124,7 @@
                                    (list (make-listen-track :artist "[Empty queue]"))))
            :sort-by '((1 . ascend))
            :actions (list "q" (lambda (_) (bury-buffer))
+                          "g" (lambda (_) (call-interactively #'listen-queue-revert))
                           "j" (lambda (_) (listen-queue-jump))
                           "n" (lambda (_) (forward-line 1))
                           "p" (lambda (_) (forward-line -1))
@@ -382,6 +383,21 @@ queue buffer."
   ;; (listen-queue-revert)
   )
 
+(cl-defun listen-queue-revert (queue &key refreshp)
+  "Revert QUEUE's buffer.
+When REFRESHP (interactively, with prefix), refresh tracks from
+disk."
+  (interactive (list listen-queue :refreshp current-prefix-arg))
+  (when refreshp
+    (listen-queue-refresh queue))
+  (listen-queue--update-buffer queue))
+
+(defun listen-queue-refresh (queue)
+  "Refresh QUEUE's tracks from disk."
+  (setf (listen-queue-tracks queue)
+        (delq nil (mapcar (lambda (track)
+                            (listen-queue-track (listen-track-filename track)))
+                          (listen-queue-tracks queue)))))
 
 (defun listen-queue-order-by ()
   "Order the queue by the column at point.
@@ -398,7 +414,7 @@ tracks in the queue unchanged)."
                    while track
                    collect track
                    do (forward-line 1))))
-  (vtable-revert-command))
+  (listen-queue-revert listen-queue))
 
 (defun listen-queue-selected ()
   "Return tracks selected in current queue buffer."

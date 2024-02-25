@@ -54,6 +54,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Additions*
 + Command ~listen-queue-jump~ jumps to the currently playing track in the queue.
 + Command ~listen-queue-shell-command~ runs a shell command on the tracks selected in the queue.
++ Reverting a queue buffer with universal prefix argument refreshes the tracks' metadata from disk.
 
 *Fixes*
 + The queue could sometimes skip tracks when playing.
