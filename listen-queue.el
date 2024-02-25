@@ -129,7 +129,8 @@
                           "RET" (lambda (track) (listen-queue-play queue track))
                           "SPC" (lambda (_) (call-interactively #'listen-pause))
                           "o" (lambda (_) (call-interactively #'listen-queue-order-by))
-                          "s" (lambda (_) (listen-queue-shuffle listen-queue)))))
+                          "s" (lambda (_) (listen-queue-shuffle listen-queue))
+                          "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
         (goto-char (point-min))
         (listen-queue--highlight-current)
         (hl-line-mode 1)))
@@ -340,6 +341,29 @@ PROMPT is passed to `format-prompt', which see."
   (seq-elt (listen-queue-tracks queue)
            (1+ (seq-position (listen-queue-tracks queue)
                              (listen-queue-current queue)))))
+(declare-function listen-shell-command "listen")
+(defun listen-queue-shell-command (command filenames)
+  "Run COMMAND on FILENAMES.
+Interactively, read COMMAND and use tracks at point in current
+queue buffer."
+  (interactive
+   (let* ((filenames (mapcar #'listen-track-filename (listen-queue-selected)))
+          (command (read-shell-command (format "Run command on %S: " filenames))))
+     (list command filenames)))
+  (listen-shell-command command filenames)
+  ;; NOTE: This code below would be great but for using async shell
+  ;; command in `listen-shell-command'.  Also, if the files end up
+  ;; renamed, they'll not be found, but that's up to the user.
+  ;; (seq-do (lambda (filename)
+  ;;           (setf (seq-elt (listen-queue-tracks listen-queue)
+  ;;                          (seq-position (listen-queue-tracks listen-queue) filename
+  ;;                                        (lambda (track)
+  ;;                                          (equal filename (listen-track-filename track)))))
+  ;;                 (listen-queue-track filename)))
+  ;;         filenames)
+  ;; (listen-queue-revert)
+  )
+
 
 (defun listen-queue-order-by ()
   "Order the queue by the column at point.
@@ -357,6 +381,19 @@ tracks in the queue unchanged)."
                    collect track
                    do (forward-line 1))))
   (vtable-revert-command))
+
+(defun listen-queue-selected ()
+  "Return tracks selected in current queue buffer."
+  (cl-assert listen-queue)
+  (if (not (region-active-p))
+      (vtable-current-object)
+    (let ((beg (region-beginning))
+          (end (region-end)))
+      (save-excursion
+        (goto-char beg)
+        (cl-loop collect (vtable-current-object)
+                 do (forward-line 1)
+                 while (<= (point) end))))))
 
 ;;;;; Bookmark support
 
