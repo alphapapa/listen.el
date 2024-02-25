@@ -84,6 +84,11 @@
            (list (list :name "▶" :primary 'descend
                        :getter (lambda (track _table)
                                  (if (eq track (listen-queue-current queue))
+                                     ;; FIXME: If track metadata changes during playback and the
+                                     ;; user refreshes the queue from disk, the currently playing
+                                     ;; track won't match anymore.  (The obvious solution is to
+                                     ;; compare filenames, but that would seem wasteful for a
+                                     ;; large queue, so let's defer that for now.)
                                      "▶" " ")))
                  (list :name "#" :primary 'descend
                        :getter (lambda (track _table)
@@ -338,9 +343,22 @@ PROMPT is passed to `format-prompt', which see."
 
 (defun listen-queue-next-track (queue)
   "Return QUEUE's next track after current."
-  (seq-elt (listen-queue-tracks queue)
-           (1+ (seq-position (listen-queue-tracks queue)
-                             (listen-queue-current queue)))))
+  (or (ignore-errors
+        (seq-elt (listen-queue-tracks queue)
+                 (1+ (seq-position (listen-queue-tracks queue)
+                                   (listen-queue-current queue) #'eq))))
+      ;; Couldn't find position of current track: maybe the track
+      ;; object changed while it was playing (e.g. if the user changes
+      ;; the track metadata and refreshes the queue from disk while
+      ;; the track is playing), in which case it won't be able to find
+      ;; the track in the queue, so look again by comparing filenames.
+      (seq-elt (listen-queue-tracks queue)
+               (1+ (seq-position (listen-queue-tracks queue)
+                                 (listen-queue-current queue)
+                                 (lambda (a b)
+                                   (equal (listen-track-filename a)
+                                          (listen-track-filename b))))))))
+
 (declare-function listen-shell-command "listen")
 (defun listen-queue-shell-command (command filenames)
   "Run COMMAND on FILENAMES.
