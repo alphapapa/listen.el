@@ -56,7 +56,6 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 *Fixes*
 + The queue could sometimes skip tracks when playing.
-+ Don't revert queue buffer when playing next track (just move the highlight).
 
 ** v0.1
 
