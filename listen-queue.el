@@ -92,11 +92,11 @@
                (list :name "Title" :max-width 35
                      :getter (lambda (track _table)
                                (propertize (or (listen-track-title track) "")
-                                           'face 'track-title)))
+                                           'face 'listen-title)))
                (list :name "Album" :max-width 30
                      :getter (lambda (track _table)
                                (propertize (or (listen-track-album track) "")
-                                           'face 'track-album)))
+                                           'face 'listen-album)))
                (list :name "#"
                      :getter (lambda (track _table)
                                (or (listen-track-number track) "")))
@@ -105,10 +105,12 @@
                                (or (listen-track-date track) "")))
                (list :name "Genre"
                      :getter (lambda (track _table)
-                               (or (listen-track-genre track) "")))
+                               (propertize (or (listen-track-genre track) "")
+                                           'face 'listen-genre)))
                (list :name "File"
                      :getter (lambda (track _table)
-                               (listen-track-filename track))))
+                               (propertize (listen-track-filename track)
+                                           'face 'listen-filename))))
          :objects-function (lambda ()
                              (or (listen-queue-tracks listen-queue)
                                  (list (make-listen-track :artist "[Empty queue]"))))
@@ -122,7 +124,8 @@
                         "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
                         "RET" (lambda (track) (listen-queue-play queue track))
                         "SPC" (lambda (_) (call-interactively #'listen-pause))
-                        "S" (lambda (_) (listen-queue-shuffle listen-queue))))
+                        "o" (lambda (_) (call-interactively #'listen-queue-order-by))
+                        "s" (lambda (_) (listen-queue-shuffle listen-queue))))
         (goto-char (point-min))
         (listen-queue--highlight-current)
         (hl-line-mode 1)))
@@ -317,6 +320,23 @@ PROMPT is passed to `format-prompt', which see."
   (seq-elt (listen-queue-tracks queue)
            (1+ (seq-position (listen-queue-tracks queue)
                              (listen-queue-current queue)))))
+
+(defun listen-queue-order-by ()
+  "Order the queue by the column at point.
+That is, set the order of the tracks in the queue to match their
+order in the view after sorting by the column at point (whereas
+merely sorting the view by a column leaves the order of the
+tracks in the queue unchanged)."
+  (interactive)
+  (vtable-sort-by-current-column)
+  (save-excursion
+    (goto-char (point-min))
+    (setf (listen-queue-tracks listen-queue)
+          (cl-loop for track = (ignore-errors (vtable-current-object))
+                   while track
+                   collect track
+                   do (forward-line 1))))
+  (vtable-revert-command))
 
 ;;;;; Bookmark support
 
