@@ -51,7 +51,8 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 ** v0.2-pre
 
-Nothing new yet.
+*Additions*
++ Command ~listen-queue-jump~ jumps to the currently playing track in the queue.
 
 ** v0.1
 

@@ -117,6 +117,7 @@
                                    (list (make-listen-track :artist "[Empty queue]"))))
            :sort-by '((1 . ascend))
            :actions (list "q" (lambda (_) (bury-buffer))
+                          "j" (lambda (_) (listen-queue-jump))
                           "n" (lambda (_) (forward-line 1))
                           "p" (lambda (_) (forward-line -1))
                           "N" (lambda (track) (listen-queue-transpose-forward track queue))
@@ -211,6 +212,12 @@ select track as well."
     (listen-queue--update-buffer queue))
   (listen-mode 1)
   queue)
+
+(defun listen-queue-jump ()
+  "Jump to current track."
+  (interactive)
+  (when-let ((current-track (listen-queue-current listen-queue)))
+    (vtable-goto-object current-track)))
 
 (defun listen-queue-complete-track (queue)
   "Return track selected from QUEUE with completion."
