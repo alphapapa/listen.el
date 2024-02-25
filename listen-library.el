@@ -132,7 +132,7 @@ show the view."
 Interactively, play tracks in sections at point and select QUEUE
 with completion."
   (interactive
-   (list (listen-queue-complete) (listen-library--tracks-at-point)))
+   (list (listen-queue-complete) (listen-library--selected-tracks)))
   (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
 
 (declare-function listen-play "listen")
@@ -141,7 +141,7 @@ with completion."
 If TRACKS is a list of one track, play it immediately; otherwise
 prompt for a QUEUE to add them to."
   (interactive
-   (let ((tracks (listen-library--tracks-at-point)))
+   (let ((tracks (listen-library--selected-tracks)))
      (list tracks (when (length> tracks 1)
                     (listen-queue-complete)))))
   (if queue
@@ -154,7 +154,7 @@ prompt for a QUEUE to add them to."
 Interactively, read COMMAND and use tracks at point in
 `listen-library' buffer."
   (interactive
-   (let* ((filenames (mapcar #'listen-track-filename (listen-library--tracks-at-point)))
+   (let* ((filenames (mapcar #'listen-track-filename (listen-library--selected-tracks)))
           (command (read-shell-command (format "Run command on %S: " filenames))))
      (list command filenames)))
   (listen-shell-command command filenames))
@@ -167,12 +167,22 @@ Interactively, read COMMAND and use tracks at point in
 
 ;;;; Functions
 
-(defun listen-library--tracks-at-point ()
-  "Return tracks in sections at point."
-  (let ((value(oref (magit-current-section) value)))
-    (cl-typecase value
-      (listen-track (list value))
-      (taxy-magit-section (taxy-flatten value)))))
+(defun listen-library--selected-tracks ()
+  "Return tracks in highlighted sections or ones at point."
+  (cl-labels ((value-of (section)
+                (let ((value (oref section value)))
+                  (cl-typecase value
+                    (listen-track (list value))
+                    (taxy-magit-section (taxy-flatten value))))))
+    ;; NOTE: `magit-region-sections' only returns non-nil if the
+    ;; region starts and ends at sibling sections.  Even if, e.g. the
+    ;; region end is on a section that's a descendant of a sibling of
+    ;; the section at the region start (a situation which seems like
+    ;; it ought to return sections in the region), it returns nil.
+    ;; This may be confusing to users, but it seems like an upstream
+    ;; issue.
+    (or (flatten-list (mapcar #'value-of (magit-region-sections)))
+        (value-of (magit-current-section)))))
 
 ;;;;; Bookmark support
 
