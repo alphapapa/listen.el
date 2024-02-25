@@ -118,6 +118,8 @@ File: README.info,  Node: v02-pre,  Next: v01,  Up: Changelog
 
    *Fixes*
    • The queue could sometimes skip tracks when playing.
+   • Don’t revert queue buffer when playing next track (just move the
+     highlight).
 
 
 File: README.info,  Node: v01,  Prev: v02-pre,  Up: Changelog
@@ -149,8 +151,8 @@ Node: Configuration2537
 Node: Usage2876
 Node: Changelog3147
 Node: v02-pre3299
-Node: v013570
-Node: Development3672
+Node: v013661
+Node: Development3763
 
 End Tag Table
 

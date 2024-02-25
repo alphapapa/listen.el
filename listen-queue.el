@@ -183,16 +183,19 @@ If BACKWARDP, move it backward."
       (setf listen-queue-overlay (make-overlay (pos-bol) (pos-eol)))
       (overlay-put listen-queue-overlay 'face 'highlight))))
 
-(defun listen-queue--update-buffer (queue)
-  "Update QUEUE's buffer, if any."
+(cl-defun listen-queue--update-buffer (queue &key (revertp t))
+  "Update QUEUE's buffer, if any.
+When REVERTP, revert the track list; otherwise just highlight the
+current track."
   (when-let ((buffer (cl-loop for buffer in (buffer-list)
                               when (eq queue (buffer-local-value 'listen-queue buffer))
                               return buffer)))
     (with-current-buffer buffer
-      (save-excursion
-        (goto-char (point-min))
-        (when (vtable-current-table)
-          (vtable-revert-command)))
+      (when revertp
+        (save-excursion
+          (goto-char (point-min))
+          (when (vtable-current-table)
+            (vtable-revert-command))))
       (listen-queue--highlight-current))))
 
 (declare-function listen-mode "listen")
@@ -211,7 +214,7 @@ select track as well."
     (listen-play player (listen-track-filename track))
     (setf (listen-queue-current queue) track
           (map-elt (listen-player-etc player) :queue) queue)
-    (listen-queue--update-buffer queue))
+    (listen-queue--update-buffer queue :revertp nil))
   (unless listen-mode
     (listen-mode))
   queue)
