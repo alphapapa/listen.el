@@ -52,6 +52,7 @@ will be made more configurable and useful in the future.)
 
 Changelog
 
+* v0.3-pre: v03-pre.
 * v0.2: v02.
 * v0.1: v01.
 
@@ -103,13 +104,22 @@ File: README.info,  Node: Changelog,  Next: Development,  Prev: Usage,  Up: Top
 
 * Menu:
 
+* v0.3-pre: v03-pre.
 * v0.2: v02.
 * v0.1: v01.
 
 
-File: README.info,  Node: v02,  Next: v01,  Up: Changelog
+File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
 
-4.1 v0.2
+4.1 v0.3-pre
+============
+
+Nothing new yet.
+
+
+File: README.info,  Node: v02,  Next: v01,  Prev: v03-pre,  Up: Changelog
+
+4.2 v0.2
 ========
 
 *Additions*
@@ -129,7 +139,7 @@ File: README.info,  Node: v02,  Next: v01,  Up: Changelog
 
 File: README.info,  Node: v01,  Prev: v02,  Up: Changelog
 
-4.2 v0.1
+4.3 v0.1
 ========
 
 Initial release.
@@ -151,13 +161,14 @@ assigned to the FSF).
 
 Tag Table:
 Node: Top181
-Node: Installation1922
-Node: Configuration2529
-Node: Usage2868
-Node: Changelog3139
-Node: v023283
-Node: v013907
-Node: Development4005
+Node: Installation1943
+Node: Configuration2550
+Node: Usage2889
+Node: Changelog3160
+Node: v03-pre3325
+Node: v023435
+Node: v014075
+Node: Development4173
 
 End Tag Table
 

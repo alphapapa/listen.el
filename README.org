@@ -49,6 +49,10 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 * Changelog
 
+** v0.3-pre
+
+Nothing new yet.
+
 ** v0.2
 
 *Additions*
