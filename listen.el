@@ -243,6 +243,7 @@ command with completion."
           (when (and listen-player (listen--running-p listen-player))
             (listen-mode-lighter)))
     (when playing-next-p
+      ;; TODO: Remove this (I think it's not necessary anymore).
       (force-mode-line-update 'all))))
 
 ;;;; Functions
