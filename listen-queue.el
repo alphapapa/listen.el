@@ -76,56 +76,57 @@
         (erase-buffer)
         (toggle-truncate-lines 1)
         (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record)
-        (make-vtable
-         :columns
-         (list (list :name "*" :primary 'descend
-                     :getter (lambda (track _table)
-                               (if (eq track (listen-queue-current queue))
-                                   "▶" " ")))
-               (list :name "At" :primary 'descend
-                     :getter (lambda (track _table)
-                               (cl-position track (listen-queue-tracks queue))))
-               (list :name "Artist" :max-width 20 :align 'right
-                     :getter (lambda (track _table)
-                               (propertize (or (listen-track-artist track) "")
-                                           'face 'listen-artist)))
-               (list :name "Title" :max-width 35
-                     :getter (lambda (track _table)
-                               (propertize (or (listen-track-title track) "")
-                                           'face 'listen-title)))
-               (list :name "Album" :max-width 30
-                     :getter (lambda (track _table)
-                               (propertize (or (listen-track-album track) "")
-                                           'face 'listen-album)))
-               (list :name "#"
-                     :getter (lambda (track _table)
-                               (or (listen-track-number track) "")))
-               (list :name "Date"
-                     :getter (lambda (track _table)
-                               (or (listen-track-date track) "")))
-               (list :name "Genre"
-                     :getter (lambda (track _table)
-                               (propertize (or (listen-track-genre track) "")
-                                           'face 'listen-genre)))
-               (list :name "File"
-                     :getter (lambda (track _table)
-                               (propertize (listen-track-filename track)
-                                           'face 'listen-filename))))
-         :objects-function (lambda ()
-                             (or (listen-queue-tracks listen-queue)
-                                 (list (make-listen-track :artist "[Empty queue]"))))
-         :sort-by '((1 . ascend))
-         :actions (list "q" (lambda (_) (bury-buffer))
-                        "n" (lambda (_) (forward-line 1))
-                        "p" (lambda (_) (forward-line -1))
-                        "N" (lambda (track) (listen-queue-transpose-forward track queue))
-                        "P" (lambda (track) (listen-queue-transpose-backward track queue))
-                        "C-k" (lambda (track) (listen-queue-kill-track track queue))
-                        "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
-                        "RET" (lambda (track) (listen-queue-play queue track))
-                        "SPC" (lambda (_) (call-interactively #'listen-pause))
-                        "o" (lambda (_) (call-interactively #'listen-queue-order-by))
-                        "s" (lambda (_) (listen-queue-shuffle listen-queue))))
+        (when (listen-queue-tracks listen-queue)
+          (make-vtable
+           :columns
+           (list (list :name "*" :primary 'descend
+                       :getter (lambda (track _table)
+                                 (if (eq track (listen-queue-current queue))
+                                     "▶" " ")))
+                 (list :name "At" :primary 'descend
+                       :getter (lambda (track _table)
+                                 (cl-position track (listen-queue-tracks queue))))
+                 (list :name "Artist" :max-width 20 :align 'right
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-artist track) "")
+                                             'face 'listen-artist)))
+                 (list :name "Title" :max-width 35
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-title track) "")
+                                             'face 'listen-title)))
+                 (list :name "Album" :max-width 30
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-album track) "")
+                                             'face 'listen-album)))
+                 (list :name "#"
+                       :getter (lambda (track _table)
+                                 (or (listen-track-number track) "")))
+                 (list :name "Date"
+                       :getter (lambda (track _table)
+                                 (or (listen-track-date track) "")))
+                 (list :name "Genre"
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-genre track) "")
+                                             'face 'listen-genre)))
+                 (list :name "File"
+                       :getter (lambda (track _table)
+                                 (propertize (listen-track-filename track)
+                                             'face 'listen-filename))))
+           :objects-function (lambda ()
+                               (or (listen-queue-tracks listen-queue)
+                                   (list (make-listen-track :artist "[Empty queue]"))))
+           :sort-by '((1 . ascend))
+           :actions (list "q" (lambda (_) (bury-buffer))
+                          "n" (lambda (_) (forward-line 1))
+                          "p" (lambda (_) (forward-line -1))
+                          "N" (lambda (track) (listen-queue-transpose-forward track queue))
+                          "P" (lambda (track) (listen-queue-transpose-backward track queue))
+                          "C-k" (lambda (track) (listen-queue-kill-track track queue))
+                          "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
+                          "RET" (lambda (track) (listen-queue-play queue track))
+                          "SPC" (lambda (_) (call-interactively #'listen-pause))
+                          "o" (lambda (_) (call-interactively #'listen-queue-order-by))
+                          "s" (lambda (_) (listen-queue-shuffle listen-queue)))))
         (goto-char (point-min))
         (listen-queue--highlight-current)
         (hl-line-mode 1)))
@@ -185,7 +186,10 @@ If BACKWARDP, move it backward."
                               when (eq queue (buffer-local-value 'listen-queue buffer))
                               return buffer)))
     (with-current-buffer buffer
-      (vtable-revert-command)
+      (save-excursion
+        (goto-char (point-min))
+        (when (vtable-current-table)
+          (vtable-revert-command)))
       (listen-queue--highlight-current))))
 
 (declare-function listen-mode "listen")
@@ -226,7 +230,7 @@ select track as well."
   "Return a Listen queue selected with completion.
 PROMPT is passed to `format-prompt', which see."
   (pcase (length listen-queues)
-    (0 (call-interactively #'listen-queue-new))
+    (0 (listen-queue--new (read-string "New queue name: ")))
     (1 (car listen-queues))
     (_ (let* ((player (listen--player))
               (default-queue-name (or (when listen-queue
@@ -240,13 +244,18 @@ PROMPT is passed to `format-prompt', which see."
 
 ;;;###autoload
 (defun listen-queue-new (name)
-  "Add and return a new queue having NAME."
+  "Add and show a new queue having NAME."
   (interactive (list (read-string "New queue name: ")))
+  (let ((queue (listen-queue--new name)))
+    (listen-queue queue)
+    queue))
+
+(defun listen-queue--new (name)
+  "Add and return a new queue having NAME."
   (when (cl-find name listen-queues :key #'listen-queue-name :test #'equal)
     (user-error "Queue named %S already exists" name))
   (let ((queue (make-listen-queue :name name)))
     (push queue listen-queues)
-    (listen-queue queue)
     queue))
 
 (defun listen-queue-discard (queue)
@@ -265,7 +274,8 @@ PROMPT is passed to `format-prompt', which see."
              (list path))
            queue)))
   (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files)))
-  (listen-queue--update-buffer queue)
+  (listen-queue queue)
+  (listen-queue-play queue)
   queue)
 
 (declare-function listen-mpd-completing-read "listen-mpd")
