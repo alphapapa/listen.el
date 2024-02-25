@@ -49,7 +49,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 * Changelog
 
-** v0.2-pre
+** v0.2
 
 *Additions*
 + Command ~listen-queue-jump~ jumps to the currently playing track in the queue.
