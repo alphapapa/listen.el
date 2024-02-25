@@ -1,6 +1,6 @@
 ;;; listen-queue.el --- Listen queue                 -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024  Adam Porter
+;; Copyright (C) 2024  Free Software Foundation, Inc.
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 

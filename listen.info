@@ -124,6 +124,7 @@ File: README.info,  Node: v02-pre,  Next: v01,  Up: Changelog
    • The queue could sometimes skip tracks when playing.
    • Improve handling of tracks that are changed during playback (e.g.
      metadata).
+   • Update copyright statements in all libraries.
 
 
 File: README.info,  Node: v01,  Prev: v02-pre,  Up: Changelog
@@ -155,8 +156,8 @@ Node: Configuration2537
 Node: Usage2876
 Node: Changelog3147
 Node: v02-pre3299
-Node: v013882
-Node: Development3984
+Node: v013935
+Node: Development4037
 
 End Tag Table
 

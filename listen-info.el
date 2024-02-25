@@ -1,6 +1,6 @@
 ;;; listen-info.el --- Audio file metadata library  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2020-2021 Free Software Foundation, Inc.
+;; Copyright (C) 2020-2021, 2024 Free Software Foundation, Inc.
 
 ;; Author: Petteri Hintsanen <petterih@iki.fi>
 

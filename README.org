@@ -59,6 +59,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Fixes*
 + The queue could sometimes skip tracks when playing.
 + Improve handling of tracks that are changed during playback (e.g. metadata).
++ Update copyright statements in all libraries.
 
 ** v0.1
 

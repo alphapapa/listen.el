@@ -1,6 +1,6 @@
 ;;; listen-vlc.el --- VLC support for Emacs Music Player                    -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024  Adam Porter
+;; Copyright (C) 2024  Free Software Foundation, Inc.
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 
