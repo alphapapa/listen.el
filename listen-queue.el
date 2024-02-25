@@ -49,6 +49,8 @@
 (defvar-local listen-queue-kill-ring (make-ring 16)
   "Killed tracks.")
 
+(defvar listen-mode)
+
 (defgroup listen-queue nil
   "Queues."
   :group 'listen)
@@ -210,7 +212,8 @@ select track as well."
     (setf (listen-queue-current queue) track
           (map-elt (listen-player-etc player) :queue) queue)
     (listen-queue--update-buffer queue))
-  (listen-mode 1)
+  (unless listen-mode
+    (listen-mode))
   queue)
 
 (defun listen-queue-jump ()

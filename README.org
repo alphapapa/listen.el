@@ -54,6 +54,9 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Additions*
 + Command ~listen-queue-jump~ jumps to the currently playing track in the queue.
 
+*Fixes*
++ The queue could sometimes skip tracks when playing.
+
 ** v0.1
 
 Initial release.
