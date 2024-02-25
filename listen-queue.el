@@ -53,6 +53,8 @@
   "Queues."
   :group 'listen)
 
+;;;; Commands
+
 ;; (defmacro listen-queue-command (command)
 ;;   "Expand to a lambda that applies its args to COMMAND and reverts the list buffer."
 ;;   `(lambda (&rest args)
@@ -86,15 +88,15 @@
                (list :name "Artist" :max-width 20 :align 'right
                      :getter (lambda (track _table)
                                (propertize (or (listen-track-artist track) "")
-                                           'face 'font-lock-variable-name-face)))
+                                           'face 'listen-artist)))
                (list :name "Title" :max-width 35
                      :getter (lambda (track _table)
                                (propertize (or (listen-track-title track) "")
-                                           'face 'font-lock-function-name-face)))
+                                           'face 'track-title)))
                (list :name "Album" :max-width 30
                      :getter (lambda (track _table)
                                (propertize (or (listen-track-album track) "")
-                                           'face 'font-lock-type-face)))
+                                           'face 'track-album)))
                (list :name "#"
                      :getter (lambda (track _table)
                                (or (listen-track-number track) "")))

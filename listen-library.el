@@ -41,16 +41,26 @@
 (defvar-local listen-library-paths nil)
 
 (defvar listen-library-taxy
-  (cl-labels ((genre (track)
+  (cl-labels ((with-face (face string)
+                (when (and string (not (string-empty-p string)))
+                  (propertize string 'face face)))
+              (genre (track)
                 (or (listen-track-genre track) "[unknown genre]"))
               (date (track)
                 (or (listen-track-date track) "[unknown date]"))
               (artist (track)
-                (or (listen-track-artist track) "[unknown artist]"))
+                (or (with-face 'listen-artist (listen-track-artist track))
+                    "[unknown artist]"))
               (album (track)
-                (or (listen-track-album track) "[unknown album]"))
+                (or (when-let ((album (with-face 'listen-album (listen-track-album track))))
+                      (concat album
+                              (pcase (listen-track-date track)
+                                (`nil nil)
+                                (date (format " (%s)" date)))))
+                    "[unknown album]"))
               (title (track)
-                (or (listen-track-title track) "[unknown title]"))
+                (or (with-face 'listen-title (listen-track-title track))
+                    "[unknown title]"))
               (number (track)
                 (or (listen-track-number track) ""))
               (track-string (track)
@@ -66,7 +76,8 @@
     (make-fn
      :name "Genres"
      :take (apply-partially #'taxy-take-keyed
-                            (list #'genre #'artist #'date #'album #'track-string)))))
+                            (list #'genre #'artist ;; #'date
+                                  #'album #'track-string)))))
 
 ;;;; Mode
 

@@ -47,6 +47,21 @@
 (defvar listen-debug-p nil
   "When non-nil, don't erase process buffer after sending commands.")
 
+;;;; Faces
+
+(defgroup listen-faces nil
+  "Faces."
+  :group 'listen)
+
+(defface listen-artist '((t :inherit font-lock-variable-name-face))
+  "Track artist.")
+
+(defface listen-title '((t :inherit font-lock-function-name-face))
+  "Track title.")
+
+(defface listen-album '((t :inherit font-lock-type-face))
+  "Track album.")
+
 ;;;; Functions
 
 ;; FIXME: Declare this differently or something.
