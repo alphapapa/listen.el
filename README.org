@@ -12,6 +12,18 @@ A simple "library" view is provided that shows a list of files organized into a 
 
 Note a silly limitation: a track may be present in a queue only once (but who would want to have a track more than once in a playlist).
 
+* Contents                                                         :noexport:
+:PROPERTIES:
+:TOC:      :include siblings :depth 0 :force (nothing) :ignore (this) :local (nothing)
+:END:
+:CONTENTS:
+- [[#installation][Installation]]
+- [[#configuration][Configuration]]
+- [[#usage][Usage]]
+- [[#changelog][Changelog]]
+- [[#development][Development]]
+:END:
+
 * Installation
 
 Until it's added to a repository, the easiest way to install this package is with this Elisp code (removing the line that's inappropriate for your Emacs version):
@@ -35,8 +47,44 @@ Listen is intended to work with little-to-no configuration.  You can set the ~li
 
 Use the command ~listen~ to show the Transient menu.  From there, it is--hopefully--self-explanatory.  Please feel free to give feedback if it doesn't seem so.
 
+* Changelog
+
+** v0.1
+
+Initial release.
+
 * Development
 
 Feedback is welcome.
 
 This package might be submitted to GNU ELPA in the future, so any contributions should meet the same criteria for GNU Emacs (i.e. cumulative contributions of 15 lines or more must have copyright assigned to the FSF).
+
+* COMMENT Export setup                                             :noexport:
+:PROPERTIES:
+:TOC:      :ignore this
+:END:
+
+# Copied from org-super-agenda's readme, in which much was borrowed from Org's =org-manual.org=.
+
+#+OPTIONS: broken-links:t *:t
+
+** Info export options
+
+#+TEXINFO_DIR_CATEGORY: Emacs
+#+TEXINFO_DIR_TITLE: Listen: (listen)
+#+TEXINFO_DIR_DESC: Audio/Music player
+
+# NOTE: We could use these, but that causes a pointless error, "org-compile-file: File "..README.info" wasn't produced...", so we just rename the files in the after-save-hook instead.
+# #+TEXINFO_FILENAME: listen.info
+# #+EXPORT_FILE_NAME: listen.texi
+
+** File-local variables
+
+# NOTE: Setting org-comment-string buffer-locally is a nasty hack to work around GitHub's org-ruby's HTML rendering, which does not respect noexport tags.  The only way to hide this tree from its output is to use the COMMENT keyword, but that prevents Org from processing the export options declared in it.  So since these file-local variables don't affect org-ruby, wet set org-comment-string to an unused keyword, which prevents Org from deleting this tree from the export buffer, which allows it to find the export options in it.  And since org-export does respect the noexport tag, the tree is excluded from the info page.
+
+# Local Variables:
+# before-save-hook: org-make-toc
+# after-save-hook: (lambda nil (when (and (require 'ox-texinfo nil t) (org-texinfo-export-to-info)) (delete-file "README.texi") (rename-file "README.info" "listen.info" t)))
+# org-export-initial-scope: buffer
+# org-comment-string: "NOTCOMMENT"
+# End:

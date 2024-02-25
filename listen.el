@@ -1,11 +1,12 @@
 ;;; listen.el --- Audio/Music player                    -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024  Adam Porter
+;; Copyright (C) 2024  Free Software Foundation, Inc.
 
 ;; Author: Adam Porter <adam@alphapapa.net>
+;; Maintainer: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13"))
-;; Version: 0.1-pre
+;; Version: 0.1
 ;; URL: https://github.com/alphapapa/listen.el
 
 ;; This program is free software; you can redistribute it and/or modify
