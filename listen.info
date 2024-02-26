@@ -119,6 +119,8 @@ File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
      a library view.
 
    *Changes*
+   • Reading tracks from MPD allows multiple selection using
+     ‘completing-read-multiple’.
    • Various improvements in robustness.
 
    *Fixes*
@@ -178,9 +180,9 @@ Node: Configuration2552
 Node: Usage2891
 Node: Changelog3162
 Node: v03-pre3327
-Node: v023739
-Node: v014379
-Node: Development4477
+Node: v023839
+Node: v014479
+Node: Development4577
 
 End Tag Table
 

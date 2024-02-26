@@ -115,7 +115,8 @@ completion."
            (prompt (pcase-exhaustive tag
                      ('file "MPC Search (track): ")
                      (_ (format "MPC Search (%s): " tag))))
-           (result (completing-read prompt #'collection nil))
+           (result (let ((crm-separator ";"))
+                     (ensure-list (completing-read-multiple prompt #'collection nil))))
            (result (pcase tag
                      ('any result)
                      (_ (flatten-list
