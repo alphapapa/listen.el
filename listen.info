@@ -121,6 +121,9 @@ File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
    *Changes*
    • Various improvements in robustness.
 
+   *Fixes*
+   • Completing read of tracks from MPD.
+
    *Credits*
    • Thanks to Philip Kaludercic (https://amodernist.com/) for
      reviewing.
@@ -175,9 +178,9 @@ Node: Configuration2552
 Node: Usage2891
 Node: Changelog3162
 Node: v03-pre3327
-Node: v023684
-Node: v014324
-Node: Development4422
+Node: v023739
+Node: v014379
+Node: Development4477
 
 End Tag Table
 

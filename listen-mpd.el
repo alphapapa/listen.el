@@ -117,11 +117,14 @@ completion."
                      (_ (format "MPC Search (%s): " tag))))
            (result (completing-read prompt #'collection nil))
            (result (pcase tag
-                     ("any" result)
-                     (_ (mapcar (lambda (row)
-                                  (alist-get 'file row))
-                                (mpc-proc-buf-to-alists
-                                 (mpc-proc-cmd (list "find" (symbol-name tag) result))))))))
+                     ('any result)
+                     (_ (flatten-list
+                         (mapcar (lambda (result)
+                                   (mapcar (lambda (row)
+                                             (alist-get 'file row))
+                                           (mpc-proc-buf-to-alists
+                                            (mpc-proc-cmd (list "find" (symbol-name tag) result)))))
+                                 result))))))
       (mapcar (lambda (filename)
                 (expand-file-name filename (or mpc-mpd-music-directory listen-directory)))
               result))))

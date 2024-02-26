@@ -57,6 +57,9 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Changes*
 + Various improvements in robustness.
 
+*Fixes*
++ Completing read of tracks from MPD.
+
 *Credits*
 + Thanks to [[https://amodernist.com/][Philip Kaludercic]] for reviewing.
 
