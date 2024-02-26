@@ -61,6 +61,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 *Fixes*
 + Completing read of tracks from MPD.
++ Unset VLC process's query-on-exit flag.
 
 *Credits*
 + Thanks to [[https://amodernist.com/][Philip Kaludercic]] for reviewing.

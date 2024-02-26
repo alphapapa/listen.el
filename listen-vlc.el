@@ -61,7 +61,8 @@
     (unless (process-live-p process)
       (setf (listen-player-process player)
             (apply #'start-process "listen-player-vlc" (generate-new-buffer " *listen-player-vlc*")
-                   command args)))))
+                   command args))
+      (set-process-query-on-exit-flag (listen-player-process player) nil))))
 
 (cl-defmethod listen--play ((player listen-player-vlc) file)
   "Play FILE with PLAYER.

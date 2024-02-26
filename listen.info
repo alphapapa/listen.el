@@ -127,6 +127,7 @@ File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
 
    *Fixes*
    • Completing read of tracks from MPD.
+   • Unset VLC process’s query-on-exit flag.
 
    *Credits*
    • Thanks to Philip Kaludercic (https://amodernist.com/) for
@@ -182,9 +183,9 @@ Node: Configuration2552
 Node: Usage2891
 Node: Changelog3162
 Node: v03-pre3327
-Node: v023947
-Node: v014587
-Node: Development4685
+Node: v023996
+Node: v014636
+Node: Development4734
 
 End Tag Table
 
