@@ -207,6 +207,7 @@ If BACKWARDP, move it backward."
 
 (declare-function listen-mode "listen")
 (declare-function listen-play "listen")
+;;;###autoload
 (cl-defun listen-queue-play (queue &optional (track (car (listen-queue-tracks queue))))
   "Play QUEUE and optionally TRACK in it.
 Interactively, selected queue with completion; and with prefix,
