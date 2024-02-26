@@ -50,7 +50,7 @@
 ;;;; Faces
 
 (defgroup listen-faces nil
-  "Faces."
+  "Faces used by `listen'."
   :group 'listen)
 
 (defface listen-artist '((t :inherit font-lock-variable-name-face))
