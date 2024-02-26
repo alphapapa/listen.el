@@ -114,7 +114,12 @@ File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
 4.1 v0.3-pre
 ============
 
-Nothing new yet.
+*Changes*
+   • Various improvements in robustness.
+
+   *Credits*
+   • Thanks to Philip Kaludercic (https://amodernist.com/) for
+     reviewing.
 
 
 File: README.info,  Node: v02,  Next: v01,  Prev: v03-pre,  Up: Changelog
@@ -166,9 +171,9 @@ Node: Configuration2552
 Node: Usage2891
 Node: Changelog3162
 Node: v03-pre3327
-Node: v023437
-Node: v014077
-Node: Development4175
+Node: v023568
+Node: v014208
+Node: Development4306
 
 End Tag Table
 

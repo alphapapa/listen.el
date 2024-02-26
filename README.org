@@ -51,7 +51,11 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 ** v0.3-pre
 
-Nothing new yet.
+*Changes*
++ Various improvements in robustness.
+
+*Credits*
++ Thanks to [[https://amodernist.com/][Philip Kaludercic]] for reviewing.
 
 ** v0.2
 
