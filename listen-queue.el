@@ -137,6 +137,8 @@
                           "SPC" (lambda (_) (call-interactively #'listen-pause))
                           "o" (lambda (_) (call-interactively #'listen-queue-order-by))
                           "s" (lambda (_) (listen-queue-shuffle listen-queue))
+                          "l" (lambda (_) "Show (selected) tracks in library view."
+                                (call-interactively #'listen-queue-library))
                           "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
         (goto-char (point-min))
         (listen-queue--highlight-current)
@@ -302,6 +304,17 @@ PROMPT is passed to `format-prompt', which see."
   (interactive (list (listen-queue-complete)))
   (require 'listen-mpd)
   (listen-queue-add-files (listen-mpd-completing-read :select-tag-p t) queue))
+
+(declare-function listen-library "listen-library")
+(defun listen-queue-library (tracks)
+  "Display TRACKS in library.
+Interactively, use tracks (or selected tracks) from current
+buffer's queue."
+  (interactive
+   (list (if (region-active-p)
+             (listen-queue-selected)
+           (listen-queue-tracks listen-queue))))
+  (listen-library (mapcar #'listen-track-filename tracks)))
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."

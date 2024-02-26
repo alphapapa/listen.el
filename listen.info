@@ -117,6 +117,8 @@ File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
 *Additions*
    • Command ‘listen-library-from-mpd’ shows tracks selected from MPD in
      a library view.
+   • Command ‘listen-queue-library’ shows tracks selected from a queue
+     buffer in a library view.
 
    *Changes*
    • Reading tracks from MPD allows multiple selection using
@@ -180,9 +182,9 @@ Node: Configuration2552
 Node: Usage2891
 Node: Changelog3162
 Node: v03-pre3327
-Node: v023839
-Node: v014479
-Node: Development4577
+Node: v023947
+Node: v014587
+Node: Development4685
 
 End Tag Table
 
