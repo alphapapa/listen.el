@@ -1,5 +1,8 @@
 #+title: listen.el
 
+# ELPA badge image.
+[[https://elpa.gnu.org/packages/listen.html][https://elpa.gnu.org/packages/listen.svg]]
+
 This package aims to provide a simple audio/music player for Emacs.  It should "just work," with little-to-no configuration, have intuitive commands, and be easily extended and customized.  (Contrast to setting up EMMS, or having to configure external players like MPD.)  A Transient menu, under the command ~listen~, is the primary entry point.
 
 The only external dependency is VLC, which is currently the only player backend that is supported.  (Other backends may easily be added; see library ~listen-vlc~ for example.)  Track metadata is read using EMMS's native Elisp metadata library, which has been imported into this package.
@@ -26,18 +29,31 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 
 * Installation
 
-Until it's added to a repository, the easiest way to install this package is with this Elisp code (removing the line that's inappropriate for your Emacs version):
+Note that Listen.el uses [[https://www.videolan.org/vlc/][VLC]] to play audio, so it must be installed.
 
-#+begin_src elisp
+** GNU ELPA
+
+Listen.el is published in [[http://elpa.gnu.org/][GNU ELPA]] as [[https://elpa.gnu.org/packages/listen.html][listen]], so it may be installed in Emacs with the command ~M-x package-install RET listen RET~.  This is the recommended way to install Listen.el, as it will install the current stable release.
+
+The latest development build may be installed from [[https://elpa.gnu.org/devel/listen.html][ELPA-devel]] or from Git (see below).
+
+** Git
+
+The ~master~ branch of the Git repository is intended to be usable at all times; only minor bugs are expected to be found in it before a new stable release is made.
+
+To install, it is recommended to use [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], like this (using [[https://github.com/alphapapa/unpackaged.el#upgrade-a-quelpa-use-package-forms-package][this helpful command]] for upgrading versions):
+
+#+BEGIN_SRC elisp
+  ;; Install and load `quelpa-use-package'.
+  (package-install 'quelpa-use-package)
+  (require 'quelpa-use-package)
+
+  ;; Install Listen.
   (use-package listen
-    ;; For Emacs 29:
-    :init (unless (package-installed-p 'listen)
-            (package-vc-install '(listen :url "https://github.com/alphapapa/listen.el.git")))
-    ;; For Emacs 30+:
-    :vc (:url "https://github.com/alphapapa/listen.el"))
-#+end_src
+    :quelpa (listen :fetcher github :repo "alphapapa/listen.el"))
+#+END_SRC
 
-You also need to have VLC installed.
+One might also use systems like [[https://github.com/progfolio/elpaca][Elpaca]] or [[https://github.com/radian-software/straight.el][Straight]] (which is also used by [[https://github.com/doomemacs/doomemacs][DOOM]]), but the author cannot offer support for them.
 
 * Configuration
 
@@ -84,9 +100,11 @@ Initial release.
 
 * Development
 
-Feedback is welcome.
+Feedback and patches are welcome.
 
-This package might be submitted to GNU ELPA in the future, so any contributions should meet the same criteria for GNU Emacs (i.e. cumulative contributions of 15 lines or more must have copyright assigned to the FSF).
+** Copyright assignment
+
+Listen.el is published in GNU ELPA and is considered part of GNU Emacs.  Therefore, cumulative contributions of more than 15 lines of code require that the author assign copyright of such contributions to the FSF.  Authors who are interested in doing so may contact [[mailto:assign@gnu.org][assign@gnu.org]] to request the appropriate form.
 
 * COMMENT Export setup                                             :noexport:
 :PROPERTIES:
@@ -95,17 +113,17 @@ This package might be submitted to GNU ELPA in the future, so any contributions 
 
 # Copied from org-super-agenda's readme, in which much was borrowed from Org's =org-manual.org=.
 
-#+OPTIONS: broken-links:t *:t
+#+OPTIONS: broken-links:t *:t num:1 toc:1
 
 ** Info export options
 
+#+EXPORT_FILE_NAME: listen.texi
 #+TEXINFO_DIR_CATEGORY: Emacs
 #+TEXINFO_DIR_TITLE: Listen: (listen)
 #+TEXINFO_DIR_DESC: Audio/Music player
 
 # NOTE: We could use these, but that causes a pointless error, "org-compile-file: File "..README.info" wasn't produced...", so we just rename the files in the after-save-hook instead.
 # #+TEXINFO_FILENAME: listen.info
-# #+EXPORT_FILE_NAME: listen.texi
 
 ** File-local variables
 
@@ -113,7 +131,8 @@ This package might be submitted to GNU ELPA in the future, so any contributions 
 
 # Local Variables:
 # before-save-hook: org-make-toc
-# after-save-hook: (lambda nil (when (and (require 'ox-texinfo nil t) (org-texinfo-export-to-info)) (delete-file "README.texi") (rename-file "README.info" "listen.info" t)))
+# org-export-with-properties: ()
+# org-export-with-title: t
 # org-export-initial-scope: buffer
 # org-comment-string: "NOTCOMMENT"
 # End:
