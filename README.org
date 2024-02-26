@@ -34,7 +34,7 @@ Until it's added to a repository, the easiest way to install this package is wit
     :init (unless (package-installed-p 'listen)
             (package-vc-install '(listen :url "https://github.com/alphapapa/listen.el.git")))
     ;; For Emacs 30+:
-    :vc (:fetcher github :repo "alphapapa/listen.el"))
+    :vc (:url "https://github.com/alphapapa/listen.el"))
 #+end_src
 
 You also need to have VLC installed.

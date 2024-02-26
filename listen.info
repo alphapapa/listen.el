@@ -72,7 +72,7 @@ for your Emacs version):
        :init (unless (package-installed-p 'listen)
                (package-vc-install '(listen :url "https://github.com/alphapapa/listen.el.git")))
        ;; For Emacs 30+:
-       :vc (:fetcher github :repo "alphapapa/listen.el"))
+       :vc (:url "https://github.com/alphapapa/listen.el"))
 
    You also need to have VLC installed.
 
@@ -162,13 +162,13 @@ assigned to the FSF).
 Tag Table:
 Node: Top181
 Node: Installation1943
-Node: Configuration2550
-Node: Usage2889
-Node: Changelog3160
-Node: v03-pre3325
-Node: v023435
-Node: v014075
-Node: Development4173
+Node: Configuration2552
+Node: Usage2891
+Node: Changelog3162
+Node: v03-pre3327
+Node: v023437
+Node: v014077
+Node: Development4175
 
 End Tag Table
 
