@@ -435,7 +435,7 @@ tracks in the queue unchanged)."
   "Return tracks selected in current queue buffer."
   (cl-assert listen-queue)
   (if (not (region-active-p))
-      (vtable-current-object)
+      (list (vtable-current-object))
     (let ((beg (region-beginning))
           (end (region-end)))
       (save-excursion
