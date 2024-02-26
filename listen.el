@@ -304,7 +304,10 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
                 (interactive)
                 (let ((player (listen--player)))
                   (listen-volume player (min 100 (+ (listen--volume player) 5)))))
-     :transient t)]]
+     :transient t)]
+   ["Library"
+    ("Lf" "Library (from files)" listen-library)
+    ("Lm" "Library (from MPD)" listen-library-from-mpd)]]
 
   [["Queue mode"
     :description

@@ -31,6 +31,7 @@
 
 (defvar listen-directory)
 
+;;;###autoload
 (cl-defun listen-mpd-completing-read (&key (tag 'file) select-tag-p)
   "Return files selected from MPD library.
 Searches by TAG; or if SELECT-TAG-P, tag is selected with

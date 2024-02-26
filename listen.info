@@ -114,7 +114,11 @@ File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
 4.1 v0.3-pre
 ============
 
-*Changes*
+*Additions*
+   • Command ‘listen-library-from-mpd’ shows tracks selected from MPD in
+     a library view.
+
+   *Changes*
    • Various improvements in robustness.
 
    *Credits*
@@ -171,9 +175,9 @@ Node: Configuration2552
 Node: Usage2891
 Node: Changelog3162
 Node: v03-pre3327
-Node: v023568
-Node: v014208
-Node: Development4306
+Node: v023684
+Node: v014324
+Node: Development4422
 
 End Tag Table
 

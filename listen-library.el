@@ -165,6 +165,14 @@ Interactively, read COMMAND and use tracks at point in
   (cl-assert listen-library-paths)
   (listen-library listen-library-paths :name listen-library-name :buffer (current-buffer)))
 
+(declare-function listen-mpd-completing-read "listen-mpd")
+;;;###autoload
+(cl-defun listen-library-from-mpd (filenames)
+  "Show library view of FILENAMES selected from MPD library."
+  (interactive
+   (list (listen-mpd-completing-read :select-tag-p t)))
+  (listen-library filenames))
+
 ;;;; Functions
 
 (defun listen-library--selected-tracks ()
