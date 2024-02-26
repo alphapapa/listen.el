@@ -250,11 +250,12 @@ command with completion."
 
 (defun listen-read-time (time)
   "Return TIME in seconds.
-TIME is an HH:MM:SS string."
-  (string-match (rx (group (1+ num))
-                    (optional ":" (group (1+ num))
-                              (optional ":" (group (1+ num)))))
-                time)
+TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
+  (unless (string-match (rx (group (1+ num))
+                            (optional ":" (group (1+ num))
+                                      (optional ":" (group (1+ num)))))
+                        time)
+    (user-error "TIME must be a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\""))
   (let ((fields (nreverse
                  (remq nil
                        (list (match-string 1 time)
