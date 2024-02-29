@@ -70,79 +70,81 @@
 (defun listen-queue (queue)
   "Show listen QUEUE."
   (interactive (list (listen-queue-complete)))
-  (let ((buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue)))))
-    (with-current-buffer buffer
-      (let ((inhibit-read-only t))
-        (setf listen-queue queue)
-        (read-only-mode)
-        (erase-buffer)
-        (toggle-truncate-lines 1)
-        (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record)
-        (when (listen-queue-tracks listen-queue)
-          (make-vtable
-           :columns
-           (list (list :name "▶" :primary 'descend
-                       :getter (lambda (track _table)
-                                 (if (eq track (listen-queue-current queue))
-                                     ;; FIXME: If track metadata changes during playback and the
-                                     ;; user refreshes the queue from disk, the currently playing
-                                     ;; track won't match anymore.  (The obvious solution is to
-                                     ;; compare filenames, but that would seem wasteful for a
-                                     ;; large queue, so let's defer that for now.)
-                                     "▶" " ")))
-                 (list :name "#" :primary 'descend
-                       :getter (lambda (track _table)
-                                 (cl-position track (listen-queue-tracks queue))))
-                 (list :name "Artist" :max-width 20 :align 'right
-                       :getter (lambda (track _table)
-                                 (propertize (or (listen-track-artist track) "")
-                                             'face 'listen-artist)))
-                 (list :name "Title" :max-width 35
-                       :getter (lambda (track _table)
-                                 (propertize (or (listen-track-title track) "")
-                                             'face 'listen-title)))
-                 (list :name "Album" :max-width 30
-                       :getter (lambda (track _table)
-                                 (propertize (or (listen-track-album track) "")
-                                             'face 'listen-album)))
-                 (list :name "#"
-                       :getter (lambda (track _table)
-                                 (or (listen-track-number track) "")))
-                 (list :name "Date"
-                       :getter (lambda (track _table)
-                                 (or (listen-track-date track) "")))
-                 (list :name "Genre"
-                       :getter (lambda (track _table)
-                                 (propertize (or (listen-track-genre track) "")
-                                             'face 'listen-genre)))
-                 (list :name "File"
-                       :getter (lambda (track _table)
-                                 (propertize (listen-track-filename track)
-                                             'face 'listen-filename))))
-           :objects-function (lambda ()
-                               (or (listen-queue-tracks listen-queue)
-                                   (list (make-listen-track :artist "[Empty queue]"))))
-           :sort-by '((1 . ascend))
-           ;; TODO: Add a transient to show these bindings when pressing "?".
-           :actions (list "q" (lambda (_) (bury-buffer))
-                          "g" (lambda (_) (call-interactively #'listen-queue-revert))
-                          "j" (lambda (_) (listen-queue-jump))
-                          "n" (lambda (_) (forward-line 1))
-                          "p" (lambda (_) (forward-line -1))
-                          "N" (lambda (track) (listen-queue-transpose-forward track queue))
-                          "P" (lambda (track) (listen-queue-transpose-backward track queue))
-                          "C-k" (lambda (track) (listen-queue-kill-track track queue))
-                          "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
-                          "RET" (lambda (track) (listen-queue-play queue track))
-                          "SPC" (lambda (_) (call-interactively #'listen-pause))
-                          "o" (lambda (_) (call-interactively #'listen-queue-order-by))
-                          "s" (lambda (_) (listen-queue-shuffle listen-queue))
-                          "l" (lambda (_) "Show (selected) tracks in library view."
-                                (call-interactively #'listen-queue-as-library))
-                          "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
-        (goto-char (point-min))
-        (listen-queue--highlight-current)
-        (hl-line-mode 1)))
+  (let* ((buffer-name (format "*Listen Queue: %s*" (listen-queue-name queue)))
+         (buffer (get-buffer buffer-name)))
+    (unless buffer
+      (with-current-buffer (setf buffer (get-buffer-create buffer-name))
+        (let ((inhibit-read-only t))
+          (setf listen-queue queue)
+          (read-only-mode)
+          (erase-buffer)
+          (toggle-truncate-lines 1)
+          (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record)
+          (when (listen-queue-tracks listen-queue)
+            (make-vtable
+             :columns
+             (list (list :name "▶" :primary 'descend
+                         :getter (lambda (track _table)
+                                   (if (eq track (listen-queue-current queue))
+                                       ;; FIXME: If track metadata changes during playback and the
+                                       ;; user refreshes the queue from disk, the currently playing
+                                       ;; track won't match anymore.  (The obvious solution is to
+                                       ;; compare filenames, but that would seem wasteful for a
+                                       ;; large queue, so let's defer that for now.)
+                                       "▶" " ")))
+                   (list :name "#" :primary 'descend
+                         :getter (lambda (track _table)
+                                   (cl-position track (listen-queue-tracks queue))))
+                   (list :name "Artist" :max-width 20 :align 'right
+                         :getter (lambda (track _table)
+                                   (propertize (or (listen-track-artist track) "")
+                                               'face 'listen-artist)))
+                   (list :name "Title" :max-width 35
+                         :getter (lambda (track _table)
+                                   (propertize (or (listen-track-title track) "")
+                                               'face 'listen-title)))
+                   (list :name "Album" :max-width 30
+                         :getter (lambda (track _table)
+                                   (propertize (or (listen-track-album track) "")
+                                               'face 'listen-album)))
+                   (list :name "#"
+                         :getter (lambda (track _table)
+                                   (or (listen-track-number track) "")))
+                   (list :name "Date"
+                         :getter (lambda (track _table)
+                                   (or (listen-track-date track) "")))
+                   (list :name "Genre"
+                         :getter (lambda (track _table)
+                                   (propertize (or (listen-track-genre track) "")
+                                               'face 'listen-genre)))
+                   (list :name "File"
+                         :getter (lambda (track _table)
+                                   (propertize (listen-track-filename track)
+                                               'face 'listen-filename))))
+             :objects-function (lambda ()
+                                 (or (listen-queue-tracks listen-queue)
+                                     (list (make-listen-track :artist "[Empty queue]"))))
+             :sort-by '((1 . ascend))
+             ;; TODO: Add a transient to show these bindings when pressing "?".
+             :actions (list "q" (lambda (_) (bury-buffer))
+                            "g" (lambda (_) (call-interactively #'listen-queue-revert))
+                            "j" (lambda (_) (listen-queue-jump))
+                            "n" (lambda (_) (forward-line 1))
+                            "p" (lambda (_) (forward-line -1))
+                            "N" (lambda (track) (listen-queue-transpose-forward track queue))
+                            "P" (lambda (track) (listen-queue-transpose-backward track queue))
+                            "C-k" (lambda (track) (listen-queue-kill-track track queue))
+                            "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
+                            "RET" (lambda (track) (listen-queue-play queue track))
+                            "SPC" (lambda (_) (call-interactively #'listen-pause))
+                            "o" (lambda (_) (call-interactively #'listen-queue-order-by))
+                            "s" (lambda (_) (listen-queue-shuffle listen-queue))
+                            "l" (lambda (_) "Show (selected) tracks in library view."
+                                  (call-interactively #'listen-queue-as-library))
+                            "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
+          (goto-char (point-min))
+          (listen-queue--highlight-current)
+          (hl-line-mode 1))))
     (pop-to-buffer buffer)))
 
 (cl-defun listen-queue-transpose-forward (track queue &key backwardp)
