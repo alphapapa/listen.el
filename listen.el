@@ -289,7 +289,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
     ("Q" "Quit" listen-quit)]]
 
   [["Player"
-    ("SPC" "Pause" listen-pause)
+    ("SPC" "Pause" listen-pause :transient t)
     ("p" "Play" listen-play)
     ;; ("ESC" "Stop" listen-stop)
     ("n" "Next" listen-next)
