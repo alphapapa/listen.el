@@ -54,6 +54,9 @@
 (defvar listen-queue-ffprobe-p (not (not (executable-find "ffprobe")))
   "Whether \"ffprobe\" is available.")
 
+(defvar listen-queue-nice-p (not (not (executable-find "nice")))
+  "Whether \"nice\" is available.")
+
 (defgroup listen-queue nil
   "Queues."
   :group 'listen)
@@ -592,13 +595,15 @@ MAX-PROCESSES limits the number of parallel probing processes."
                                     (kill-buffer (process-buffer process))
                                     (cl-callf2 remove process processes)
                                     (probe-more))))
+                      (command (list "ffprobe" "-v" "quiet" "-print_format"
+                                     "compact=print_section=0:nokey=1:escape=csv"
+                                     "-show_entries" "format=duration"
+                                     (expand-file-name (listen-track-filename track))))
                       (process (make-process
                                 :name "listen:ffprobe" :noquery t :type 'pipe :buffer (current-buffer)
-                                :sentinel sentinel
-                                :command (list "ffprobe" "-v" "quiet" "-print_format"
-                                               "compact=print_section=0:nokey=1:escape=csv"
-                                               "-show_entries" "format=duration"
-                                               (expand-file-name (listen-track-filename track))))))
+                                :sentinel sentinel :command (if listen-queue-nice-p
+                                                                (cons "nice" command)
+                                                              command))))
                  process))))
          (probe-more ()
            (while (and tracks (length< processes max-processes))
