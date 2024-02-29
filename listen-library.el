@@ -174,6 +174,15 @@ Interactively, read COMMAND and use tracks at point in
    (list (listen-mpd-completing-read :select-tag-p t)))
   (listen-library filenames))
 
+(cl-defun listen-library-from-playlist-file (filename)
+  "Show library view tracks in playlist at FILENAME."
+  (interactive
+   (list (read-file-name "Add tracks from playlist: " listen-directory nil t nil
+                         (lambda (filename)
+                           (pcase (file-name-extension filename)
+                             ("m3u" t))))))
+  (listen-library (listen-queue--m3u-filenames filename)))
+
 ;;;; Functions
 
 (defun listen-library--selected-tracks ()

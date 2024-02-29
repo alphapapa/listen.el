@@ -70,6 +70,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Additions*
 + Command ~listen-library-from-mpd~ shows tracks selected from MPD in a library view.
 + Command ~listen-library-from-queue~ shows tracks selected from a queue buffer in a library view.
++ Command ~listen-library-from-playlist-file~ shows tracks from an M3U playlist in a library view.
 + Command ~listen-queue-add-from-playlist-file~ adds tracks from an M3U playlist file to a queue.
 
 *Changes*
