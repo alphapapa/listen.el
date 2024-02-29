@@ -327,7 +327,10 @@ which see."
 Interactively, use tracks from QUEUE (or selected ones in its
 buffer, if any)."
   (interactive
-   (let* ((queue (listen-queue-complete))
+   (let* ((queue (if (and listen-queue (use-region-p))
+                     ;; In a queue buffer and the region is active: use it.
+                     listen-queue
+                   (listen-queue-complete :allow-new-p t)))
           (tracks (or (if-let ((buffer (listen-queue-buffer queue)))
                           (with-current-buffer buffer
                             (when (region-active-p)
