@@ -195,9 +195,7 @@ command with completion."
 
 (defun listen-mode-lighter ()
   "Return lighter for `listen-mode'."
-  (cl-labels ((format-time (seconds)
-                (format-seconds "%h:%z%.2m:%.2s" seconds))
-              (format-track ()
+  (cl-labels ((format-track ()
                 (when-let ((info (listen--info listen-player))
                            ;; Sometimes when paused/stopped, the artist and/or
                            ;; title are nil even if info isn't, so we must
@@ -218,11 +216,11 @@ command with completion."
                (list (format-status) " " (format-track)
                      " ("
                      (pcase listen-lighter-format
-                       ('remaining (concat "-" (format-time (- (listen--length listen-player)
-                                                               (listen--elapsed listen-player)))))
-                       (_ (concat (format-time (listen--elapsed listen-player))
+                       ('remaining (concat "-" (listen-format-seconds (- (listen--length listen-player)
+                                                                         (listen--elapsed listen-player)))))
+                       (_ (concat (listen-format-seconds (listen--elapsed listen-player))
                                   "/"
-                                  (format-time (listen--length listen-player)))))
+                                  (listen-format-seconds (listen--length listen-player)))))
                      ") ")
              '("■ ")))))
 

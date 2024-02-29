@@ -77,6 +77,10 @@
   (or listen-player
       (setf listen-player (make-listen-player-vlc))))
 
+(defun listen-format-seconds (seconds)
+  "Return SECONDS formatted as an hour:minute:second-style duration."
+  (format-seconds "%h:%z%.2m:%.2s" seconds))
+
 ;;;; Methods
 
 (cl-defmethod listen--running-p ((player listen-player))
