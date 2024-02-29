@@ -51,7 +51,7 @@
 
 (defvar listen-mode)
 
-(defvar listen-queue-ffprobe-p (executable-find "ffprobe")
+(defvar listen-queue-ffprobe-p (not (not (executable-find "ffprobe")))
   "Whether \"ffprobe\" is available.")
 
 (defgroup listen-queue nil
