@@ -30,6 +30,7 @@
 (require 'mpc)
 
 (defvar listen-directory)
+(defvar crm-separator)
 
 ;;;###autoload
 (cl-defun listen-mpd-completing-read (&key (tag 'file) select-tag-p)
