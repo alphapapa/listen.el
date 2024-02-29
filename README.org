@@ -74,6 +74,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 *Fixes*
 + Transposing a track in a queue keeps point on the track.
++ Autoloading of ~listen~ command.
 
 ** v0.3
 

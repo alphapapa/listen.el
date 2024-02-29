@@ -269,8 +269,12 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 
 (require 'transient)
 
+;; It seems that autoloading the transient prefix command doesn't work
+;; as expected, so we'll try this workaround.
 ;;;###autoload
-(transient-define-prefix listen ()
+(defalias 'listen #'listen-menu)
+
+(transient-define-prefix listen-menu ()
   "Show Listen menu."
   :refresh-suffixes t
   [["Listen"
