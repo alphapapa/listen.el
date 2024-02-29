@@ -199,10 +199,12 @@ If BACKWARDP, move it backward."
   "Update QUEUE's buffer, if any."
   (when-let ((buffer (listen-queue-buffer queue)))
     (with-current-buffer buffer
-      (save-excursion
+      ;; `save-excursion' doesn't work because of the table's being reverted.
+      (let ((pos (point)))
         (goto-char (point-min))
         (when (vtable-current-table)
-          (vtable-revert-command)))
+          (vtable-revert-command))
+        (goto-char pos))
       (listen-queue--highlight-current))))
 
 (declare-function listen-mode "listen")
