@@ -144,7 +144,7 @@ prompt for a QUEUE to add them to."
   (interactive
    (let ((tracks (listen-library--selected-tracks)))
      (list tracks (when (length> tracks 1)
-                    (listen-queue-complete :allow-new-p t)))))
+                    (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t)))))
   (if queue
       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
     (listen-play (listen--player) (listen-track-filename (car tracks)))))
