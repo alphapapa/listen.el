@@ -108,7 +108,7 @@ show the view."
                              if (file-directory-p path)
                              append (directory-files-recursively path "." t)
                              else collect path))
-         (tracks (remq nil (mapcar #'listen-queue-track filenames)))
+         (tracks (listen-queue-tracks-for filenames))
          (buffer-name (if name
                           (format "*Listen library: %s" name)
                         (generate-new-buffer-name (format "*Listen library*"))))

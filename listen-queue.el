@@ -314,7 +314,7 @@ which see."
                (directory-files-recursively path ".")
              (list path))
            queue)))
-  (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files)))
+  (cl-callf append (listen-queue-tracks queue) (listen-queue-tracks-for files))
   (listen-queue queue)
   (listen-queue-play queue)
   queue)
@@ -497,9 +497,7 @@ disk."
 (defun listen-queue-refresh (queue)
   "Refresh QUEUE's tracks from disk."
   (setf (listen-queue-tracks queue)
-        (delq nil (mapcar (lambda (track)
-                            (listen-queue-track (listen-track-filename track)))
-                          (listen-queue-tracks queue)))))
+        (listen-queue-tracks-for (mapcar #'listen-track-filename (listen-queue-tracks queue)))))
 
 (defun listen-queue-order-by ()
   "Order the queue by the column at point.
