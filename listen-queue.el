@@ -102,6 +102,10 @@
                    (list :name "#" :primary 'descend
                          :getter (lambda (track _table)
                                    (cl-position track (listen-queue-tracks queue))))
+                   (list :name "Duration"
+                         :getter (lambda (track _table)
+                                   (when-let ((duration (listen-track-duration track)))
+                                     (listen-format-seconds duration))))
                    (list :name "Artist" :max-width 20 :align 'right
                          :getter (lambda (track _table)
                                    (propertize (or (listen-track-artist track) "")
@@ -583,8 +587,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
                                            (goto-char (point-min))
                                            (let ((duration (read (current-buffer))))
                                              (cl-check-type duration number )
-                                             ;; FIXME: length->duration
-                                             (setf (listen-track-length track) duration)))))
+                                             (setf (listen-track-duration track) duration)))))
                                     (kill-buffer (process-buffer process))
                                     (cl-callf2 remove process processes)
                                     (probe-more))))
