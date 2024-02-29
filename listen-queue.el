@@ -51,9 +51,16 @@
 
 (defvar listen-mode)
 
+(defvar listen-queue-ffprobe-p (executable-find "ffprobe")
+  "Whether \"ffprobe\" is available.")
+
 (defgroup listen-queue nil
   "Queues."
   :group 'listen)
+
+(defcustom listen-queue-max-probe-processes 16
+  "Maximum number of processes to run while probing track durations."
+  :type 'natnum)
 
 ;;;; Commands
 
@@ -95,6 +102,10 @@
                    (list :name "#" :primary 'descend
                          :getter (lambda (track _table)
                                    (cl-position track (listen-queue-tracks queue))))
+                   (list :name "Duration"
+                         :getter (lambda (track _table)
+                                   (when-let ((duration (listen-track-duration track)))
+                                     (listen-format-seconds duration))))
                    (list :name "Artist" :max-width 20 :align 'right
                          :getter (lambda (track _table)
                                    (propertize (or (listen-track-artist track) "")
@@ -303,7 +314,7 @@ which see."
                (directory-files-recursively path ".")
              (list path))
            queue)))
-  (cl-callf append (listen-queue-tracks queue) (delq nil (mapcar #'listen-queue-track files)))
+  (cl-callf append (listen-queue-tracks queue) (listen-queue-tracks-for files))
   (listen-queue queue)
   (listen-queue-play queue)
   queue)
@@ -371,6 +382,16 @@ buffer, if any)."
      :number (map-elt metadata "tracknumber")
      :date (map-elt metadata "date")
      :genre (map-elt metadata "genre"))))
+
+(defun listen-queue-tracks-for (filenames)
+  "Return tracks for FILENAMES.
+When `listen-queue-ffprobe-p' is non-nil, adds durations read
+with \"ffprobe\"."
+  (with-demoted-errors "listen-queue-tracks-for: %S"
+    (let ((tracks (remq nil (mapcar #'listen-queue-track filenames))))
+      (when listen-queue-ffprobe-p
+        (listen-queue--add-track-durations tracks))
+      tracks)))
 
 (defun listen-queue-shuffle (queue)
   "Shuffle QUEUE."
@@ -476,9 +497,7 @@ disk."
 (defun listen-queue-refresh (queue)
   "Refresh QUEUE's tracks from disk."
   (setf (listen-queue-tracks queue)
-        (delq nil (mapcar (lambda (track)
-                            (listen-queue-track (listen-track-filename track)))
-                          (listen-queue-tracks queue)))))
+        (listen-queue-tracks-for (mapcar #'listen-track-filename (listen-queue-tracks queue)))))
 
 (defun listen-queue-order-by ()
   "Order the queue by the column at point.
@@ -541,6 +560,52 @@ Expands filenames relative to playlist's directory."
       (goto-char (point-min))
       (cl-loop while (re-search-forward (rx bol (group (not (any "#")) (1+ nonl)) eol) nil t)
                collect (expand-file-name (match-string 1))))))
+
+;;;;; ffprobe queue
+
+(cl-defun listen-queue--add-track-durations (tracks &key (max-processes listen-queue-max-probe-processes))
+  "Add durations to TRACKS by probing with \"ffprobe\".
+MAX-PROCESSES limits the number of parallel probing processes."
+  ;; Because running "ffprobe" sequentially can be quite slow, we do
+  ;; it asynchronously in a queue.
+  ;; TODO: Generalize this.
+  (let (processes)
+    (cl-labels
+        ((probe-duration (track)
+           (with-demoted-errors "Unable to get duration for %S"
+             (with-current-buffer (get-buffer-create (generate-new-buffer " *listen: ffprobe*"))
+               (let* ((sentinel (lambda (process status)
+                                  (unwind-protect
+                                      (pcase status
+                                        ((or "killed\n" "interrupt\n"
+                                             (pred numberp)
+                                             (rx "exited abnormally with code " (1+ digit))))
+                                        ("finished\n"
+                                         (with-current-buffer (process-buffer process)
+                                           (goto-char (point-min))
+                                           (let ((duration (read (current-buffer))))
+                                             (cl-check-type duration number )
+                                             (setf (listen-track-duration track) duration)))))
+                                    (kill-buffer (process-buffer process))
+                                    (cl-callf2 remove process processes)
+                                    (probe-more))))
+                      (process (make-process
+                                :name "listen:ffprobe" :noquery t :type 'pipe :buffer (current-buffer)
+                                :sentinel sentinel
+                                :command (list "ffprobe" "-v" "quiet" "-print_format"
+                                               "compact=print_section=0:nokey=1:escape=csv"
+                                               "-show_entries" "format=duration"
+                                               (expand-file-name (listen-track-filename track))))))
+                 process))))
+         (probe-more ()
+           (while (and tracks (length< processes max-processes))
+             (let ((track (pop tracks)))
+               (push (probe-duration track) processes)))))
+      (with-timeout ((* 0.05 (length tracks)) (error "Probing for track duration timed out"))
+        (while (or tracks processes)
+          (probe-more)
+          (while (accept-process-output nil 0.01))
+          (sleep-for 0.01))))))
 
 ;;;; Footer
 

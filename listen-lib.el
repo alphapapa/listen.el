@@ -35,7 +35,7 @@
   name tracks current etc)
 
 (cl-defstruct listen-track
-  filename artist title album number genre length date rating etc)
+  filename artist title album number genre duration date rating etc)
 
 (cl-defmethod cl-print-object ((track listen-track) stream)
   (prin1 (listen-track-filename track) stream))
@@ -76,6 +76,10 @@
   "Return variable `listen-player' or a newly set one if nil."
   (or listen-player
       (setf listen-player (make-listen-player-vlc))))
+
+(defun listen-format-seconds (seconds)
+  "Return SECONDS formatted as an hour:minute:second-style duration."
+  (format-seconds "%h:%z%.2m:%.2s" seconds))
 
 ;;;; Methods
 
