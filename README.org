@@ -29,7 +29,7 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 
 * Installation
 
-Note that Listen.el uses [[https://www.videolan.org/vlc/][VLC]] to play audio, so it must be installed.
+Note that Listen.el uses [[https://www.videolan.org/vlc/][VLC]] to play audio, so it must be installed.  Also, ~ffprobe~ (part of [[https://ffmpeg.org/ffprobe.html][FFmpeg]]) is used to read track durations when available, but it is not required.
 
 ** GNU ELPA
 
@@ -69,6 +69,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 *Additions*
 + Command ~listen-queue-deduplicate~ removes duplicate tracks from a queue (by comparing artist, album, and title metadata case-insensitively).
++ Read track durations with ~ffprobe~ and show in library and queue views.
 
 ** v0.3
 
