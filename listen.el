@@ -322,8 +322,9 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
     ("qc" "View current" (lambda ()
                            "View current queue."
                            (interactive)
-                           (listen-queue (or (map-elt (listen-player-etc (listen--player)) :queue)
-                                             (listen-queue-complete))))
+                           (listen-queue (map-elt (listen-player-etc (listen--player)) :queue)))
+     :if (lambda ()
+           (map-elt (listen-player-etc (listen--player)) :queue))
      :transient t)
     ("qq" "View another" listen-queue
      :transient t)
