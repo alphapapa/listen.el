@@ -38,7 +38,7 @@
   filename artist title album number genre length date rating etc)
 
 (cl-defmethod cl-print-object ((track listen-track) stream)
-  (princ (listen-track-filename track) stream))
+  (prin1 (listen-track-filename track) stream))
 
 ;;;; Variables
 
@@ -50,7 +50,7 @@
 ;;;; Faces
 
 (defgroup listen-faces nil
-  "Faces."
+  "Faces used by `listen'."
   :group 'listen)
 
 (defface listen-artist '((t :inherit font-lock-variable-name-face))

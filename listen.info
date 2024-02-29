@@ -52,6 +52,7 @@ will be made more configurable and useful in the future.)
 
 Changelog
 
+* v0.3-pre: v03-pre.
 * v0.2: v02.
 * v0.1: v01.
 
@@ -71,7 +72,7 @@ for your Emacs version):
        :init (unless (package-installed-p 'listen)
                (package-vc-install '(listen :url "https://github.com/alphapapa/listen.el.git")))
        ;; For Emacs 30+:
-       :vc (:fetcher github :repo "alphapapa/listen.el"))
+       :vc (:url "https://github.com/alphapapa/listen.el"))
 
    You also need to have VLC installed.
 
@@ -103,13 +104,39 @@ File: README.info,  Node: Changelog,  Next: Development,  Prev: Usage,  Up: Top
 
 * Menu:
 
+* v0.3-pre: v03-pre.
 * v0.2: v02.
 * v0.1: v01.
 
 
-File: README.info,  Node: v02,  Next: v01,  Up: Changelog
+File: README.info,  Node: v03-pre,  Next: v02,  Up: Changelog
 
-4.1 v0.2
+4.1 v0.3-pre
+============
+
+*Additions*
+   • Command ‘listen-library-from-mpd’ shows tracks selected from MPD in
+     a library view.
+   • Command ‘listen-queue-library’ shows tracks selected from a queue
+     buffer in a library view.
+
+   *Changes*
+   • Reading tracks from MPD allows multiple selection using
+     ‘completing-read-multiple’.
+   • Various improvements in robustness.
+
+   *Fixes*
+   • Completing read of tracks from MPD.
+   • Unset VLC process’s query-on-exit flag.
+
+   *Credits*
+   • Thanks to Philip Kaludercic (https://amodernist.com/) for
+     reviewing.
+
+
+File: README.info,  Node: v02,  Next: v01,  Prev: v03-pre,  Up: Changelog
+
+4.2 v0.2
 ========
 
 *Additions*
@@ -129,7 +156,7 @@ File: README.info,  Node: v02,  Next: v01,  Up: Changelog
 
 File: README.info,  Node: v01,  Prev: v02,  Up: Changelog
 
-4.2 v0.1
+4.3 v0.1
 ========
 
 Initial release.
@@ -151,13 +178,14 @@ assigned to the FSF).
 
 Tag Table:
 Node: Top181
-Node: Installation1922
-Node: Configuration2529
-Node: Usage2868
-Node: Changelog3139
-Node: v023283
-Node: v013907
-Node: Development4005
+Node: Installation1943
+Node: Configuration2552
+Node: Usage2891
+Node: Changelog3162
+Node: v03-pre3327
+Node: v023996
+Node: v014636
+Node: Development4734
 
 End Tag Table
 

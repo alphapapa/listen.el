@@ -61,7 +61,8 @@
     (unless (process-live-p process)
       (setf (listen-player-process player)
             (apply #'start-process "listen-player-vlc" (generate-new-buffer " *listen-player-vlc*")
-                   command args)))))
+                   command args))
+      (set-process-query-on-exit-flag (listen-player-process player) nil))))
 
 (cl-defmethod listen--play ((player listen-player-vlc) file)
   "Play FILE with PLAYER.
@@ -116,7 +117,9 @@ Stops playing, clears playlist, adds FILE, and plays it."
   "Return or set PLAYER's VOLUME.
 VOLUME is an integer percentage."
   (if volume
-      (listen--send player (format "volume %s" (* 255 (/ volume 100.0))))
+      (progn
+        (cl-assert (<= 0 volume 100) nil "VOLUME must be 0-100")
+        (listen--send player (format "volume %s" (* 255 (/ volume 100.0)))))
     (* 100 (/ (string-to-number (listen--send player "volume")) 255.0))))
 
 (provide 'listen-vlc)

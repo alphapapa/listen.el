@@ -942,10 +942,10 @@ extension.
 
 Return one of symbols `vorbis', `opus', `flac', or `mp3'."
   (let ((case-fold-search t))
-    (cond ((string-match ".ogg$" filename) 'vorbis)
-          ((string-match ".opus$" filename) 'opus)
-          ((string-match ".flac$" filename) 'flac)
-          ((string-match ".mp3$" filename) 'mp3)
+    (cond ((string-match "\\.ogg$" filename) 'vorbis)
+          ((string-match "\\.opus$" filename) 'opus)
+          ((string-match "\\.flac$" filename) 'flac)
+          ((string-match "\\.mp3$" filename) 'mp3)
           (t nil))))
 
 (provide 'listen-info)

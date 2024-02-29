@@ -6,7 +6,7 @@
 ;; Maintainer: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13"))
-;; Version: 0.2
+;; Version: 0.3
 ;; URL: https://github.com/alphapapa/listen.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -250,11 +250,12 @@ command with completion."
 
 (defun listen-read-time (time)
   "Return TIME in seconds.
-TIME is an HH:MM:SS string."
-  (string-match (rx (group (1+ num))
-                    (optional ":" (group (1+ num))
-                              (optional ":" (group (1+ num)))))
-                time)
+TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
+  (unless (string-match (rx (group (1+ num))
+                            (optional ":" (group (1+ num))
+                                      (optional ":" (group (1+ num)))))
+                        time)
+    (user-error "TIME must be a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\""))
   (let ((fields (nreverse
                  (remq nil
                        (list (match-string 1 time)
@@ -279,7 +280,7 @@ TIME is an HH:MM:SS string."
       (if listen-player
           (concat "Listening: " (listen-mode-lighter))
         "Not listening"))
-    ("q" "Quit" listen-quit)]]
+    ("Q" "Quit" listen-quit)]]
 
   [["Player"
     ("SPC" "Pause" listen-pause)
@@ -303,7 +304,12 @@ TIME is an HH:MM:SS string."
                 (interactive)
                 (let ((player (listen--player)))
                   (listen-volume player (min 100 (+ (listen--volume player) 5)))))
-     :transient t)]]
+     :transient t)]
+   ["Library view"
+    ("lf" "from files" listen-library)
+    ("lm" "from MPD" listen-library-from-mpd)
+    ("lq" "from queue" listen-library-from-queue)
+    ("lp" "from playlist file" listen-library-from-playlist-file)]]
 
   [["Queue mode"
     :description
@@ -314,29 +320,38 @@ TIME is an HH:MM:SS string."
                   (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
                   (length (listen-queue-tracks queue)))
         "No queue"))
-    ("Q" "Show" listen-queue
+    ("qc" "View current" (lambda ()
+                           "View current queue."
+                           (interactive)
+                           (listen-queue (map-elt (listen-player-etc (listen--player)) :queue)))
+     :if (lambda ()
+           (map-elt (listen-player-etc (listen--player)) :queue))
      :transient t)
-    ("P" "Play another queue" listen-queue-play
+    ("qq" "View another" listen-queue
      :transient t)
-    ("N" "New" listen-queue-new
+    ("qp" "Play another queue" listen-queue-play
      :transient t)
-    ("D" "Discard" listen-queue-discard
+    ("qn" "New" listen-queue-new
+     :transient t)
+    ("qD" "Discard" listen-queue-discard
      :transient t)]
    ["Tracks"
-    ("A" "Add files" listen-queue-add-files
+    ("qaf" "Add files" listen-queue-add-files
      :transient t)
-    ("M" "Add files from MPD" listen-queue-add-from-mpd
+    ("qam" "Add from MPD" listen-queue-add-from-mpd
      :transient t)
-    ("T" "Select track" (lambda ()
-                          "Call `listen-queue-play' with prefix."
-                          (interactive)
-                          (let ((current-prefix-arg '(4)))
-                            (call-interactively #'listen-queue-play)))
+    ("qap" "Add from playlist file" listen-queue-add-from-playlist-file
      :transient t)
-    ("S" "Shuffle" (lambda ()
-                     "Shuffle queue."
-                     (interactive)
-                     (call-interactively #'listen-queue-shuffle))
+    ("qt" "Play track" (lambda ()
+                         "Call `listen-queue-play' with prefix."
+                         (interactive)
+                         (let ((current-prefix-arg '(4)))
+                           (call-interactively #'listen-queue-play)))
+     :transient t)
+    ("qs" "Shuffle" (lambda ()
+                      "Shuffle queue."
+                      (interactive)
+                      (call-interactively #'listen-queue-shuffle))
      :transient t)]])
 
 (provide 'listen)

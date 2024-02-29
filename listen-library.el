@@ -37,6 +37,8 @@
 
 ;;;; Variables
 
+(defvar listen-directory)
+
 (defvar-local listen-library-name nil)
 (defvar-local listen-library-paths nil)
 
@@ -132,7 +134,8 @@ show the view."
 Interactively, play tracks in sections at point and select QUEUE
 with completion."
   (interactive
-   (list (listen-queue-complete) (listen-library--selected-tracks)))
+   (list (listen-queue-complete :allow-new-p t)
+         (listen-library--selected-tracks)))
   (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
 
 (declare-function listen-play "listen")
@@ -143,7 +146,7 @@ prompt for a QUEUE to add them to."
   (interactive
    (let ((tracks (listen-library--selected-tracks)))
      (list tracks (when (length> tracks 1)
-                    (listen-queue-complete)))))
+                    (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t)))))
   (if queue
       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
     (listen-play (listen--player) (listen-track-filename (car tracks)))))
@@ -164,6 +167,23 @@ Interactively, read COMMAND and use tracks at point in
   (interactive)
   (cl-assert listen-library-paths)
   (listen-library listen-library-paths :name listen-library-name :buffer (current-buffer)))
+
+(declare-function listen-mpd-completing-read "listen-mpd")
+;;;###autoload
+(cl-defun listen-library-from-mpd (filenames)
+  "Show library view of FILENAMES selected from MPD library."
+  (interactive
+   (list (listen-mpd-completing-read :select-tag-p t)))
+  (listen-library filenames))
+
+(cl-defun listen-library-from-playlist-file (filename)
+  "Show library view tracks in playlist at FILENAME."
+  (interactive
+   (list (read-file-name "Add tracks from playlist: " listen-directory nil t nil
+                         (lambda (filename)
+                           (pcase (file-name-extension filename)
+                             ("m3u" t))))))
+  (listen-library (listen-queue--m3u-filenames filename)))
 
 ;;;; Functions
 
