@@ -72,6 +72,9 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Read track durations with ~ffprobe~ and show in library and queue views.
 + Bound key ~?~ to open the ~listen~ Transient menu in library and queue views.
 
+*Fixes*
++ Transposing a track in a queue keeps point on the track.
+
 ** v0.3
 
 *Additions*

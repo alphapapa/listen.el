@@ -171,7 +171,8 @@ If BACKWARDP, move it backward."
          (next-track (seq-elt (listen-queue-tracks queue) next-position)))
     (setf (seq-elt (listen-queue-tracks queue) next-position) track
           (seq-elt (listen-queue-tracks queue) position) next-track)
-    (listen-queue--update-buffer queue)))
+    (listen-queue--update-buffer queue)
+    (vtable-goto-object track)))
 
 (cl-defun listen-queue-transpose-backward (track queue)
   "Transpose TRACK backward in QUEUE."
