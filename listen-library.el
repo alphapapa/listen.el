@@ -88,6 +88,7 @@
 
 (defvar-keymap listen-library-mode-map
   :parent magit-section-mode-map
+  "?" #'listen
   "!" #'listen-library-shell-command
   "a" #'listen-library-add-tracks
   "g" #'listen-library-revert

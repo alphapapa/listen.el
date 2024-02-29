@@ -70,6 +70,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Additions*
 + Command ~listen-queue-deduplicate~ removes duplicate tracks from a queue (by comparing artist, album, and title metadata case-insensitively).
 + Read track durations with ~ffprobe~ and show in library and queue views.
++ Bound key ~?~ to open the ~listen~ Transient menu in library and queue views.
 
 ** v0.3
 

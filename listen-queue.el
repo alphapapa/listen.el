@@ -138,6 +138,7 @@
              :sort-by '((1 . ascend))
              ;; TODO: Add a transient to show these bindings when pressing "?".
              :actions (list "q" (lambda (_) (bury-buffer))
+                            "?" (lambda (_) (call-interactively #'listen))
                             "g" (lambda (_) (call-interactively #'listen-queue-revert))
                             "j" (lambda (_) (listen-queue-jump))
                             "n" (lambda (_) (forward-line 1))
