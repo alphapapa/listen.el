@@ -76,6 +76,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Various improvements in robustness.
 + Command ~listen-queue~ doesn't recreate its buffer when already open.
 + Key bindings in ~listen~ Transient menu.
++ Function ~listen-queue-complete~ accepts argument ~:allow-new-p~ to return a new queue if the entered name doesn't match an existing one.
 
 *Fixes*
 + Completing read of tracks from MPD.

@@ -249,22 +249,28 @@ select track as well."
       (alist-get selected map nil nil #'equal))))
 
 (declare-function listen--playing-p "listen-vlc")
-(cl-defun listen-queue-complete (&key (prompt "Queue"))
+(cl-defun listen-queue-complete (&key (prompt "Queue") allow-new-p)
   "Return a Listen queue selected with completion.
-PROMPT is passed to `format-prompt', which see."
-  (pcase (length listen-queues)
-    (0 (listen-queue--new (read-string "New queue name: ")))
-    (1 (car listen-queues))
-    (_ (let* ((player (listen--player))
-              (default-queue-name (or (when listen-queue
-                                        ;; In a listen buffer: offer its queue as default.
-                                        (listen-queue-name listen-queue))
-                                      (when (listen--playing-p player)
-                                        (listen-queue-name (map-elt (listen-player-etc player) :queue)))))
-              (queue-names (mapcar #'listen-queue-name listen-queues))
-              (prompt (format-prompt prompt default-queue-name))
-              (selected (completing-read prompt queue-names nil t nil nil default-queue-name)))
-         (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)))))
+If ALLOW-NEW-P, accept the name of a non-existent queue and
+return a new one having it.  PROMPT is passed to `format-prompt',
+which see."
+  (cl-labels ((read-queue ()
+                (let* ((player (listen--player))
+                       (default-queue-name (or (when listen-queue
+                                                 ;; In a listen buffer: offer its queue as default.
+                                                 (listen-queue-name listen-queue))
+                                               (when (listen--playing-p player)
+                                                 (listen-queue-name (map-elt (listen-player-etc player) :queue)))))
+                       (queue-names (mapcar #'listen-queue-name listen-queues))
+                       (prompt (format-prompt prompt default-queue-name))
+                       (selected (completing-read prompt queue-names nil (not allow-new-p)
+                                                  nil nil default-queue-name)))
+                  (or (cl-find selected listen-queues :key #'listen-queue-name :test #'equal)
+                      (when allow-new-p
+                        (listen-queue--new selected))))))
+    (pcase (length listen-queues)
+      (0 (listen-queue--new (read-string "New queue name: ")))
+      (_ (read-queue)))))
 
 ;;;###autoload
 (defun listen-queue-new (name)
