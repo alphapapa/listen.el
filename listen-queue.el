@@ -317,6 +317,19 @@ which see."
   (require 'listen-mpd)
   (listen-queue-add-files filenames queue))
 
+(cl-defun listen-queue-add-from-playlist-file (filename queue)
+  "Add tracks to QUEUE selected from playlist at FILENAME.
+M3U playlists are supported."
+  (interactive
+   (let ((filename
+          (read-file-name "Add tracks from playlist: " listen-directory nil t nil
+                          (lambda (filename)
+                            (pcase (file-name-extension filename)
+                              ("m3u" t)))))
+         (queue (listen-queue-complete :allow-new-p t)))
+     (list filename queue)))
+  (listen-queue-add-files (listen-queue--m3u-filenames filename) queue))
+
 (defun listen-queue-buffer (queue)
   "Return QUEUE's buffer, if any."
   (cl-loop for buffer in (buffer-list)
@@ -488,6 +501,18 @@ tracks in the queue unchanged)."
     (unless queue
       (error "No Listen queue found named %S" queue-name))
     (listen-queue queue)))
+
+;;;;; M3U playlist support
+
+(defun listen-queue--m3u-filenames (filename)
+  "Return filenames from M3U playlist at FILENAME.
+Expands filenames relative to playlist's directory."
+  (let ((default-directory (file-name-directory filename)))
+    (with-temp-buffer
+      (insert-file-contents filename)
+      (goto-char (point-min))
+      (cl-loop while (re-search-forward (rx bol (group (not (any "#")) (1+ nonl)) eol) nil t)
+               collect (expand-file-name (match-string 1))))))
 
 ;;;; Footer
 

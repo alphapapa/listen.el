@@ -337,7 +337,9 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
    ["Tracks"
     ("qaf" "Add files" listen-queue-add-files
      :transient t)
-    ("qam" "Add files from MPD" listen-queue-add-from-mpd
+    ("qam" "Add from MPD" listen-queue-add-from-mpd
+     :transient t)
+    ("qap" "Add from playlist file" listen-queue-add-from-playlist-file
      :transient t)
     ("qt" "Play track" (lambda ()
                          "Call `listen-queue-play' with prefix."
