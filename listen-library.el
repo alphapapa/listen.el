@@ -132,7 +132,8 @@ show the view."
 Interactively, play tracks in sections at point and select QUEUE
 with completion."
   (interactive
-   (list (listen-queue-complete) (listen-library--selected-tracks)))
+   (list (listen-queue-complete :allow-new-p t)
+         (listen-library--selected-tracks)))
   (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
 
 (declare-function listen-play "listen")
@@ -143,7 +144,7 @@ prompt for a QUEUE to add them to."
   (interactive
    (let ((tracks (listen-library--selected-tracks)))
      (list tracks (when (length> tracks 1)
-                    (listen-queue-complete)))))
+                    (listen-queue-complete :allow-new-p t)))))
   (if queue
       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
     (listen-play (listen--player) (listen-track-filename (car tracks)))))

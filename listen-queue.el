@@ -297,7 +297,7 @@ which see."
 (cl-defun listen-queue-add-files (files queue)
   "Add FILES to QUEUE."
   (interactive
-   (let ((queue (listen-queue-complete))
+   (let ((queue (listen-queue-complete :allow-new-p t))
          (path (expand-file-name (read-file-name "Enqueue file/directory: " listen-directory nil t))))
      (list (if (file-directory-p path)
                (directory-files-recursively path ".")
