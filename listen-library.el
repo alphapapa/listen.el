@@ -60,26 +60,29 @@
                                 (`nil nil)
                                 (date (format " (%s)" date)))))
                     "[unknown album]"))
-              (title (track)
-                (or (with-face 'listen-title (listen-track-title track))
-                    "[unknown title]"))
               (number (track)
                 (or (listen-track-number track) ""))
-              (track-string (track)
+              (title (track)
                 (concat (pcase (number track)
                           ("" "")
                           (else (format "%s: " else)))
-                        (title track)))
+                        (or (with-face 'listen-title (listen-track-title track))
+                            "[unknown title]")))
+              (format-track (track)
+                (let* ((duration (listen-track-duration track)))
+                  (when duration
+                    (setf duration (concat "(" (listen-format-seconds duration) ")" " ")))
+                  (concat duration (listen-track-filename track))))
               (make-fn (&rest args)
                 (apply #'make-taxy-magit-section
                        :make #'make-fn
-                       :format-fn #'cl-prin1-to-string
+                       :format-fn #'format-track
                        args)))
     (make-fn
      :name "Genres"
      :take (apply-partially #'taxy-take-keyed
                             (list #'genre #'artist ;; #'date
-                                  #'album #'track-string)))))
+                                  #'album #'title)))))
 
 ;;;; Mode
 
