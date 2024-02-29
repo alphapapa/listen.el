@@ -99,7 +99,8 @@ Interactively, uses the default player."
    (list (listen--player)))
   (delete-process (listen-player-process player))
   (when (eq player listen-player)
-    (setf listen-player nil)))
+    (setf listen-player nil))
+  (listen-mode--update))
 
 (declare-function listen-queue-next "listen-queue")
 (defun listen-next (player)
