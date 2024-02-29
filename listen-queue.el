@@ -138,7 +138,7 @@
                           "o" (lambda (_) (call-interactively #'listen-queue-order-by))
                           "s" (lambda (_) (listen-queue-shuffle listen-queue))
                           "l" (lambda (_) "Show (selected) tracks in library view."
-                                (call-interactively #'listen-queue-library))
+                                (call-interactively #'listen-queue-as-library))
                           "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
         (goto-char (point-min))
         (listen-queue--highlight-current)
@@ -195,9 +195,7 @@ If BACKWARDP, move it backward."
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
-  (when-let ((buffer (cl-loop for buffer in (buffer-list)
-                              when (eq queue (buffer-local-value 'listen-queue buffer))
-                              return buffer)))
+  (when-let ((buffer (listen-queue-buffer queue)))
     (with-current-buffer buffer
       (save-excursion
         (goto-char (point-min))
@@ -255,6 +253,7 @@ PROMPT is passed to `format-prompt', which see."
     (1 (car listen-queues))
     (_ (let* ((player (listen--player))
               (default-queue-name (or (when listen-queue
+                                        ;; In a listen buffer: offer its queue as default.
                                         (listen-queue-name listen-queue))
                                       (when (listen--playing-p player)
                                         (listen-queue-name (map-elt (listen-player-etc player) :queue)))))
@@ -306,16 +305,27 @@ PROMPT is passed to `format-prompt', which see."
   (require 'listen-mpd)
   (listen-queue-add-files (listen-mpd-completing-read :select-tag-p t) queue))
 
+(defun listen-queue-buffer (queue)
+  "Return QUEUE's buffer, if any."
+  (cl-loop for buffer in (buffer-list)
+           when (eq queue (buffer-local-value 'listen-queue buffer))
+           return buffer))
+
 (declare-function listen-library "listen-library")
-(defun listen-queue-library (tracks)
-  "Display TRACKS in library.
-Interactively, use tracks (or selected tracks) from current
-buffer's queue."
+(cl-defun listen-queue-as-library (&key tracks queue)
+  "Display TRACKS from QUEUE in library view.
+Interactively, use tracks from QUEUE (or selected ones in its
+buffer, if any)."
   (interactive
-   (list (if (region-active-p)
-             (listen-queue-selected)
-           (listen-queue-tracks listen-queue))))
-  (listen-library (mapcar #'listen-track-filename tracks)))
+   (let* ((queue (listen-queue-complete))
+          (tracks (or (if-let ((buffer (listen-queue-buffer queue)))
+                          (with-current-buffer buffer
+                            (when (region-active-p)
+                              (listen-queue-selected))))
+                      (listen-queue-tracks queue))))
+     (list :tracks tracks)))
+  (let ((tracks (or tracks (listen-queue-tracks queue))))
+    (listen-library (mapcar #'listen-track-filename tracks))))
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
