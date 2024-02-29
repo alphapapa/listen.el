@@ -309,11 +309,13 @@ which see."
   queue)
 
 (declare-function listen-mpd-completing-read "listen-mpd")
-(cl-defun listen-queue-add-from-mpd (queue)
-  "Add tracks to QUEUE selected from MPD library."
-  (interactive (list (listen-queue-complete)))
+(cl-defun listen-queue-add-from-mpd (filenames queue)
+  "Add FILENAMES (selected from MPD library) to QUEUE."
+  (interactive
+   (list (listen-mpd-completing-read :select-tag-p t)
+         (listen-queue-complete :allow-new-p t)))
   (require 'listen-mpd)
-  (listen-queue-add-files (listen-mpd-completing-read :select-tag-p t) queue))
+  (listen-queue-add-files filenames queue))
 
 (defun listen-queue-buffer (queue)
   "Return QUEUE's buffer, if any."
