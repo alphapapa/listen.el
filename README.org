@@ -75,6 +75,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Reading tracks from MPD allows multiple selection using ~completing-read-multiple~.
 + Various improvements in robustness.
 + Command ~listen-queue~ doesn't recreate its buffer when already open.
++ Key bindings in ~listen~ Transient menu.
 
 *Fixes*
 + Completing read of tracks from MPD.

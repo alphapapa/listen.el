@@ -280,7 +280,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
       (if listen-player
           (concat "Listening: " (listen-mode-lighter))
         "Not listening"))
-    ("q" "Quit" listen-quit)]]
+    ("Q" "Quit" listen-quit)]]
 
   [["Player"
     ("SPC" "Pause" listen-pause)
@@ -318,29 +318,35 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
                   (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
                   (length (listen-queue-tracks queue)))
         "No queue"))
-    ("Q" "Show" listen-queue
+    ("qc" "View current" (lambda ()
+                           "View current queue."
+                           (interactive)
+                           (listen-queue (or (map-elt (listen-player-etc (listen--player)) :queue)
+                                             (listen-queue-complete))))
      :transient t)
-    ("P" "Play another queue" listen-queue-play
+    ("qq" "View another" listen-queue
      :transient t)
-    ("N" "New" listen-queue-new
+    ("qp" "Play another queue" listen-queue-play
      :transient t)
-    ("D" "Discard" listen-queue-discard
+    ("qn" "New" listen-queue-new
+     :transient t)
+    ("qD" "Discard" listen-queue-discard
      :transient t)]
    ["Tracks"
-    ("A" "Add files" listen-queue-add-files
+    ("qaf" "Add files" listen-queue-add-files
      :transient t)
-    ("M" "Add files from MPD" listen-queue-add-from-mpd
+    ("qam" "Add files from MPD" listen-queue-add-from-mpd
      :transient t)
-    ("T" "Select track" (lambda ()
-                          "Call `listen-queue-play' with prefix."
-                          (interactive)
-                          (let ((current-prefix-arg '(4)))
-                            (call-interactively #'listen-queue-play)))
+    ("qt" "Play track" (lambda ()
+                           "Call `listen-queue-play' with prefix."
+                           (interactive)
+                           (let ((current-prefix-arg '(4)))
+                             (call-interactively #'listen-queue-play)))
      :transient t)
-    ("S" "Shuffle" (lambda ()
-                     "Shuffle queue."
-                     (interactive)
-                     (call-interactively #'listen-queue-shuffle))
+    ("qs" "Shuffle" (lambda ()
+                      "Shuffle queue."
+                      (interactive)
+                      (call-interactively #'listen-queue-shuffle))
      :transient t)]])
 
 (provide 'listen)
