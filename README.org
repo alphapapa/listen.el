@@ -67,7 +67,8 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 ** v0.4-pre
 
-Nothing new yet.
+*Additions*
++ Command ~listen-queue-deduplicate~ removes duplicate tracks from a queue (by comparing artist, album, and title metadata case-insensitively).
 
 ** v0.3
 

@@ -390,6 +390,34 @@ buffer, if any)."
     (setf (listen-queue-tracks queue) tracks))
   (listen-queue--update-buffer queue))
 
+(cl-defun listen-queue-deduplicate (queue)
+  "Remove duplicate tracks from QUEUE.
+Tracks that appear to have the same metadata (artist, album, and
+title, compared case-insensitively) are deduplicated."
+  (interactive (list (listen-queue-complete)))
+  (setf (listen-queue-tracks queue)
+        (cl-remove-duplicates
+         (listen-queue-tracks queue)
+         :test (lambda (a b)
+                 (pcase-let ((( cl-struct listen-track
+                                (artist a-artist) (album a-album) (title a-title)) a)
+                             (( cl-struct listen-track
+                                (artist b-artist) (album b-album) (title b-title)) b))
+                   (and (or (and a-artist b-artist)
+                            (and a-album b-album)
+                            (and a-title b-title))
+                        ;; Tracks have at least one common metadata field: compare them.
+                        (if (and a-artist b-artist)
+                            (string-equal-ignore-case a-artist b-artist)
+                          t)
+                        (if (and a-album b-album)
+                            (string-equal-ignore-case a-album b-album)
+                          t)
+                        (if (and a-title b-title)
+                            (string-equal-ignore-case a-title b-title)
+                          t))))))
+  (listen-queue--update-buffer queue))
+
 (defun listen-queue-next (queue)
   "Play next track in QUEUE."
   (interactive (list (listen-queue-complete)))

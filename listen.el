@@ -348,6 +348,8 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
                          (let ((current-prefix-arg '(4)))
                            (call-interactively #'listen-queue-play)))
      :transient t)
+    ("qd" "Deduplicate" listen-queue-deduplicate
+     :transient t)
     ("qs" "Shuffle" (lambda ()
                       "Shuffle queue."
                       (interactive)
