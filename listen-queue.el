@@ -167,10 +167,10 @@ If BACKWARDP, move it backward."
          (position (seq-position (listen-queue-tracks queue) track))
          (_ (when (= (funcall fn position) (length (listen-queue-tracks queue)))
               (user-error "Track at end of queue")))
-         (next-position (funcall fn position))
-         (next-track (seq-elt (listen-queue-tracks queue) next-position)))
-    (setf (seq-elt (listen-queue-tracks queue) next-position) track
-          (seq-elt (listen-queue-tracks queue) position) next-track)
+         (next-position (funcall fn position)))
+    ;; Hey, a chance to use `rotatef'!
+    (cl-rotatef (seq-elt (listen-queue-tracks queue) next-position)
+                (seq-elt (listen-queue-tracks queue) position))
     (listen-queue--update-buffer queue)
     (vtable-goto-object track)))
 
