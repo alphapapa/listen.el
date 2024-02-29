@@ -579,7 +579,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
     (cl-labels
         ((probe-duration (track)
            (with-demoted-errors "Unable to get duration for %S"
-             (with-current-buffer (get-buffer-create (generate-new-buffer " *listen: ffprobe*"))
+             (with-current-buffer (generate-new-buffer " *listen: ffprobe*")
                (let* ((sentinel (lambda (process status)
                                   (unwind-protect
                                       (pcase status
