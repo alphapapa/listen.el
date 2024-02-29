@@ -37,6 +37,8 @@
 
 ;;;; Variables
 
+(defvar listen-directory)
+
 (defvar-local listen-library-name nil)
 (defvar-local listen-library-paths nil)
 
