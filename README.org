@@ -65,7 +65,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 * Changelog
 
-** v0.3-pre
+** v0.3
 
 *Additions*
 + Command ~listen-library-from-mpd~ shows tracks selected from MPD in a library view.
