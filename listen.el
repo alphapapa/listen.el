@@ -308,7 +308,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
    ["Library view"
     ("lf" "from files" listen-library)
     ("lm" "from MPD" listen-library-from-mpd)
-    ("lq" "from queue" listen-queue-as-library)]]
+    ("lq" "from queue" listen-library-from-queue)]]
 
   [["Queue mode"
     :description

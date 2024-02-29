@@ -140,7 +140,7 @@
                             "o" (lambda (_) (call-interactively #'listen-queue-order-by))
                             "s" (lambda (_) (listen-queue-shuffle listen-queue))
                             "l" (lambda (_) "Show (selected) tracks in library view."
-                                  (call-interactively #'listen-queue-as-library))
+                                  (call-interactively #'listen-library-from-queue))
                             "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
           (goto-char (point-min))
           (listen-queue--highlight-current)
@@ -324,7 +324,7 @@ which see."
            return buffer))
 
 (declare-function listen-library "listen-library")
-(cl-defun listen-queue-as-library (&key tracks queue)
+(cl-defun listen-library-from-queue (&key tracks queue)
   "Display TRACKS from QUEUE in library view.
 Interactively, use tracks from QUEUE (or selected ones in its
 buffer, if any)."
