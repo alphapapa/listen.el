@@ -338,10 +338,10 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
     ("qam" "Add files from MPD" listen-queue-add-from-mpd
      :transient t)
     ("qt" "Play track" (lambda ()
-                           "Call `listen-queue-play' with prefix."
-                           (interactive)
-                           (let ((current-prefix-arg '(4)))
-                             (call-interactively #'listen-queue-play)))
+                         "Call `listen-queue-play' with prefix."
+                         (interactive)
+                         (let ((current-prefix-arg '(4)))
+                           (call-interactively #'listen-queue-play)))
      :transient t)
     ("qs" "Shuffle" (lambda ()
                       "Shuffle queue."
