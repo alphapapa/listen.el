@@ -269,6 +269,9 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 
 (require 'transient)
 
+(declare-function listen-queue "listen-queue")
+(declare-function listen-queue-shuffle "listen-queue")
+
 ;; It seems that autoloading the transient prefix command doesn't work
 ;; as expected, so we'll try this workaround.
 ;;;###autoload
