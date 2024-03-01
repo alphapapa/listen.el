@@ -326,16 +326,16 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
                   (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
                   (length (listen-queue-tracks queue)))
         "No queue"))
-    ("qc" "View current" (lambda ()
+    ("qq" "View current" (lambda ()
                            "View current queue."
                            (interactive)
                            (listen-queue (map-elt (listen-player-etc (listen--player)) :queue)))
      :if (lambda ()
            (map-elt (listen-player-etc (listen--player)) :queue))
      :transient t)
-    ("qq" "View another" listen-queue
+    ("qo" "View other" listen-queue
      :transient t)
-    ("qp" "Play another queue" listen-queue-play
+    ("qp" "Play other" listen-queue-play
      :transient t)
     ("qn" "New" listen-queue-new
      :transient t)
