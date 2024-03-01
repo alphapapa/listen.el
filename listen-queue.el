@@ -609,7 +609,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
            (while (and tracks (length< processes max-processes))
              (let ((track (pop tracks)))
                (push (probe-duration track) processes)))))
-      (with-timeout ((* 0.05 (length tracks)) (error "Probing for track duration timed out"))
+      (with-timeout ((* 0.1 (length tracks)) (error "Probing for track duration timed out"))
         (while (or tracks processes)
           (probe-more)
           (while (accept-process-output nil 0.01))
