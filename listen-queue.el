@@ -65,6 +65,19 @@
   "Maximum number of processes to run while probing track durations."
   :type 'natnum)
 
+(defcustom listen-queue-repeat-mode nil
+  "Whether and how to repeat queues.
+This is provided as a customization option, but it's mainly
+intended to be set from the `listen-menu'."
+  :type '(choice (const :tag "Don't repeat" nil)
+                 (const :tag "Repeat queue" queue)
+                 (const :tag "Shuffle and repeat queue"
+                        :documentation "When the queue finishes, shuffle it and play again."
+                        shuffle)
+                 ;; TODO: Implement track repeat (it doesn't fit into the current logic).
+                 ;; (const :tag "Repeat track" track)
+                 ))
+
 ;;;; Commands
 
 ;; (defmacro listen-queue-command (command)
