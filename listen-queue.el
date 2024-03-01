@@ -234,7 +234,8 @@ If BACKWARDP, move it backward."
         (goto-char (point-min))
         (when (vtable-current-table)
           (vtable-revert-command))
-        (goto-char pos))
+        (goto-char pos)
+        (goto-char (pos-bol)))
       (listen-queue--highlight-current))))
 
 (declare-function listen-mode "listen")
