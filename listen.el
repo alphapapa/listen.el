@@ -291,6 +291,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 (defalias 'listen #'listen-menu)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
+  :info-manual "(listen)"
   :refresh-suffixes t
   [["Listen"
     :description
