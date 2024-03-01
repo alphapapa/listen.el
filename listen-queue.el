@@ -590,7 +590,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
                                          (with-current-buffer (process-buffer process)
                                            (goto-char (point-min))
                                            (let ((duration (read (current-buffer))))
-                                             (cl-check-type duration number )
+                                             (cl-check-type duration number)
                                              (setf (listen-track-duration track) duration)))))
                                     (kill-buffer (process-buffer process))
                                     (cl-callf2 remove process processes)
