@@ -170,7 +170,11 @@ intended to be set from the `listen-menu'."
                             "s" (lambda (_) (listen-queue-shuffle listen-queue))
                             "l" (lambda (_) "Show (selected) tracks in library view."
                                   (call-interactively #'listen-library-from-queue))
-                            "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
+                            "!" (lambda (_) (call-interactively #'listen-queue-shell-command))))
+            (vtable-end-of-table)
+            (insert (format "Duration: %s"
+                            (listen-format-seconds (cl-reduce #'+ (listen-queue-tracks queue)
+                                                              :key #'listen-track-duration)))))
           (goto-char (point-min))
           (listen-queue--highlight-current)
           (hl-line-mode 1))))

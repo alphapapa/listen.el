@@ -69,6 +69,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 *Additions*
 + Option ~listen-queue-repeat-mode~ (also settable in ~listen-menu~) allows repeating a queue in-order or shuffled.
++ Show total queue duration at bottom of track list.
 
 *Fixes*
 + Increase timeout for reading track durations.
