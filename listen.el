@@ -65,6 +65,7 @@
 ;;;; Variables
 
 (defvar listen-mode-update-mode-line-timer nil)
+(defvar listen-queue-repeat-mode)
 
 ;;;; Customization
 
