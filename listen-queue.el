@@ -88,6 +88,7 @@ intended to be set from the `listen-menu'."
 ;;        (with-current-buffer list-buffer
 ;;          (vtable-revert)))))
 
+(declare-function listen-jump "listen")
 (declare-function listen-menu "listen")
 (declare-function listen-pause "listen")
 ;;;###autoload
@@ -157,7 +158,7 @@ intended to be set from the `listen-menu'."
              :actions (list "q" (lambda (_) (bury-buffer))
                             "?" (lambda (_) (call-interactively #'listen-menu))
                             "g" (lambda (_) (call-interactively #'listen-queue-revert))
-                            "j" (lambda (_) (listen-queue-jump))
+                            "j" #'listen-jump
                             "n" (lambda (_) (forward-line 1))
                             "p" (lambda (_) (forward-line -1))
                             "N" (lambda (track) (listen-queue-transpose-forward track queue))
@@ -240,7 +241,8 @@ If BACKWARDP, move it backward."
           (vtable-revert-command))
         (goto-char pos)
         (goto-char (pos-bol)))
-      (listen-queue--highlight-current))))
+      (listen-queue--highlight-current)
+      (listen-queue-goto-current))))
 
 (declare-function listen-mode "listen")
 (declare-function listen-play "listen")
@@ -264,7 +266,7 @@ select track as well."
     (listen-mode))
   queue)
 
-(defun listen-queue-jump ()
+(defun listen-queue-goto-current ()
   "Jump to current track."
   (interactive)
   (when-let ((current-track (listen-queue-current listen-queue)))

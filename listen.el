@@ -171,6 +171,12 @@ command with completion."
         (display-buffer-alist `((,(regexp-quote shell-command-buffer-name-async) display-buffer-no-window))))
     (async-shell-command command)))
 
+(defun listen-jump (track)
+  "Jump to TRACK in a Dired buffer.
+Interactively, jump to current queue's current track."
+  (interactive (list (listen-queue-current (map-elt (listen-player-etc (listen--player)) :queue))))
+  (dired-jump nil (listen-track-filename track)))
+
 ;;;; Mode
 
 (defvar listen-mode-lighter nil)
@@ -324,6 +330,17 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
                 (let ((player (listen--player)))
                   (listen-volume player (min 100 (+ (listen--volume player) 5)))))
      :transient t)]
+   ["Repeat"
+    ("rn" "None" (lambda () (interactive) (setopt listen-queue-repeat-mode nil))
+     :inapt-if (lambda () (not listen-queue-repeat-mode)))
+    ("rq" "Queue" (lambda () (interactive) (setopt listen-queue-repeat-mode 'queue))
+     :inapt-if (lambda () (eq 'queue listen-queue-repeat-mode)))
+    ("rs" "Queue and shuffle" (lambda () (interactive) (setopt listen-queue-repeat-mode 'shuffle))
+     :inapt-if (lambda () (eq 'shuffle listen-queue-repeat-mode)))
+    ;; ("qrt" "Track" (lambda () (interactive) (setopt listen-queue-repeat-mode 'track))
+    ;;  :inapt-if (lambda () (eq 'track listen-queue-repeat-mode)))
+    ]
+
    ["Library view"
     ("lf" "from files" listen-library)
     ("lm" "from MPD" listen-library-from-mpd)
@@ -355,12 +372,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
     ("qD" "Discard" listen-queue-discard
      :transient t)]
    ["Tracks"
-    ("qaf" "Add files" listen-queue-add-files
-     :transient t)
-    ("qam" "Add from MPD" listen-queue-add-from-mpd
-     :transient t)
-    ("qap" "Add from playlist file" listen-queue-add-from-playlist-file
-     :transient t)
+    ("qj" "Jump to current in Dired" listen-jump)
     ("qt" "Play track" (lambda ()
                          "Call `listen-queue-play' with prefix."
                          (interactive)
@@ -371,16 +383,13 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
      :transient t)
     ("qs" "Shuffle" (lambda () (interactive) (call-interactively #'listen-queue-shuffle))
      :transient t)]
-   ["Repeat"
-    ("qrn" "None" (lambda () (interactive) (setopt listen-queue-repeat-mode nil))
-     :inapt-if (lambda () (not listen-queue-repeat-mode)))
-    ("qrq" "Queue" (lambda () (interactive) (setopt listen-queue-repeat-mode 'queue))
-     :inapt-if (lambda () (eq 'queue listen-queue-repeat-mode)))
-    ("qrs" "Queue and shuffle" (lambda () (interactive) (setopt listen-queue-repeat-mode 'shuffle))
-     :inapt-if (lambda () (eq 'shuffle listen-queue-repeat-mode)))
-    ;; ("qrt" "Track" (lambda () (interactive) (setopt listen-queue-repeat-mode 'track))
-    ;;  :inapt-if (lambda () (eq 'track listen-queue-repeat-mode)))
-    ]])
+   ["Add tracks"
+    ("qaf" "from files" listen-queue-add-files
+     :transient t)
+    ("qam" "from MPD" listen-queue-add-from-mpd
+     :transient t)
+    ("qap" "from playlist file" listen-queue-add-from-playlist-file
+     :transient t)]])
 
 (provide 'listen)
 

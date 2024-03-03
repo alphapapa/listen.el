@@ -87,6 +87,7 @@
 ;;;; Mode
 
 (declare-function listen-menu "listen")
+(declare-function listen-jump "listen")
 
 (defvar-keymap listen-library-mode-map
   :parent magit-section-mode-map
@@ -94,6 +95,7 @@
   "!" #'listen-library-shell-command
   "a" #'listen-library-add-tracks
   "g" #'listen-library-revert
+  "j" #'listen-library-jump
   "RET" #'listen-library-play-or-add)
 
 (define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
@@ -156,6 +158,12 @@ prompt for a QUEUE to add them to."
   (if queue
       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
     (listen-play (listen--player) (listen-track-filename (car tracks)))))
+
+(defun listen-library-jump (track)
+  "Jump to TRACK in a Dired buffer."
+  (interactive
+   (list (car (listen-library--selected-tracks))))
+  (listen-jump track))
 
 (declare-function listen-shell-command "listen")
 (defun listen-library-shell-command (command filenames)
