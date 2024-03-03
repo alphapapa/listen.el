@@ -175,7 +175,7 @@ command with completion."
   "Jump to TRACK in a Dired buffer.
 Interactively, jump to current queue's current track."
   (interactive (list (listen-queue-current (map-elt (listen-player-etc (listen--player)) :queue))))
-  (dired-jump nil (listen-track-filename track)))
+  (dired-jump-other-window (listen-track-filename track)))
 
 ;;;; Mode
 
