@@ -74,6 +74,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 *Fixes*
 + Increase timeout for reading track durations.
++ Command ~listen-queue-deduplicate~ first removes any tracks not backed by a file.
 
 ** v0.4
 

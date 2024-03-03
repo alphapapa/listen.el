@@ -440,9 +440,15 @@ with \"ffprobe\"."
 (cl-defun listen-queue-deduplicate (queue)
   "Remove duplicate tracks from QUEUE.
 Tracks that appear to have the same metadata (artist, album, and
-title, compared case-insensitively) are deduplicated."
+title, compared case-insensitively) are deduplicated.  Also, any
+tracks no longer backed by a file are removed."
   (interactive (list (listen-queue-complete)))
+  ;; Remove any tracks with missing files first, so as not to remove
+  ;; an apparent duplicate that does have a file.
   (setf (listen-queue-tracks queue)
+        (cl-remove-if-not #'file-exists-p (listen-queue-tracks queue)
+                          :key #'listen-track-filename)
+        (listen-queue-tracks queue)
         (cl-remove-duplicates
          (listen-queue-tracks queue)
          :test (lambda (a b)
