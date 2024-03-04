@@ -381,6 +381,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
                   (cl-position (listen-queue-current queue) (listen-queue-tracks queue))
                   (length (listen-queue-tracks queue)))
         "No queue"))
+    ("ql" "List" listen-queue-list)
     ("qq" "View current" (lambda ()
                            "View current queue."
                            (interactive)
@@ -388,8 +389,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
      :if (lambda ()
            (map-elt (listen-player-etc (listen--player)) :queue))
      :transient t)
-    ("qo" "View other" listen-queue
-     :transient t)
+    ("qo" "View other" listen-queue)
     ("qp" "Play other" listen-queue-play
      :transient t)
     ("qn" "New" listen-queue-new

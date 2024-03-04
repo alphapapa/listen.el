@@ -68,6 +68,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 ** v0.5-pre
 
 *Additions*
++ Command ~listen-queue-list~ shows a list of queues.
 + Command ~listen-jump~ (bound to ~j~ in queue and library buffers) jumps to the track at point in a Dired buffer.
 + Command ~listen-track-view~ shows a track's complete metadata in a table view.
 + Mode ~listen-queue-delay-mode~ plays a queue with a configurable, random delay between tracks.
