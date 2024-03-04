@@ -25,6 +25,21 @@
 
 (require 'cl-lib)
 
+;;;; Macros
+
+(defmacro listen-once-per (value-form &rest body)
+  "Evaluate BODY at most once while VALUE-FORM has the same value."
+  (declare (indent defun))
+  (let ((value-defvar (gensym "listen-once-per"))
+        (value-var (gensym "listen-once-per")))
+    `(progn
+       (defvar ,value-defvar nil
+         "Defined by macro `listen-once-per', which see.")
+       (let ((,value-var ,value-form))
+         (unless (equal ,value-defvar ,value-var)
+           (setf ,value-defvar ,value-var)
+           ,@body)))))
+
 ;;;; Types
 
 (cl-defstruct listen-player

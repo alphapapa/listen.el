@@ -711,6 +711,37 @@ MAX-PROCESSES limits the number of parallel probing processes."
           (while (accept-process-output nil 0.01))
           (sleep-for 0.01))))))
 
+;;;;; Queue delay mode
+
+;; When you want music to play periodically, like while playing
+;; Minecraft.
+
+(defcustom listen-queue-delay-time-range '(120 . 600)
+  "Range of delay in seconds."
+  :type '(cons (natnum :tag "Minimum delay")
+               (natnum :tag "Maximum delay")))
+
+(declare-function listen-play-next "listen")
+(define-minor-mode listen-queue-delay-mode
+  "Delay playing the next track in the queue by a random amount of time.
+Delay according to `listen-queue-delay-time-range', which see."
+  :global t
+  (if listen-queue-delay-mode
+      (advice-add #'listen-play-next :around #'listen-queue-play-next-delayed)
+    (advice-remove #'listen-play-next #'listen-queue-play-next-delayed)))
+
+(defun listen-queue-play-next-delayed (oldfun player)
+  "Call OLDFUN to play PLAYER's queue's next track after a random delay.
+Delay according to `listen-queue-delay-time-range', which see."
+  (when-let ((queue (map-elt (listen-player-etc player) :queue)))
+    ;; Wrapping with `listen-once-per' protects against this function
+    ;; being called multiple times while `listen-queue-delay-mode' is
+    ;; enabled.  Sort of a hack, but it will serve until a refactor.
+    (listen-once-per (listen-queue-next-track queue)
+      (let ((delay-seconds (max (car listen-queue-delay-time-range)
+                                (random (cdr listen-queue-delay-time-range)))))
+        (run-at-time delay-seconds nil oldfun player)))))
+
 ;;;; Footer
 
 (provide 'listen-queue)
