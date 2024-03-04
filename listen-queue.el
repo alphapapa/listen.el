@@ -572,18 +572,18 @@ tracks in the queue unchanged)."
 
 (cl-defun listen-queue-remaining-duration (&optional (player (listen--player)))
   "Return seconds remaining in PLAYER's queue."
-  (let* ((queue (map-elt (listen-player-etc player) :queue))
-         (current-track-remaining (- (listen--length player)
-                                     (listen--elapsed player)))
-         (remaining-tracks (cl-subseq (listen-queue-tracks queue)
-                                      (1+ (cl-position (listen-queue-current queue)
-                                                       (listen-queue-tracks queue)))))
-         (remaining-tracks-duration (cl-reduce #'+ remaining-tracks :key #'listen-track-duration)))
+  (when-let ((queue (map-elt (listen-player-etc player) :queue))
+             (current-track-remaining (- (listen--length player) (listen--elapsed player)))
+             (current-track-position (cl-position (listen-queue-current queue)
+                                                  (listen-queue-tracks queue)))
+             (remaining-tracks (cl-subseq (listen-queue-tracks queue) (1+ current-track-position)))
+             (remaining-tracks-duration (cl-reduce #'+ remaining-tracks :key #'listen-track-duration)))
     (+ current-track-remaining remaining-tracks-duration)))
 
 (cl-defun listen-queue-format-remaining (&optional (player (listen--player)))
   "Return PLAYER's queue's remaining duration formatted."
-  (concat "-" (listen-format-seconds (listen-queue-remaining-duration player))))
+  (when-let ((duration (listen-queue-remaining-duration player)))
+    (concat "-" (listen-format-seconds duration))))
 
 ;;;;; Track view
 
