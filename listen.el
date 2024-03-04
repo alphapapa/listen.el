@@ -98,6 +98,12 @@ without extra whitespace."
   :type '(repeat (choice (const :tag "Remaining queue time" listen-queue-format-remaining)
                          function)))
 
+(defcustom listen-track-end-functions '(listen-play-next)
+  "Functions called when a track finishes playing.
+Called with one argument, the player (if the player has a queue,
+its current track will be the one that just finished playing)."
+  :type 'hook)
+
 ;;;; Commands
 
 (defun listen-quit (player)
@@ -254,26 +260,31 @@ Interactively, jump to current queue's current track."
                   ;; HACK: It seems that sometimes the player gets restarted
                   ;; even when paused: this extra check should prevent that.
                   (member (listen--status listen-player) '("playing" "paused")))
-        (when-let ((queue (map-elt (listen-player-etc listen-player) :queue)))
-          (if-let ((next-track (listen-queue-next-track queue)))
-              (progn
-                (listen-queue-play queue next-track)
-                (setf playing-next-p t))
-            ;; Queue done: repeat?
-            (pcase listen-queue-repeat-mode
-              ('queue
-               (listen-queue-play queue)
-               (setf playing-next-p t))
-              ('shuffle
-               (listen-queue-play queue (seq-random-elt (listen-queue-tracks queue)))
-               (listen-queue-shuffle queue)
-               (setf playing-next-p t)))))))
+        (setf playing-next-p
+              (run-hook-with-args 'listen-track-end-functions listen-player))))
     (setf listen-mode-lighter
           (when (and listen-player (listen--running-p listen-player))
             (listen-mode-lighter)))
     (when playing-next-p
       ;; TODO: Remove this (I think it's not necessary anymore).
       (force-mode-line-update 'all))))
+
+(defun listen-play-next (player)
+  "Play PLAYER's queue's next track and return non-nil if playing."
+  (when-let ((queue (map-elt (listen-player-etc player) :queue)))
+    (if-let ((next-track (listen-queue-next-track queue)))
+        (progn
+          (listen-queue-play queue next-track)
+          t)
+      ;; Queue done: repeat?
+      (pcase listen-queue-repeat-mode
+        ('queue
+         (listen-queue-play queue)
+         t)
+        ('shuffle
+         (listen-queue-play queue (seq-random-elt (listen-queue-tracks queue)))
+         (listen-queue-shuffle queue)
+         t)))))
 
 ;;;; Functions
 
