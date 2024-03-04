@@ -299,14 +299,15 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
   "Show Listen menu."
   :info-manual "(listen)"
   :refresh-suffixes t
-  [["Listen"
-    :description
-    (lambda ()
-      (if listen-player
-          (concat "Listening: " (listen-mode-lighter))
-        "Not listening"))
-    ("Q" "Quit" listen-quit)]]
-
+  ["Listen"
+   :description
+   (lambda ()
+     (if listen-player
+         (concat "Listening: " (listen-mode-lighter))
+       "Not listening"))
+   ;; Getting this layout to work required a lot of trial-and-error.
+   [("Q" "Quit" listen-quit)]
+   [("m" "Metadata" listen-view-track)]]
   [["Player"
     ("SPC" "Pause" listen-pause)
     ("p" "Play" listen-play)

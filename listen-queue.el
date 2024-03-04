@@ -419,6 +419,14 @@ with \"ffprobe\"."
         (listen-queue--add-track-durations tracks))
       tracks)))
 
+(defun listen-queue-track-revert (track)
+  "Revert TRACK's metadata from disk."
+  ;; TODO: Use this where appropriate.
+  (let ((new-track (car (listen-queue-tracks-for (list (listen-track-filename track))))))
+    (dolist (slot '(artist title album number date genre))
+      (setf (cl-struct-slot-value 'listen-track slot track)
+            (cl-struct-slot-value 'listen-track slot new-track)))))
+
 (defun listen-queue-shuffle (queue)
   "Shuffle QUEUE."
   (interactive (list (listen-queue-complete)))
@@ -560,6 +568,52 @@ tracks in the queue unchanged)."
         (cl-loop collect (vtable-current-object)
                  do (forward-line 1)
                  while (<= (point) end))))))
+
+;;;;; Track view
+
+;;;###autoload
+(defun listen-view-track (track)
+  "View information about TRACK."
+  (interactive (list (listen-queue-current (map-elt (listen-player-etc (listen--player)) :queue))))
+  (with-current-buffer (get-buffer-create (format "*Listen track: %S*" (listen-track-filename track)))
+    (let ((inhibit-read-only t))
+      (read-only-mode)
+      (erase-buffer)
+      (toggle-truncate-lines 1)
+      (cl-labels ((get (slot)
+                    (cons (capitalize (symbol-name slot))
+                          (cl-struct-slot-value 'listen-track slot track))))
+        (make-vtable
+         :columns
+         (list (list :name "Key" :getter (lambda (row _table) (car row)))
+               (list :name "Value" :getter (lambda (row _table) (cdr row))))
+         :objects-function
+         (lambda ()
+           (append (list (get 'filename)
+                         (get 'artist)
+                         (get 'title)
+                         (get 'album)
+                         (get 'number)
+                         (get 'date)
+                         (cons " " " "))
+                   (sort (listen-info--decode-info-fields (listen-track-filename track))
+                         (lambda (a b)
+                           (string< (car a) (car b))))))
+         :actions (list "q" (lambda (_) (bury-buffer))
+                        "g" (lambda (_)
+                              (listen-queue-track-revert track)
+                              (vtable-revert-command))
+                        "?" (lambda (_) (call-interactively #'listen-menu))
+                        "n" (lambda (_) (forward-line 1))
+                        "p" (lambda (_) (forward-line -1))
+                        "SPC" (lambda (_) (call-interactively #'listen-pause))
+                        "!" (lambda (_) (let ((filename (listen-track-filename track)))
+                                          (listen-shell-command
+                                           (read-shell-command (format "Run command on %S: " filename))
+                                           (list filename)))))))
+      (goto-char (point-min))
+      (hl-line-mode 1))
+    (pop-to-buffer (current-buffer))))
 
 ;;;;; Bookmark support
 
