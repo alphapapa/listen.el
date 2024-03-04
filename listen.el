@@ -98,6 +98,12 @@ without extra whitespace."
   :type '(repeat (choice (const :tag "Remaining queue time" listen-queue-format-remaining)
                          function)))
 
+(defcustom listen-track-after-start-functions nil
+  "Functions called after a track starts playing.
+Called with one argument, the player (if the player has a queue,
+its current track will be the one that just started playing)."
+  :type 'hook)
+
 (defcustom listen-track-end-functions '(listen-play-next)
   "Functions called when a track finishes playing.
 Called with one argument, the player (if the player has a queue,
@@ -140,7 +146,8 @@ Interactively, uses the default player."
   (interactive
    (list (listen--player)
          (read-file-name "Play file: " listen-directory nil t)))
-  (listen--play player file))
+  (listen--play player file)
+  (run-hook-with-args 'listen-track-after-start-functions player))
 
 (defun listen-volume (player volume)
   "Set PLAYER's volume to VOLUME %.
@@ -285,6 +292,70 @@ Interactively, jump to current queue's current track."
          (listen-queue-play queue (seq-random-elt (listen-queue-tracks queue)))
          (listen-queue-shuffle queue)
          t)))))
+
+;;;; Fade mode
+
+(defvar listen-fade-timer nil)
+
+(define-minor-mode listen-fade-mode
+  "Fade tracks in and out."
+  :global t
+  (if listen-fade-mode
+      (progn
+        (add-hook 'listen-track-after-start-functions #'listen-fade-in)
+        (setf listen-fade-timer (run-at-time nil 1 #'listen-fade-out)))
+    (remove-hook 'listen-track-after-start-functions #'listen-fade-in)
+    (setf listen-fade-timer
+          (when (timerp listen-fade-timer)
+            (cancel-timer listen-fade-timer)))))
+
+(defcustom listen-fade-out-at 5
+  "Fade out when this many seconds remain."
+  :type 'natnum)
+
+(defcustom listen-fade-last-volume 50
+  "Default volume target for fading in (in percent)."
+  :type 'natnum)
+
+(defun listen-fade-in (player)
+  "Fade in."
+  (when-let (((listen--playing-p player))
+             (listen-fade-last-volume))
+    (listen-fade listen-fade-last-volume)))
+
+(defun listen-fade-out ()
+  "Fade out when track is within `listen-fade-out-at' seconds of ending."
+  (when-let ((player (listen--player))
+             ((listen--playing-p player))
+             ((<= (listen--remaining player) listen-fade-out-at)))
+    (message "fading out")
+    (setf listen-fade-last-volume (listen--volume player))
+    (listen-fade 0)))
+
+(cl-defun listen-fade (volume)
+  "Fade the player to VOLUME."
+  (when-let ((player (listen--player))
+             ((listen--playing-p player))
+             (starting-volume (listen--volume player))
+             (steps (/ (abs (- volume starting-volume)) 1.0))
+             (interval (/ listen-fade-out-at steps))
+             (diff (if (< starting-volume volume)
+                       #'+ #'-)))
+    (cl-labels ((fade ()
+                  (when (listen--playing-p player)
+                    (let ((target (max 0 (min (funcall diff (listen--volume player) 1.0) 100))))
+                      (listen-volume player target)
+                      (message "volume: %s" target)
+                      (when (if (< starting-volume volume)
+                                (< target volume)
+                              (> target volume)) 
+                        (run-at-time interval nil #'fade))))))
+      (fade))))
+
+(defun listen--remaining (player)
+  "Return the number of seconds remaining on PLAYER's track."
+  (- (listen--length player)
+     (listen--elapsed player)))
 
 ;;;; Functions
 
