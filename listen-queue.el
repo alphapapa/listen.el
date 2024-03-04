@@ -171,11 +171,7 @@ intended to be set from the `listen-menu'."
                             "s" (lambda (_) (listen-queue-shuffle listen-queue))
                             "l" (lambda (_) "Show (selected) tracks in library view."
                                   (call-interactively #'listen-library-from-queue))
-                            "!" (lambda (_) (call-interactively #'listen-queue-shell-command))))
-            (vtable-end-of-table)
-            (insert (format "Duration: %s"
-                            (listen-format-seconds (cl-reduce #'+ (listen-queue-tracks queue)
-                                                              :key #'listen-track-duration)))))
+                            "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
           (goto-char (point-min))
           (listen-queue--highlight-current)
           (hl-line-mode 1))))
@@ -235,10 +231,15 @@ If BACKWARDP, move it backward."
   (when-let ((buffer (listen-queue-buffer queue)))
     (with-current-buffer buffer
       ;; `save-excursion' doesn't work because of the table's being reverted.
-      (let ((pos (point)))
+      (let ((pos (point))
+            (inhibit-read-only t))
         (goto-char (point-min))
         (when (vtable-current-table)
           (vtable-revert-command))
+        (vtable-end-of-table)
+        (insert (format "Duration: %s"
+                        (listen-format-seconds (cl-reduce #'+ (listen-queue-tracks queue)
+                                                          :key #'listen-track-duration))))
         (goto-char pos)
         (goto-char (pos-bol)))
       (listen-queue--highlight-current)
