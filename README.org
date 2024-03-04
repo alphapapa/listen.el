@@ -72,6 +72,9 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Option ~listen-queue-repeat-mode~ (also settable in ~listen-menu~) allows repeating a queue in-order or shuffled.
 + Show total queue duration at bottom of track list.
 
+*Changes*
++ All metadata in Ogg files is available for display (not only standard tags).
+
 *Fixes*
 + Increase timeout for reading track durations.
 + Command ~listen-queue-deduplicate~ first removes any tracks not backed by a file.

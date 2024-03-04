@@ -211,18 +211,13 @@ USER-COMMENTS should be a list of Vorbis comments according to
 `listen-info--opus-comment-header-bindat-spec' or
 `listen-info--flac-comment-block-bindat-spec'.
 
-Return comments in a list of (FIELD . VALUE) cons cells.  Only
-FIELDs that are listed in
-`listen-info--accepted-vorbis-fields' are returned."
+Return comments in a list of (FIELD . VALUE) cons cells."
   (let (comments)
     (dolist (user-comment user-comments)
       (let* ((comment (cdr (assoc 'user-comment user-comment)))
              (pair (listen-info--split-vorbis-comment comment)))
         (push pair comments)))
-    (seq-filter (lambda (elt)
-                  (member (car elt)
-                          listen-info--accepted-vorbis-fields))
-                comments)))
+    comments))
 
 (defun listen-info--split-vorbis-comment (comment)
   "Split Vorbis comment to a field-value pair.
