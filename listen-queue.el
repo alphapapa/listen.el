@@ -161,6 +161,7 @@ intended to be set from the `listen-menu'."
                             "j" #'listen-jump
                             "n" (lambda (_) (forward-line 1))
                             "p" (lambda (_) (forward-line -1))
+                            "m" #'listen-view-track
                             "N" (lambda (track) (listen-queue-transpose-forward track queue))
                             "P" (lambda (track) (listen-queue-transpose-backward track queue))
                             "C-k" (lambda (track) (listen-queue-kill-track track queue))
