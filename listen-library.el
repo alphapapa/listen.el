@@ -142,7 +142,7 @@ show the view."
 Interactively, play tracks in sections at point and select QUEUE
 with completion."
   (interactive
-   (list (listen-queue-complete :allow-new-p t)
+   (list (listen-queue-complete :prompt "Add to queue" :allow-new-p t)
          (listen-library--selected-tracks)))
   (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
 
@@ -181,14 +181,6 @@ Interactively, read COMMAND and use tracks at point in
   (interactive)
   (cl-assert listen-library-paths)
   (listen-library listen-library-paths :name listen-library-name :buffer (current-buffer)))
-
-(declare-function listen-mpd-completing-read "listen-mpd")
-;;;###autoload
-(cl-defun listen-library-from-mpd (filenames)
-  "Show library view of FILENAMES selected from MPD library."
-  (interactive
-   (list (listen-mpd-completing-read :select-tag-p t)))
-  (listen-library filenames))
 
 (cl-defun listen-library-from-playlist-file (filename)
   "Show library view tracks in playlist at FILENAME."

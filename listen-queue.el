@@ -346,15 +346,6 @@ which see."
   (listen-queue-play queue)
   queue)
 
-(declare-function listen-mpd-completing-read "listen-mpd")
-(cl-defun listen-queue-add-from-mpd (filenames queue)
-  "Add FILENAMES (selected from MPD library) to QUEUE."
-  (interactive
-   (list (listen-mpd-completing-read :select-tag-p t)
-         (listen-queue-complete :allow-new-p t)))
-  (require 'listen-mpd)
-  (listen-queue-add-files filenames queue))
-
 (cl-defun listen-queue-add-from-playlist-file (filename queue)
   "Add tracks to QUEUE selected from playlist at FILENAME.
 M3U playlists are supported."
