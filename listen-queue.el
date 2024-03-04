@@ -716,6 +716,8 @@ MAX-PROCESSES limits the number of parallel probing processes."
 ;; When you want music to play periodically, like while playing
 ;; Minecraft.
 
+(defvar listen-queue-delay-timer nil)
+
 (defcustom listen-queue-delay-time-range '(120 . 600)
   "Range of delay in seconds."
   :type '(cons (natnum :tag "Minimum delay")
@@ -728,7 +730,9 @@ Delay according to `listen-queue-delay-time-range', which see."
   :global t
   (if listen-queue-delay-mode
       (advice-add #'listen-play-next :around #'listen-queue-play-next-delayed)
-    (advice-remove #'listen-play-next #'listen-queue-play-next-delayed)))
+    (advice-remove #'listen-play-next #'listen-queue-play-next-delayed)
+    (when (timerp listen-queue-delay-timer)
+      (setf listen-queue-delay-timer (cancel-timer listen-queue-delay-timer)))))
 
 (defun listen-queue-play-next-delayed (oldfun player)
   "Call OLDFUN to play PLAYER's queue's next track after a random delay.
@@ -740,7 +744,7 @@ Delay according to `listen-queue-delay-time-range', which see."
     (listen-once-per (listen-queue-next-track queue)
       (let ((delay-seconds (max (car listen-queue-delay-time-range)
                                 (random (cdr listen-queue-delay-time-range)))))
-        (run-at-time delay-seconds nil oldfun player)))))
+        (setf listen-queue-delay-timer (run-at-time delay-seconds nil oldfun player))))))
 
 ;;;; Footer
 
