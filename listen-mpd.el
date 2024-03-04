@@ -37,14 +37,15 @@
 (cl-defun listen-library-from-mpd (filenames &key query)
   "Show library view of FILENAMES selected from MPD library.
 With prefix, select individual results with
-`completing-read-multiple'; otherwise show all results."
+`completing-read-multiple'; otherwise show all results and show
+QUERY in result buffer."
   (interactive
-   (list (if current-prefix-arg
-             (listen-mpd-completing-read)
-           (listen-mpd-tracks-matching (listen-mpd-read-query :select-tag-p t)))))
-  (let ((name (when query
-                (format " (MPD: %s)" query))))
-    (listen-library filenames :name name)))
+   (if current-prefix-arg
+       (list (listen-mpd-completing-read))
+     (let ((query (listen-mpd-read-query :select-tag-p t)))
+       (list (listen-mpd-tracks-matching query) :query query))))
+  (listen-library filenames :name (when query
+                                    (format " (MPD: %s)" query))))
 
 (declare-function listen-queue-add-files "listen-queue")
 (declare-function listen-queue-complete "listen-queue-complete")
