@@ -518,6 +518,14 @@ queue buffer."
   ;; (listen-queue-revert)
   )
 
+(defun listen-queue-rename (name queue)
+  "Rename QUEUE to NAME."
+  (interactive
+   (let* ((queue (listen-queue-complete))
+          (name (read-string (format "Rename queue %S:" (listen-queue-name queue)))))
+     (list name queue)))
+  (setf (listen-queue-name queue) name))
+
 (cl-defun listen-queue-revert (queue &key refreshp)
   "Revert QUEUE's buffer.
 When REFRESHP (interactively, with prefix), refresh tracks from
@@ -779,6 +787,11 @@ Delay according to `listen-queue-delay-time-range', which see."
                             "g" (lambda (_) (call-interactively #'listen-queue-list))
                             "n" (lambda (_) (forward-line 1))
                             "p" (lambda (_) (forward-line -1))
+                            "R" (lambda (queue)
+                                  (listen-queue-rename
+                                   (read-string (format "Rename queue %S: " (listen-queue-name queue)))
+                                   queue)
+                                  (call-interactively #'vtable-revert-command))
                             "C-k" #'listen-queue-discard
                             "RET" #'listen-queue
                             "SPC" (lambda (_) (call-interactively #'listen-pause))
