@@ -91,6 +91,13 @@ For the currently playing track."
   :type '(choice (const :tag "Time remaining" remaining)
                  (const :tag "Time elapsed/total" elapsed)))
 
+(defcustom listen-lighter-extra-functions nil
+  "Functions to show extra info in the lighter.
+Each is called without arguments and should return a string
+without extra whitespace."
+  :type '(repeat (choice (const :tag "Remaining queue time" listen-queue-format-remaining)
+                         function)))
+
 ;;;; Commands
 
 (defun listen-quit (player)
@@ -216,7 +223,9 @@ Interactively, jump to current queue's current track."
                 (pcase (listen--status listen-player)
                   ("playing" "▶")
                   ("paused" "⏸")
-                  ("stopped" "■"))))
+                  ("stopped" "■")))
+              (format-extra ()
+                (mapconcat #'funcall listen-lighter-extra-functions " ")))
     (apply #'concat "🎵:"
            (if (and (listen--running-p listen-player)
                     (listen--playing-p listen-player))
@@ -228,7 +237,11 @@ Interactively, jump to current queue's current track."
                        (_ (concat (listen-format-seconds (listen--elapsed listen-player))
                                   "/"
                                   (listen-format-seconds (listen--length listen-player)))))
-                     ") ")
+                     ")"
+                     (if-let ((extra (format-extra)))
+                         (concat " " extra)
+                       "")
+                     " ")
              '("■ ")))))
 
 (declare-function listen-queue-play "listen-queue")

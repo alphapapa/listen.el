@@ -83,6 +83,12 @@
 
 ;;;; Methods
 
+(cl-defgeneric listen--elapsed (player)
+  "Return elapsed seconds of PLAYER's current track.")
+
+(cl-defgeneric listen--length (player)
+  "Return duration in seconds of PLAYER's current track.")
+
 (cl-defmethod listen--running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
   (process-live-p (listen-player-process player)))
