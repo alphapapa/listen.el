@@ -76,6 +76,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Option ~listen-lighter-extra-functions~ allows displaying extra information in the ~listen-mode~ lighter.
 + Option ~listen-track-end-functions~ allows running functions when a track finishes playing.
 + Show total queue duration at bottom of track list.
++ Show track ratings in queue.
 
 *Changes*
 + All metadata in MP3 and Ogg files is available for display (not only standard tags).

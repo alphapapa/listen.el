@@ -83,6 +83,9 @@
 (defface listen-genre '((t :inherit font-lock-type-face))
   "Track genre.")
 
+(defface listen-rating '((t :inherit font-lock-escape-face))
+  "Track rating.")
+
 ;;;; Functions
 
 ;; FIXME: Declare this differently or something.

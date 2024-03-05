@@ -124,6 +124,14 @@ intended to be set from the `listen-menu'."
                          :getter (lambda (track _table)
                                    (when-let ((duration (listen-track-duration track)))
                                      (listen-format-seconds duration))))
+                   (list :name "s/5"
+                         :getter (lambda (track _table)
+                                   (if-let ((rating (map-elt (listen-track-etc track) "fmps_rating"))
+                                            ((not (equal "-1" rating))))
+                                       (progn
+                                         (setf rating (number-to-string (* 5 (string-to-number rating))))
+                                         (propertize rating 'face 'listen-rating))
+                                     "")))
                    (list :name "Artist" :max-width 20 :align 'right
                          :getter (lambda (track _table)
                                    (propertize (or (listen-track-artist track) "")
@@ -400,7 +408,11 @@ buffer, if any)."
      :album (map-elt metadata "album")
      :number (map-elt metadata "tracknumber")
      :date (map-elt metadata "date")
-     :genre (map-elt metadata "genre"))))
+     :genre (map-elt metadata "genre")
+     ;; TODO: Since we're storing all of the metadata in the etc slot,
+     ;; consider whether to consolidate there or add slots for,
+     ;; e.g. rating.
+     :etc metadata)))
 
 (defun listen-queue-tracks-for (filenames)
   "Return tracks for FILENAMES.
