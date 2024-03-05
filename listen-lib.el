@@ -50,6 +50,7 @@
   name tracks current etc)
 
 (cl-defstruct listen-track
+  ;; FIXME: Store rating in the slot I already made for it.
   filename artist title album number genre (duration 0) date rating etc)
 
 (cl-defmethod cl-print-object ((track listen-track) stream)
