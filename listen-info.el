@@ -893,8 +893,7 @@ string."
              (let* ((key-val (split-string str (string 0)))
                     (key (downcase (car key-val)))
                     (val (cadr key-val)))
-               (when (rassoc key listen-info--id3v2-frame-to-info)
-                 (cons key val))))))))
+               (cons key val)))))))
 
 (defun listen-info--decode-id3v2-string (bytes)
   "Decode id3v2 text information from BYTES.

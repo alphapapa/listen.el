@@ -78,7 +78,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Show total queue duration at bottom of track list.
 
 *Changes*
-+ All metadata in Ogg files is available for display (not only standard tags).
++ All metadata in MP3 and Ogg files is available for display (not only standard tags).
 
 *Fixes*
 + Increase timeout for reading track durations.
