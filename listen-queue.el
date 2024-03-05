@@ -731,8 +731,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
 
 ;;;;; Queue delay mode
 
-;; When you want music to play periodically, like while playing
-;; Minecraft.
+;; When you want music to play periodically, e.g. like Minecraft does.
 
 (defvar listen-queue-delay-timer nil)
 
