@@ -769,57 +769,54 @@ Delay according to `listen-queue-delay-time-range', which see."
 (defun listen-queue-list ()
   "Show queue list."
   (interactive)
-  (let* ((buffer-name "*Listen Queues*")
-         (buffer (get-buffer buffer-name)))
-    (unless buffer
-      (with-current-buffer (setf buffer (get-buffer-create buffer-name))
-        (let ((inhibit-read-only t))
-          (read-only-mode)
-          (erase-buffer)
-          (toggle-truncate-lines 1)
-          (when listen-queues
-            (make-vtable
-             :columns
-             (list (list :name "▶" :primary 'descend
-                         :getter (lambda (queue _table)
-                                   (when-let ((player (listen--player)))
-                                     (if (eq queue (map-elt (listen-player-etc player) :queue))
-                                         "▶" " "))))
-                   (list :name "Name" :primary 'ascend
-                         :getter (lambda (queue _table)
-                                   (listen-queue-name queue)))
-                   (list :name "Tracks" :align 'right
-                         :getter (lambda (queue _table)
-                                   (length (listen-queue-tracks queue))))
-                   ;; (list :name "Duration"
-                   ;;       :getter (lambda (track _table)
-                   ;;                 (when-let ((duration (listen-track-duration track)))
-                   ;;                   (listen-format-seconds duration))))
-                   )
-             :objects-function (lambda ()
-                                 listen-queues)
-             :sort-by '((1 . ascend))
-             ;; TODO: Add a transient to show these bindings when pressing "?".
-             :actions (list "q" (lambda (_) (bury-buffer))
-                            "?" (lambda (_) (call-interactively #'listen-menu))
-                            "g" (lambda (_) (call-interactively #'listen-queue-list))
-                            "n" (lambda (_) (forward-line 1))
-                            "p" (lambda (_) (forward-line -1))
-                            "R" (lambda (queue)
-                                  (listen-queue-rename
-                                   (read-string (format "Rename queue %S: " (listen-queue-name queue)))
-                                   queue)
-                                  (call-interactively #'vtable-revert-command))
-                            "C-k" #'listen-queue-discard
-                            "RET" #'listen-queue
-                            "SPC" (lambda (_) (call-interactively #'listen-pause))
-                            "l" (lambda (queue)
-                                  (listen-library-from-queue :queue queue))
-                            ;; "!" (lambda (_) (call-interactively #'listen-queue-shell-command))
-                            )))
-          (goto-char (point-min))
-          (hl-line-mode 1))))
-    (pop-to-buffer buffer)))
+  (with-current-buffer (get-buffer-create "*Listen Queues*")
+    (let ((inhibit-read-only t))
+      (read-only-mode)
+      (erase-buffer)
+      (toggle-truncate-lines 1)
+      (when listen-queues
+        (make-vtable
+         :columns
+         (list (list :name "▶" :primary 'descend
+                     :getter (lambda (queue _table)
+                               (when-let ((player (listen--player)))
+                                 (if (eq queue (map-elt (listen-player-etc player) :queue))
+                                     "▶" " "))))
+               (list :name "Name" :primary 'ascend
+                     :getter (lambda (queue _table)
+                               (listen-queue-name queue)))
+               (list :name "Tracks" :align 'right
+                     :getter (lambda (queue _table)
+                               (length (listen-queue-tracks queue))))
+               ;; (list :name "Duration"
+               ;;       :getter (lambda (queue _table)
+               ;;                 (when-let ((duration (map-elt (listen-queue-etc queue) :duration)))
+               ;;                   (listen-format-seconds duration))))
+               )
+         :objects-function (lambda ()
+                             listen-queues)
+         :sort-by '((1 . ascend))
+         ;; TODO: Add a transient to show these bindings when pressing "?".
+         :actions (list "q" (lambda (_) (bury-buffer))
+                        "?" (lambda (_) (call-interactively #'listen-menu))
+                        "g" (lambda (_) (call-interactively #'listen-queue-list))
+                        "n" (lambda (_) (forward-line 1))
+                        "p" (lambda (_) (forward-line -1))
+                        "R" (lambda (queue)
+                              (listen-queue-rename
+                               (read-string (format "Rename queue %S: " (listen-queue-name queue)))
+                               queue)
+                              (call-interactively #'vtable-revert-command))
+                        "C-k" #'listen-queue-discard
+                        "RET" #'listen-queue
+                        "SPC" (lambda (_) (call-interactively #'listen-pause))
+                        "l" (lambda (queue)
+                              (listen-library-from-queue :queue queue))
+                        ;; "!" (lambda (_) (call-interactively #'listen-queue-shell-command))
+                        )))
+      (goto-char (point-min))
+      (hl-line-mode 1)
+      (pop-to-buffer (current-buffer)))))
 
 ;;;; Footer
 
