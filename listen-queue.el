@@ -124,7 +124,7 @@ intended to be set from the `listen-menu'."
                          :getter (lambda (track _table)
                                    (when-let ((duration (listen-track-duration track)))
                                      (listen-format-seconds duration))))
-                   (list :name "s/5"
+                   (list :name "r/5"
                          :getter (lambda (track _table)
                                    (if-let ((rating (map-elt (listen-track-etc track) "fmps_rating"))
                                             ((not (equal "-1" rating))))
