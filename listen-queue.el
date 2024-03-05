@@ -760,6 +760,8 @@ Delay according to `listen-queue-delay-time-range', which see."
     ;; being called multiple times while `listen-queue-delay-mode' is
     ;; enabled.  Sort of a hack, but it will serve until a refactor.
     (listen-once-per (listen-queue-next-track queue)
+      ;; FIXME: Since `random' takes an upper limit, by having a floor
+      ;; for values which are below the minimum, the delay is biased.
       (let ((delay-seconds (max (car listen-queue-delay-time-range)
                                 (random (cdr listen-queue-delay-time-range)))))
         (setf listen-queue-delay-timer (run-at-time delay-seconds nil oldfun player))))))
