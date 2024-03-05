@@ -45,7 +45,7 @@ QUERY in result buffer."
      (let ((query (listen-mpd-read-query :select-tag-p t)))
        (list (listen-mpd-tracks-matching query) :query query))))
   (listen-library filenames :name (when query
-                                    (format " (MPD: %s)" query))))
+                                    (format "(MPD: %s)" query))))
 
 (declare-function listen-queue-add-files "listen-queue")
 (declare-function listen-queue-complete "listen-queue-complete")
