@@ -68,11 +68,18 @@
                           (else (format "%s: " else)))
                         (or (with-face 'listen-title (listen-track-title track))
                             "[unknown title]")))
+              (rating (track)
+                (when-let ((rating (map-elt (listen-track-etc track) "fmps_rating"))
+                           ((not (equal "-1" rating))))
+                  (setf rating (number-to-string (* 5 (string-to-number rating))))
+                  (with-face 'listen-rating (concat "[" rating "] "))))
               (format-track (track)
                 (let* ((duration (listen-track-duration track)))
                   (when duration
                     (setf duration (concat "(" (listen-format-seconds duration) ")" " ")))
-                  (concat duration (listen-track-filename track))))
+                  (concat duration
+                          (rating track)
+                          (listen-track-filename track))))
               (make-fn (&rest args)
                 (apply #'make-taxy-magit-section
                        :make #'make-fn
