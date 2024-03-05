@@ -182,9 +182,22 @@ intended to be set from the `listen-menu'."
                                   (call-interactively #'listen-library-from-queue))
                             "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
           (goto-char (point-min))
-          (listen-queue--highlight-current)
+          (listen-queue--annotate-buffer)
           (hl-line-mode 1))))
     (pop-to-buffer buffer)))
+
+(defun listen-queue--annotate-buffer ()
+  "Annotate current buffer.
+To be called in a queue's buffer."
+  (let* ((queue listen-queue)
+         ;; HACK: Update duration here (for now).
+         (duration (cl-reduce #'+ (listen-queue-tracks queue)
+                              :key #'listen-track-duration)))
+    (setf (map-elt (listen-queue-etc queue) :duration) duration)
+    (vtable-end-of-table)
+    (when duration
+      (insert (format "Duration: %s" (listen-format-seconds duration))))
+    (listen-queue--highlight-current)))
 
 (cl-defun listen-queue-transpose-forward (track queue &key backwardp)
   "Transpose TRACK forward in QUEUE.
@@ -240,18 +253,11 @@ If BACKWARDP, move it backward."
   (when-let ((buffer (listen-queue-buffer queue)))
     (with-current-buffer buffer
       ;; `save-excursion' doesn't work because of the table's being reverted.
-      (let ((pos (point))
-            (inhibit-read-only t))
+      (let ((inhibit-read-only t))
         (goto-char (point-min))
         (when (vtable-current-table)
           (vtable-revert-command))
-        (vtable-end-of-table)
-        (insert (format "Duration: %s"
-                        (listen-format-seconds (cl-reduce #'+ (listen-queue-tracks queue)
-                                                          :key #'listen-track-duration))))
-        (goto-char pos)
-        (goto-char (pos-bol)))
-      (listen-queue--highlight-current)
+        (listen-queue--annotate-buffer))
       (listen-queue-goto-current))))
 
 (declare-function listen-mode "listen")
