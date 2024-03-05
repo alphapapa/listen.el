@@ -627,7 +627,7 @@ tracks in the queue unchanged)."
                    (sort (listen-info--decode-info-fields (listen-track-filename track))
                          (lambda (a b)
                            (string< (car a) (car b))))))
-         :actions (list "q" (lambda (_) (bury-buffer))
+         :actions (list "q" (lambda (_) (quit-window))
                         "g" (lambda (_)
                               (listen-queue-track-revert track)
                               (vtable-revert-command))
