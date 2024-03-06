@@ -185,6 +185,7 @@ intended to be set from the `listen-menu'."
                             "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
           (goto-char (point-min))
           (listen-queue--annotate-buffer)
+          (listen-queue-goto-current)
           (hl-line-mode 1))))
     (pop-to-buffer buffer)))
 
