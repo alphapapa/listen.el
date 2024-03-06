@@ -70,7 +70,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 * Changelog
 
-** v0.5.1-pre
+** v0.5.1
 
 *Fixes*
 + Viewing queues which aren't currently playing.
