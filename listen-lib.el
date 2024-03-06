@@ -75,7 +75,7 @@
 (defface listen-title '((t :inherit font-lock-function-name-face))
   "Track title.")
 
-(defface listen-album '((t :inherit font-lock-doc-face))
+(defface listen-album '((t :slant italic :inherit font-lock-doc-face))
   "Track album.")
 
 (defface listen-filename '((t :inherit fixed-pitch))

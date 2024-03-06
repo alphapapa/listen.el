@@ -72,7 +72,8 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 ** v0.6-pre
 
-Nothing new yet.
+*Changes*
++ Face ~listen-album~ slants italic.
 
 ** v0.5
 
