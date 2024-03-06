@@ -75,6 +75,11 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Changes*
 + Face ~listen-album~ slants italic.
 
+** v0.5.1
+
+*Fixes*
++ Viewing queues which aren't currently playing.
+
 ** v0.5
 
 *Additions*
