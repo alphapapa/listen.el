@@ -70,6 +70,10 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 * Changelog
 
+** v0.6-pre
+
+Nothing new yet.
+
 ** v0.5
 
 *Additions*
