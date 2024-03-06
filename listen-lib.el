@@ -25,6 +25,21 @@
 
 (require 'cl-lib)
 
+;;;; Macros
+
+(defmacro listen-once-per (value-form &rest body)
+  "Evaluate BODY at most once while VALUE-FORM has the same value."
+  (declare (indent defun))
+  (let ((value-defvar (gensym "listen-once-per"))
+        (value-var (gensym "listen-once-per")))
+    `(progn
+       (defvar ,value-defvar nil
+         "Defined by macro `listen-once-per', which see.")
+       (let ((,value-var ,value-form))
+         (unless (equal ,value-defvar ,value-var)
+           (setf ,value-defvar ,value-var)
+           ,@body)))))
+
 ;;;; Types
 
 (cl-defstruct listen-player
@@ -35,7 +50,8 @@
   name tracks current etc)
 
 (cl-defstruct listen-track
-  filename artist title album number genre duration date rating etc)
+  ;; FIXME: Store rating in the slot I already made for it.
+  filename artist title album number genre (duration 0) date rating etc)
 
 (cl-defmethod cl-print-object ((track listen-track) stream)
   (prin1 (listen-track-filename track) stream))
@@ -68,11 +84,14 @@
 (defface listen-genre '((t :inherit font-lock-type-face))
   "Track genre.")
 
+(defface listen-rating '((t :inherit font-lock-escape-face))
+  "Track rating.")
+
 ;;;; Functions
 
 ;; FIXME: Declare this differently or something.
 (declare-function make-listen-player-vlc "listen-vlc")
-(defun listen--player ()
+(defun listen-current-player ()
   "Return variable `listen-player' or a newly set one if nil."
   (or listen-player
       (setf listen-player (make-listen-player-vlc))))
@@ -82,6 +101,12 @@
   (format-seconds "%h:%z%.2m:%.2s" seconds))
 
 ;;;; Methods
+
+(cl-defgeneric listen--elapsed (player)
+  "Return elapsed seconds of PLAYER's current track.")
+
+(cl-defgeneric listen--length (player)
+  "Return duration in seconds of PLAYER's current track.")
 
 (cl-defmethod listen--running-p ((player listen-player))
   "Return non-nil if PLAYER is running."

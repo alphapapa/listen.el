@@ -32,6 +32,76 @@
 (defvar listen-directory)
 (defvar crm-separator)
 
+(declare-function listen-library "listen-library")
+;;;###autoload
+(cl-defun listen-library-from-mpd (filenames &key query)
+  "Show library view of FILENAMES selected from MPD library.
+With prefix, select individual results with
+`completing-read-multiple'; otherwise show all results and show
+QUERY in result buffer."
+  (interactive
+   (if current-prefix-arg
+       (list (listen-mpd-completing-read))
+     (let ((query (listen-mpd-read-query :select-tag-p t)))
+       (list (listen-mpd-tracks-matching query) :query query))))
+  (listen-library filenames :name (when query
+                                    (format "(MPD: %s)" query))))
+
+(declare-function listen-queue-add-files "listen-queue")
+(declare-function listen-queue-complete "listen-queue-complete")
+;;;###autoload
+(cl-defun listen-queue-add-from-mpd (filenames queue)
+  "Add FILENAMES (selected from MPD library) to QUEUE."
+  (interactive
+   (list (if current-prefix-arg
+             (listen-mpd-completing-read)
+           (listen-mpd-tracks-matching (listen-mpd-read-query :select-tag-p t)))
+         (listen-queue-complete :prompt "Add to queue" :allow-new-p t)))
+  (require 'listen-mpd)
+  (listen-queue-add-files filenames queue))
+
+(cl-defun listen-mpd-read-query (&key (tag 'file) select-tag-p)
+  (when select-tag-p
+    (let ((tags '( Artist Album Title Track Name Genre Date Composer Performer Comment
+                   Disc file any)))
+      (setf tag (intern (completing-read "Search by tag: " tags nil t)))))
+  (read-string (pcase-exhaustive tag
+                 ('file "MPC Search (track): ")
+                 (_ (format "MPC Search (%s): " tag)))))
+
+(cl-defun listen-mpd-tracks-matching (query &key (tag 'file) select-tag-p)
+  "Return tracks matching QUERY on TAG.
+If SELECT-TAG-P, prompt for TAG with completion.  If QUERY is
+nil, read it."
+  (when select-tag-p
+    (let ((tags '( Artist Album Title Track Name Genre Date Composer Performer Comment
+                   Disc file any)))
+      (setf tag (intern (completing-read "Search by tag: " tags nil t)))))
+  (unless query
+    (setf query (read-string (pcase-exhaustive tag
+                               ('file "MPC Search (track): ")
+                               (_ (format "MPC Search (%s): " tag))))))
+  (cl-labels ((search-any (queries)
+                (mpc-proc-buf-to-alists
+                 (mpc-proc-cmd (cl-loop for query in queries
+                                        append (list "any" query)
+                                        into list
+                                        finally return (cons "search" list))))))
+    (let ((result (unless (string-empty-p query)
+                    (let ((tag (pcase tag
+                                 ('any 'file)
+                                 (_ tag))))
+                      (delete-dups
+                       (delq nil
+                             (mapcar (lambda (row)
+                                       (when-let ((value (alist-get tag row)))
+                                         (propertize value
+                                                     :mpc-alist row)))
+                                     (search-any (split-string query)))))))))
+      (mapcar (lambda (filename)
+                (expand-file-name filename (or mpc-mpd-music-directory listen-directory)))
+              result))))
+
 ;;;###autoload
 (cl-defun listen-mpd-completing-read (&key (tag 'file) select-tag-p)
   "Return files selected from MPD library.

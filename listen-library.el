@@ -49,14 +49,16 @@
               (genre (track)
                 (or (listen-track-genre track) "[unknown genre]"))
               (date (track)
-                (or (listen-track-date track) "[unknown date]"))
+                (or (map-elt (listen-track-etc track) "originalyear")
+                    (map-elt (listen-track-etc track) "originaldate")
+                    (listen-track-date track)))
               (artist (track)
                 (or (with-face 'listen-artist (listen-track-artist track))
                     "[unknown artist]"))
               (album (track)
                 (or (when-let ((album (with-face 'listen-album (listen-track-album track))))
                       (concat album
-                              (pcase (listen-track-date track)
+                              (pcase (date track)
                                 (`nil nil)
                                 (date (format " (%s)" date)))))
                     "[unknown album]"))
@@ -68,11 +70,18 @@
                           (else (format "%s: " else)))
                         (or (with-face 'listen-title (listen-track-title track))
                             "[unknown title]")))
+              (rating (track)
+                (when-let ((rating (map-elt (listen-track-etc track) "fmps_rating"))
+                           ((not (equal "-1" rating))))
+                  (setf rating (number-to-string (* 5 (string-to-number rating))))
+                  (with-face 'listen-rating (concat "[" rating "] "))))
               (format-track (track)
                 (let* ((duration (listen-track-duration track)))
                   (when duration
                     (setf duration (concat "(" (listen-format-seconds duration) ")" " ")))
-                  (concat duration (listen-track-filename track))))
+                  (concat duration
+                          (rating track)
+                          (listen-track-filename track))))
               (make-fn (&rest args)
                 (apply #'make-taxy-magit-section
                        :make #'make-fn
@@ -87,6 +96,7 @@
 ;;;; Mode
 
 (declare-function listen-menu "listen")
+(declare-function listen-jump "listen")
 
 (defvar-keymap listen-library-mode-map
   :parent magit-section-mode-map
@@ -94,6 +104,8 @@
   "!" #'listen-library-shell-command
   "a" #'listen-library-add-tracks
   "g" #'listen-library-revert
+  "j" #'listen-library-jump
+  "m" #'listen-library-view-track
   "RET" #'listen-library-play-or-add)
 
 (define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
@@ -140,7 +152,7 @@ show the view."
 Interactively, play tracks in sections at point and select QUEUE
 with completion."
   (interactive
-   (list (listen-queue-complete :allow-new-p t)
+   (list (listen-queue-complete :prompt "Add to queue" :allow-new-p t)
          (listen-library--selected-tracks)))
   (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
 
@@ -155,7 +167,19 @@ prompt for a QUEUE to add them to."
                     (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t)))))
   (if queue
       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
-    (listen-play (listen--player) (listen-track-filename (car tracks)))))
+    (listen-play (listen-current-player) (listen-track-filename (car tracks)))))
+
+(defun listen-library-jump (track)
+  "Jump to TRACK in a Dired buffer."
+  (interactive
+   (list (car (listen-library--selected-tracks))))
+  (listen-jump track))
+
+(defun listen-library-view-track (track)
+  "View TRACK's metadata."
+  (interactive
+   (list (car (listen-library--selected-tracks))))
+  (listen-view-track track))
 
 (declare-function listen-shell-command "listen")
 (defun listen-library-shell-command (command filenames)
@@ -173,14 +197,6 @@ Interactively, read COMMAND and use tracks at point in
   (interactive)
   (cl-assert listen-library-paths)
   (listen-library listen-library-paths :name listen-library-name :buffer (current-buffer)))
-
-(declare-function listen-mpd-completing-read "listen-mpd")
-;;;###autoload
-(cl-defun listen-library-from-mpd (filenames)
-  "Show library view of FILENAMES selected from MPD library."
-  (interactive
-   (list (listen-mpd-completing-read :select-tag-p t)))
-  (listen-library filenames))
 
 (cl-defun listen-library-from-playlist-file (filename)
   "Show library view tracks in playlist at FILENAME."

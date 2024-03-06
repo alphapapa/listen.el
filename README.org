@@ -20,12 +20,17 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 :TOC:      :include siblings :depth 0 :force (nothing) :ignore (this) :local (nothing)
 :END:
 :CONTENTS:
+- [[#screenshots][Screenshots]]
 - [[#installation][Installation]]
 - [[#configuration][Configuration]]
 - [[#usage][Usage]]
 - [[#changelog][Changelog]]
 - [[#development][Development]]
 :END:
+
+* Screenshots
+
+[[file:images/screenshot-modus-vivendi-tinted.png]]
 
 * Installation
 
@@ -64,6 +69,28 @@ Listen is intended to work with little-to-no configuration.  You can set the ~li
 Use the command ~listen~ to show the Transient menu.  From there, it is--hopefully--self-explanatory.  Please feel free to give feedback if it doesn't seem so.
 
 * Changelog
+
+** v0.5
+
+*Additions*
++ Command ~listen-queue-list~ shows a list of queues.
++ Command ~listen-jump~ (bound to ~j~ in queue and library buffers) jumps to the track at point in a Dired buffer.
++ Command ~listen-track-view~ shows a track's complete metadata in a table view.
++ Mode ~listen-queue-delay-mode~ plays a queue with a configurable, random delay between tracks.
++ Option ~listen-queue-repeat-mode~ (also settable in ~listen-menu~) allows repeating a queue in-order or shuffled.
++ Option ~listen-lighter-extra-functions~ allows displaying extra information in the ~listen-mode~ lighter.
++ Option ~listen-track-end-functions~ allows running functions when a track finishes playing.
++ Show total queue duration at bottom of track list.
++ Show track ratings in library and queue buffers.
+
+*Changes*
++ All metadata in MP3 and Ogg files is available for display (not only standard tags).
++ For date field in library and queue views, show ~originalyear~ or ~originaldate~ metadata fields in preference to ~date~ (which seems generally more useful, as the ~date~ field may contain a full date, and sometimes of a later release).
+
+*Fixes*
++ Increase timeout for reading track durations.
++ Command ~listen-queue-deduplicate~ first removes any tracks not backed by a file.
++ In queue buffer, mark current track by comparing filename (rather than internal track identity).
 
 ** v0.4
 
