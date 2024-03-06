@@ -109,13 +109,24 @@ intended to be set from the `listen-menu'."
             (make-vtable
              :columns
              (list (list :name "▶" :primary 'descend
-                         :getter (lambda (track _table)
-                                   ;; We compare filenames in case the queue's files
-                                   ;; have been refreshed from disk, in which case
-                                   ;; the track objects would no longer be `eq'.
-                                   (if (equal (listen-track-filename track)
-                                              (listen-track-filename (listen-queue-current queue)))
-                                       "▶" " ")))
+                         :getter
+                         (lambda (track _table)
+                           ;; We compare filenames in case the queue's files
+                           ;; have been refreshed from disk, in which case
+                           ;; the track objects would no longer be `eq'.
+                           (if (equal (listen-track-filename track)
+                                      (listen-track-filename (listen-queue-current queue)))
+                               (progn
+                                 (unless (eq (listen-queue-current listen-queue) track)
+                                   ;; HACK: Update current track in queue.  I don't know a
+                                   ;; more optimal place to do this.
+                                   (setf (seq-elt (listen-queue-tracks listen-queue)
+                                                  (seq-position (listen-queue-tracks listen-queue)
+                                                                (listen-queue-current listen-queue)))
+                                         track
+                                         (listen-queue-current listen-queue) track))
+                                 "▶")
+                             " ")))
                    (list :name "#" :primary 'descend
                          :getter (lambda (track _table)
                                    (cl-position track (listen-queue-tracks queue))))
