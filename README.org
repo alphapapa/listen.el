@@ -20,12 +20,17 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 :TOC:      :include siblings :depth 0 :force (nothing) :ignore (this) :local (nothing)
 :END:
 :CONTENTS:
+- [[#screenshots][Screenshots]]
 - [[#installation][Installation]]
 - [[#configuration][Configuration]]
 - [[#usage][Usage]]
 - [[#changelog][Changelog]]
 - [[#development][Development]]
 :END:
+
+* Screenshots
+
+[[file:images/screenshot-modus-vivendi-tinted.png]]
 
 * Installation
 
