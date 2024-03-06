@@ -114,8 +114,9 @@ intended to be set from the `listen-menu'."
                            ;; We compare filenames in case the queue's files
                            ;; have been refreshed from disk, in which case
                            ;; the track objects would no longer be `eq'.
-                           (if (equal (listen-track-filename track)
-                                      (listen-track-filename (listen-queue-current queue)))
+                           (if-let ((current-track (listen-queue-current queue))
+                                    ((equal (listen-track-filename track)
+                                            (listen-track-filename current-track))))
                                (progn
                                  (unless (eq (listen-queue-current listen-queue) track)
                                    ;; HACK: Update current track in queue.  I don't know a

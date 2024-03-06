@@ -72,7 +72,8 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 ** v0.5.1-pre
 
-Nothing new yet.
+*Fixes*
++ Viewing queues which aren't currently playing.
 
 ** v0.5
 
