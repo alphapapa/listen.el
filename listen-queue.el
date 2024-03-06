@@ -546,17 +546,17 @@ queue buffer."
      (list name queue)))
   (setf (listen-queue-name queue) name))
 
-(cl-defun listen-queue-revert (queue &key refreshp)
+(cl-defun listen-queue-revert (queue &key reloadp)
   "Revert QUEUE's buffer.
-When REFRESHP (interactively, with prefix), refresh tracks from
+When RELOADP (interactively, with prefix), reload tracks from
 disk."
-  (interactive (list listen-queue :refreshp current-prefix-arg))
-  (when refreshp
-    (listen-queue-refresh queue))
+  (interactive (list listen-queue :reloadp current-prefix-arg))
+  (when reloadp
+    (listen-queue-reload queue))
   (listen-queue--update-buffer queue))
 
-(defun listen-queue-refresh (queue)
-  "Refresh QUEUE's tracks from disk."
+(defun listen-queue-reload (queue)
+  "Reload QUEUE's tracks from disk."
   (setf (listen-queue-tracks queue)
         (listen-queue-tracks-for (mapcar #'listen-track-filename (listen-queue-tracks queue)))))
 
