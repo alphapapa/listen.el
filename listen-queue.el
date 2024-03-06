@@ -437,7 +437,8 @@ with \"ffprobe\"."
   "Revert TRACK's metadata from disk."
   ;; TODO: Use this where appropriate.
   (let ((new-track (car (listen-queue-tracks-for (list (listen-track-filename track))))))
-    (dolist (slot '(artist title album number date genre))
+    (dolist (slot '(artist title album number date genre etc))
+      ;; FIXME: Store metadata in its own slot and don't misuse etc slot.
       (setf (cl-struct-slot-value 'listen-track slot track)
             (cl-struct-slot-value 'listen-track slot new-track)))))
 
