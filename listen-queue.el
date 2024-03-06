@@ -144,7 +144,7 @@ intended to be set from the `listen-menu'."
                          :getter (lambda (track _table)
                                    (propertize (or (listen-track-album track) "")
                                                'face 'listen-album)))
-                   (list :name "#"
+                   (list :name "#" :align 'right
                          :getter (lambda (track _table)
                                    (or (listen-track-number track) "")))
                    (list :name "Date"
