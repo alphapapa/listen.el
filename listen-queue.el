@@ -110,12 +110,11 @@ intended to be set from the `listen-menu'."
              :columns
              (list (list :name "▶" :primary 'descend
                          :getter (lambda (track _table)
-                                   (if (eq track (listen-queue-current queue))
-                                       ;; FIXME: If track metadata changes during playback and the
-                                       ;; user refreshes the queue from disk, the currently playing
-                                       ;; track won't match anymore.  (The obvious solution is to
-                                       ;; compare filenames, but that would seem wasteful for a
-                                       ;; large queue, so let's defer that for now.)
+                                   ;; We compare filenames in case the queue's files
+                                   ;; have been refreshed from disk, in which case
+                                   ;; the track objects would no longer be `eq'.
+                                   (if (equal (listen-track-filename track)
+                                              (listen-track-filename (listen-queue-current queue)))
                                        "▶" " ")))
                    (list :name "#" :primary 'descend
                          :getter (lambda (track _table)
