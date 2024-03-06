@@ -201,6 +201,16 @@ To be called in a queue's buffer."
       (insert (format "Duration: %s" (listen-format-seconds duration))))
     (listen-queue--highlight-current)))
 
+(defun listen-queue--highlight-current ()
+  "Draw highlight onto current track."
+  (when listen-queue-overlay
+    (delete-overlay listen-queue-overlay))
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "▶" nil t)
+      (setf listen-queue-overlay (make-overlay (pos-bol) (pos-eol)))
+      (overlay-put listen-queue-overlay 'face 'highlight))))
+
 (cl-defun listen-queue-transpose-forward (track queue &key backwardp)
   "Transpose TRACK forward in QUEUE.
 If BACKWARDP, move it backward."
@@ -239,16 +249,6 @@ If BACKWARDP, move it backward."
                (list track)
                (seq-subseq (listen-queue-tracks queue) position)))
   (listen-queue--update-buffer queue))
-
-(defun listen-queue--highlight-current ()
-  "Draw highlight onto current track."
-  (when listen-queue-overlay
-    (delete-overlay listen-queue-overlay))
-  (save-excursion
-    (goto-char (point-min))
-    (when (re-search-forward "▶" nil t)
-      (setf listen-queue-overlay (make-overlay (pos-bol) (pos-eol)))
-      (overlay-put listen-queue-overlay 'face 'highlight))))
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
