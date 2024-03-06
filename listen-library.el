@@ -105,6 +105,7 @@
   "a" #'listen-library-add-tracks
   "g" #'listen-library-revert
   "j" #'listen-library-jump
+  "m" #'listen-library-view-track
   "RET" #'listen-library-play-or-add)
 
 (define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
@@ -173,6 +174,12 @@ prompt for a QUEUE to add them to."
   (interactive
    (list (car (listen-library--selected-tracks))))
   (listen-jump track))
+
+(defun listen-library-view-track (track)
+  "View TRACK's metadata."
+  (interactive
+   (list (car (listen-library--selected-tracks))))
+  (listen-view-track track))
 
 (declare-function listen-shell-command "listen")
 (defun listen-library-shell-command (command filenames)
