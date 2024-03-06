@@ -167,7 +167,7 @@ prompt for a QUEUE to add them to."
                     (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t)))))
   (if queue
       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
-    (listen-play (listen--player) (listen-track-filename (car tracks)))))
+    (listen-play (listen-current-player) (listen-track-filename (car tracks)))))
 
 (defun listen-library-jump (track)
   "Jump to TRACK in a Dired buffer."

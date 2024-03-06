@@ -287,7 +287,7 @@ select track as well."
                      (listen-queue-complete-track queue)
                    (car (listen-queue-tracks queue)))))
      (list queue track)))
-  (let ((player (listen--player)))
+  (let ((player (listen-current-player)))
     (listen-play player (listen-track-filename track))
     (setf (listen-queue-current queue) track
           (map-elt (listen-player-etc player) :queue) queue)
@@ -322,7 +322,7 @@ If ALLOW-NEW-P, accept the name of a non-existent queue and
 return a new one having it.  PROMPT is passed to `format-prompt',
 which see."
   (cl-labels ((read-queue ()
-                (let* ((player (listen--player))
+                (let* ((player (listen-current-player))
                        (default-queue-name (or (when listen-queue
                                                  ;; In a listen buffer: offer its queue as default.
                                                  (listen-queue-name listen-queue))
@@ -603,7 +603,7 @@ tracks in the queue unchanged)."
                  do (forward-line 1)
                  while (<= (point) end))))))
 
-(cl-defun listen-queue-remaining-duration (&optional (player (listen--player)))
+(cl-defun listen-queue-remaining-duration (&optional (player (listen-current-player)))
   "Return seconds remaining in PLAYER's queue."
   (when-let ((queue (map-elt (listen-player-etc player) :queue))
              (current-track-remaining (- (listen--length player) (listen--elapsed player)))
@@ -613,7 +613,7 @@ tracks in the queue unchanged)."
              (remaining-tracks-duration (cl-reduce #'+ remaining-tracks :key #'listen-track-duration)))
     (+ current-track-remaining remaining-tracks-duration)))
 
-(cl-defun listen-queue-format-remaining (&optional (player (listen--player)))
+(cl-defun listen-queue-format-remaining (&optional (player (listen-current-player)))
   "Return PLAYER's queue's remaining duration formatted."
   (when-let ((duration (listen-queue-remaining-duration player)))
     (concat "-" (listen-format-seconds duration))))
@@ -623,7 +623,7 @@ tracks in the queue unchanged)."
 ;;;###autoload
 (defun listen-view-track (track)
   "View information about TRACK."
-  (interactive (list (listen-queue-current (map-elt (listen-player-etc (listen--player)) :queue))))
+  (interactive (list (listen-queue-current (map-elt (listen-player-etc (listen-current-player)) :queue))))
   (with-current-buffer (get-buffer-create (format "*Listen track: %S*" (listen-track-filename track)))
     (let ((inhibit-read-only t))
       (read-only-mode)
@@ -795,7 +795,7 @@ Delay according to `listen-queue-delay-time-range', which see."
          :columns
          (list (list :name "▶" :primary 'descend
                      :getter (lambda (queue _table)
-                               (when-let ((player (listen--player)))
+                               (when-let ((player (listen-current-player)))
                                  (if (eq queue (map-elt (listen-player-etc player) :queue))
                                      "▶" " "))))
                (list :name "Name" :primary 'ascend

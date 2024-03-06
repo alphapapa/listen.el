@@ -91,7 +91,7 @@
 
 ;; FIXME: Declare this differently or something.
 (declare-function make-listen-player-vlc "listen-vlc")
-(defun listen--player ()
+(defun listen-current-player ()
   "Return variable `listen-player' or a newly set one if nil."
   (or listen-player
       (setf listen-player (make-listen-player-vlc))))
