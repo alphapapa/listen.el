@@ -120,6 +120,8 @@ intended to be set from the `listen-menu'."
                                  (unless (eq (listen-queue-current listen-queue) track)
                                    ;; HACK: Update current track in queue.  I don't know a
                                    ;; more optimal place to do this.
+                                   ;; TODO: Potentially use `listen-queue-track-revert' in more
+                                   ;; places to make this unnecessary.
                                    (setf (seq-elt (listen-queue-tracks listen-queue)
                                                   (seq-position (listen-queue-tracks listen-queue)
                                                                 (listen-queue-current listen-queue)))
