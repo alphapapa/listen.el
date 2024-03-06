@@ -96,6 +96,7 @@ For the currently playing track."
 Each is called without arguments and should return a string
 without extra whitespace."
   :type '(repeat (choice (const :tag "Remaining queue time" listen-queue-format-remaining)
+                         (const :tag "Track rating" listen-lighter-format-rating)
                          function)))
 
 (defcustom listen-track-end-functions '(listen-play-next)
@@ -249,6 +250,15 @@ Interactively, jump to current queue's current track."
                        "")
                      " ")
              '("■ ")))))
+
+(defun listen-lighter-format-rating ()
+  "Return the rating of the current track for display in the lighter."
+  (when-let ((player (listen--player))
+             (queue (map-elt (listen-player-etc player) :queue))
+             (track (listen-queue-current queue))
+             (rating (or (listen-track-rating track)
+                         (map-elt (listen-track-etc track) "fmps_rating"))))
+    (format "[%s]" (* 5 (string-to-number rating)))))
 
 (declare-function listen-queue-play "listen-queue")
 (declare-function listen-queue-next-track "listen-queue")
