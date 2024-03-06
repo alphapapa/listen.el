@@ -149,7 +149,10 @@ intended to be set from the `listen-menu'."
                                    (or (listen-track-number track) "")))
                    (list :name "Date"
                          :getter (lambda (track _table)
-                                   (or (listen-track-date track) "")))
+                                   (or (map-elt (listen-track-etc track) "originalyear")
+                                       (map-elt (listen-track-etc track) "originaldate")
+                                       (listen-track-date track)
+                                       "")))
                    (list :name "Genre"
                          :getter (lambda (track _table)
                                    (propertize (or (listen-track-genre track) "")
