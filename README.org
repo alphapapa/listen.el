@@ -77,6 +77,9 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Command ~listen-library-play-or-add~ renamed to ~listen-library-play~, and it now plays the selected queue when playing multiple tracks.
 + Face ~listen-album~ slants italic.
 
+*Fixes*
++ Reading new queue name when no queue is playing.
+
 ** v0.5.1
 
 *Fixes*

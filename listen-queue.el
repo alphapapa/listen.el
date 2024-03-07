@@ -325,11 +325,11 @@ return a new one having it.  PROMPT is passed to `format-prompt',
 which see."
   (cl-labels ((read-queue ()
                 (let* ((player (listen-current-player))
-                       (default-queue-name (or (when listen-queue
-                                                 ;; In a listen buffer: offer its queue as default.
-                                                 (listen-queue-name listen-queue))
-                                               (when (listen--playing-p player)
-                                                 (listen-queue-name (map-elt (listen-player-etc player) :queue)))))
+                       (default-queue-name
+                        (when-let ((queue (or listen-queue
+                                              (when (listen--playing-p player)
+                                                (map-elt (listen-player-etc player) :queue)))))
+                          (listen-queue-name queue)))
                        (queue-names (mapcar #'listen-queue-name listen-queues))
                        (prompt (format-prompt prompt default-queue-name))
                        (selected (completing-read prompt queue-names nil (not allow-new-p)
