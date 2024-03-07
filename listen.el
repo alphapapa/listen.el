@@ -127,7 +127,7 @@ Interactively, uses the default player."
 (defun listen-pause (player)
   "Pause/unpause PLAYER.
 Interactively, uses the default player."
-  (interactive (list listen-player))
+  (interactive (list (listen-current-player)))
   (listen--pause player))
 
 ;; (defun listen-stop (player)
