@@ -119,16 +119,17 @@ intended to be set from the `listen-menu'."
                                 ((equal (listen-track-filename track)
                                         (listen-track-filename current-track))))
                            (progn
-                             (unless (eq (listen-queue-current listen-queue) track)
-                               ;; HACK: Update current track in queue.  I don't know a
-                               ;; more optimal place to do this.
-                               ;; TODO: Potentially use `listen-queue-track-revert' in more
-                               ;; places to make this unnecessary.
-                               (setf (seq-elt (listen-queue-tracks listen-queue)
-                                              (seq-position (listen-queue-tracks listen-queue)
-                                                            (listen-queue-current listen-queue)))
-                                     track
-                                     (listen-queue-current listen-queue) track))
+                             (unless (eq track (listen-queue-current listen-queue))
+                               (if-let ((position (seq-position (listen-queue-tracks listen-queue)
+                                                                (listen-queue-current listen-queue))))
+                                   ;; HACK: Update current track in queue.  I don't know a more
+                                   ;; optimal place to do this.
+                                   ;; TODO: Potentially use `listen-queue-track-revert' in more
+                                   ;; places to make this unnecessary.
+                                   (setf (seq-elt (listen-queue-tracks listen-queue) position) track)
+                                 ;; Old track not found: just add it.
+                                 (push track (listen-queue-tracks queue)))
+                               (setf (listen-queue-current listen-queue) track))
                              "▶")
                          " ")))
                (list :name "#" :primary 'descend
