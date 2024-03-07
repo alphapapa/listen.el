@@ -374,7 +374,6 @@ which see."
            queue)))
   (cl-callf append (listen-queue-tracks queue) (listen-queue-tracks-for files))
   (listen-queue queue)
-  (listen-queue-play queue)
   queue)
 
 (cl-defun listen-queue-add-from-playlist-file (filename queue)

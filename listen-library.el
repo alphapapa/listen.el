@@ -106,7 +106,7 @@
   "g" #'listen-library-revert
   "j" #'listen-library-jump
   "m" #'listen-library-view-track
-  "RET" #'listen-library-play-or-add)
+  "RET" #'listen-library-play)
 
 (define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
   (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record))
@@ -157,16 +157,17 @@ with completion."
   (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
 
 (declare-function listen-play "listen")
-(defun listen-library-play-or-add (tracks &optional queue)
+(defun listen-library-play (tracks &optional queue)
   "Play or add TRACKS.
-If TRACKS is a list of one track, play it immediately; otherwise
-prompt for a QUEUE to add them to."
+If TRACKS is a list of one track, play it; otherwise, prompt for
+a QUEUE to add them to and play it."
   (interactive
    (let ((tracks (listen-library--selected-tracks)))
      (list tracks (when (length> tracks 1)
                     (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t)))))
   (if queue
-      (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
+      (listen-queue-play
+       (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
     (listen-play (listen-current-player) (listen-track-filename (car tracks)))))
 
 (defun listen-library-jump (track)

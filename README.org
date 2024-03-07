@@ -73,6 +73,8 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 ** v0.6-pre
 
 *Changes*
++ Command ~listen-queue-add-files~ no longer plays the queue automatically.
++ Command ~listen-library-play-or-add~ renamed to ~listen-library-play~, and it now plays the selected queue when playing multiple tracks.
 + Face ~listen-album~ slants italic.
 
 ** v0.5.1
