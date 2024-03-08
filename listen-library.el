@@ -132,7 +132,7 @@ show the view."
                              else collect path))
          (tracks (listen-queue-tracks-for filenames))
          (buffer-name (if name
-                          (format "*Listen library: %s" name)
+                          (format "*Listen library: %s*" name)
                         (generate-new-buffer-name (format "*Listen library*"))))
          (buffer (or buffer (get-buffer-create buffer-name)))
          (inhibit-read-only t))
