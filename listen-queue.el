@@ -377,6 +377,10 @@ which see."
   (listen-queue queue)
   queue)
 
+(defun listen-queue-add-tracks (tracks queue)
+  "Add TRACKS to QUEUE."
+  (cl-callf append (listen-queue-tracks queue) tracks))
+
 (cl-defun listen-queue-add-from-playlist-file (filename queue)
   "Add tracks to QUEUE selected from playlist at FILENAME.
 M3U playlists are supported."
@@ -413,19 +417,18 @@ buffer, if any)."
      (list :tracks tracks :queue queue)))
   (listen-library (or tracks
                       (lambda ()
-                        (mapcar #'listen-track-filename
-                                ;; In case the queue gets renamed, or gets replaced by a
-                                ;; different one with the same name:
-                                (listen-queue-tracks
-                                 (or (when (member queue listen-queues)
-                                       ;; Ensure the queue is in the queue list (one from a bookmark
-                                       ;; record wouldn't be the same object anymore).  This allows
-                                       ;; a queue to be renamed during a session and still match
-                                       ;; here.
-                                       queue)
-                                     (cl-find (listen-queue-name queue) listen-queues
-                                              :key #'listen-queue-name :test #'equal)
-                                     (error "Queue not found: %S" queue)))))) ))
+                        (listen-queue-tracks
+                         ;; In case the queue gets renamed, or gets replaced by a
+                         ;; different one with the same name:
+                         (or (when (member queue listen-queues)
+                               ;; Ensure the queue is in the queue list (one from a bookmark
+                               ;; record wouldn't be the same object anymore).  This allows
+                               ;; a queue to be renamed during a session and still match
+                               ;; here.
+                               queue)
+                             (cl-find (listen-queue-name queue) listen-queues
+                                      :key #'listen-queue-name :test #'equal)
+                             (error "Queue not found: %S" queue))))) ))
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
