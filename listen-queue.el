@@ -61,7 +61,7 @@
   "Queues."
   :group 'listen)
 
-(defcustom listen-queue-max-probe-processes 16
+(defcustom listen-queue-max-probe-processes (max 1 (/ (num-processors) 2))
   "Maximum number of processes to run while probing track durations."
   :type 'natnum)
 
