@@ -755,8 +755,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
       (with-timeout ((* 0.1 (length tracks)) (error "Probing for track duration timed out"))
         (while (or tracks processes)
           (probe-more)
-          (while (accept-process-output nil 0.01))
-          (sleep-for 0.01))))))
+          (while (accept-process-output nil 0.01)))))))
 
 ;;;;; Queue delay mode
 
