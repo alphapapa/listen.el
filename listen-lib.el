@@ -55,9 +55,6 @@
   ;; NOTE: All of the metadata values are stored as strings, except for duration.
   filename artist title album number genre (duration 0) date rating etc metadata)
 
-(cl-defmethod cl-print-object ((track listen-track) stream)
-  (prin1 (listen-track-filename track) stream))
-
 ;;;; Variables
 
 (defvar listen-player nil)
