@@ -39,6 +39,8 @@
 With prefix, select individual results with
 `completing-read-multiple'; otherwise show all results and show
 QUERY in result buffer."
+  ;; FIXME: This isn't the ideal way to split functionality between the interactive form and the
+  ;; function body.
   (interactive
    (if current-prefix-arg
        (list (listen-mpd-completing-read))
