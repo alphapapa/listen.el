@@ -34,7 +34,10 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 
 * Installation
 
-Note that Listen.el uses [[https://www.videolan.org/vlc/][VLC]] to play audio, so it must be installed.  Also, ~ffprobe~ (part of [[https://ffmpeg.org/ffprobe.html][FFmpeg]]) is used to read track durations when available, but it is not required.
+*Requirements:*
++ Emacs version 29.1 or later.
++ [[https://www.videolan.org/vlc/][VLC]]: used to play audio.
++ Optional: ~ffprobe~ (part of [[https://ffmpeg.org/ffprobe.html][FFmpeg]]) is used to read tracks' duration when available.
 
 ** GNU ELPA
 
