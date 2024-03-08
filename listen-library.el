@@ -118,15 +118,17 @@
 ;;;###autoload
 (cl-defun listen-library (paths &key name buffer)
   "Show a library view of PATHS.
-PATHS is a list of paths to files and/or directories.
-Interactively, with prefix, NAME may be specified to show in the
-mode line and bookmark name.  BUFFER may be specified in which to
-show the view."
+PATHS is a list of paths to files and/or directories, or a
+function which returns them.  Interactively, with prefix, NAME
+may be specified to show in the mode line and bookmark name.
+BUFFER may be specified in which to show the view."
   (interactive
    (list (list (read-file-name "View library for: "))
          :name (when current-prefix-arg
                  (read-string "Library name: "))))
-  (let* ((filenames (cl-loop for path in paths
+  (let* ((filenames (cl-loop for path in (cl-etypecase paths
+                                           (function (funcall paths))
+                                           (list paths))
                              if (file-directory-p path)
                              append (directory-files-recursively path "." t)
                              else collect path))

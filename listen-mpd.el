@@ -45,7 +45,9 @@ QUERY in result buffer."
    (if current-prefix-arg
        (list (listen-mpd-completing-read))
      (let ((query (listen-mpd-read-query :select-tag-p t)))
-       (list (listen-mpd-tracks-matching query) :query query))))
+       (list (lambda ()
+               (listen-mpd-tracks-matching query))
+             :query query))))
   (listen-library filenames :name (when query
                                     (format "(MPD: %s)" query))))
 

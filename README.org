@@ -79,6 +79,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + In library buffer, show disc number when available.
 
 *Changes*
++ Reverting library buffers shows tracks from the queue or MPD query originally selected.
 + Command ~listen-queue-add-files~ no longer plays the queue automatically.
 + Command ~listen-library-play-or-add~ renamed to ~listen-library-play~, and it now plays the selected queue when playing multiple tracks.
 + Face ~listen-album~ slants italic.

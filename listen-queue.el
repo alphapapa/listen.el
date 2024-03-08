@@ -406,14 +406,26 @@ buffer, if any)."
                      ;; In a queue buffer and the region is active: use it.
                      listen-queue
                    (listen-queue-complete :allow-new-p t)))
-          (tracks (or (if-let ((buffer (listen-queue-buffer queue)))
-                          (with-current-buffer buffer
-                            (when (region-active-p)
-                              (listen-queue-selected))))
-                      (listen-queue-tracks queue))))
-     (list :tracks tracks)))
-  (let ((tracks (or tracks (listen-queue-tracks queue))))
-    (listen-library (mapcar #'listen-track-filename tracks))))
+          (tracks (when-let ((buffer (listen-queue-buffer queue)))
+                    (with-current-buffer buffer
+                      (when (region-active-p)
+                        (listen-queue-selected))))))
+     (list :tracks tracks :queue queue)))
+  (listen-library (or tracks
+                      (lambda ()
+                        (mapcar #'listen-track-filename
+                                ;; In case the queue gets renamed, or gets replaced by a
+                                ;; different one with the same name:
+                                (listen-queue-tracks
+                                 (or (when (member queue listen-queues)
+                                       ;; Ensure the queue is in the queue list (one from a bookmark
+                                       ;; record wouldn't be the same object anymore).  This allows
+                                       ;; a queue to be renamed during a session and still match
+                                       ;; here.
+                                       queue)
+                                     (cl-find (listen-queue-name queue) listen-queues
+                                              :key #'listen-queue-name :test #'equal)
+                                     (error "Queue not found: %S" queue)))))) ))
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
