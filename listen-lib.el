@@ -51,7 +51,9 @@
 
 (cl-defstruct listen-track
   ;; FIXME: Store rating in the slot I already made for it.
-  filename artist title album number genre (duration 0) date rating etc)
+  ;; FIXME: Put metadata in its slot rather than etc.
+  ;; NOTE: All of the metadata values are stored as strings, except for duration.
+  filename artist title album number genre (duration 0) date rating etc metadata)
 
 (cl-defmethod cl-print-object ((track listen-track) stream)
   (prin1 (listen-track-filename track) stream))
