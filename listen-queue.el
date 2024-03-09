@@ -92,7 +92,7 @@ intended to be set from the `listen-menu'."
 (defmacro listen-save-position (&rest body)
   "Eval BODY and go to previous position.
 Useful for when `save-excursion' does not preserve point."
-  (declare (indent defun))
+  (declare (indent defun) (debug (body)))
   (let ((pos-var (gensym)))
     `(let ((,pos-var (point)))
        ,@body
