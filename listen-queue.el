@@ -309,6 +309,10 @@ select track as well."
     (listen-play player (listen-track-filename track))
     (setf (listen-queue-current queue) track
           (map-elt (listen-player-etc player) :queue) queue)
+    ;; TODO: Use `vtable-update-object' in `listen-queue--highlight-current' to just update the
+    ;; playing track instead of refreshing the whole buffer (see
+    ;; <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69664>), and call it here instead of
+    ;; `listen-queue--update-buffer'.
     (listen-queue--update-buffer queue))
   (unless listen-mode
     (listen-mode))
