@@ -1,0 +1,10 @@
+#+TITLE: Listen.el notes
+
+* Bugs
+
+** TODO [#B] Ratings missing in tracks added from MPD
+:LOGBOOK:
+- State "TODO"       from              [2024-03-09 Sat 02:05]
+:END:
+
+Since MPD doesn't provide the rating tag in its metadata, we don't get it when adding tracks directly from MPD.  Of course, we want to avoid reading the track's metadata again, but there may be no alternative.
