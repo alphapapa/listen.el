@@ -265,6 +265,8 @@ If BACKWARDP, move it backward."
     ;; Hey, a chance to use `rotatef'!
     (cl-rotatef (seq-elt (listen-queue-tracks queue) next-position)
                 (seq-elt (listen-queue-tracks queue) position))
+    ;; TODO: Use `vtable-insert-object' and `vtable-remove-object' to avoid calling
+    ;; `listen-queue--update-buffer'.
     (listen-queue--update-buffer queue)
     (vtable-goto-object track)))
 
