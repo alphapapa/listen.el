@@ -78,6 +78,17 @@ intended to be set from the `listen-menu'."
                  ;; (const :tag "Repeat track" track)
                  ))
 
+;;;; Macros
+
+(defmacro listen-queue-with-buffer (queue &rest body)
+  "Eval BODY in QUEUE's buffer, if it has a live one."
+  (declare (indent defun))
+  (let ((buffer-var (gensym)))
+    `(when-let ((,buffer-var (listen-queue-buffer ,queue)))
+       (when (buffer-live-p ,buffer-var)
+         (with-current-buffer ,buffer-var
+           ,@body)))))
+
 ;;;; Commands
 
 ;; (defmacro listen-queue-command (command)
@@ -272,15 +283,14 @@ If BACKWARDP, move it backward."
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
-  (when-let ((buffer (listen-queue-buffer queue)))
-    (with-current-buffer buffer
-      ;; `save-excursion' doesn't work because of the table's being reverted.
-      (let ((inhibit-read-only t))
-        (goto-char (point-min))
-        (when (vtable-current-table)
-          (vtable-revert-command))
-        (listen-queue--annotate-buffer))
-      (listen-queue-goto-current))))
+  (listen-queue-with-buffer queue
+    ;; `save-excursion' doesn't work because of the table's being reverted.
+    (let ((inhibit-read-only t))
+      (goto-char (point-min))
+      (when (vtable-current-table)
+        (vtable-revert-command))
+      (listen-queue--annotate-buffer))
+    (listen-queue-goto-current)))
 
 (declare-function listen-mode "listen")
 (declare-function listen-play "listen")
