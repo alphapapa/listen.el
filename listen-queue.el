@@ -213,7 +213,8 @@ To be called in a queue's buffer."
   (let* ((queue listen-queue)
          ;; HACK: Update duration here (for now).
          (duration (cl-reduce #'+ (listen-queue-tracks queue)
-                              :key #'listen-track-duration)))
+                              :key #'listen-track-duration))
+         (inhibit-read-only t))
     (setf (map-elt (listen-queue-etc queue) :duration) duration)
     (vtable-end-of-table)
     (when duration
