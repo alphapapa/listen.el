@@ -311,6 +311,17 @@ If BACKWARDP, move it backward."
       (listen-queue--annotate-buffer))
     (listen-queue-goto-current)))
 
+(defun listen-queue-update-track (track queue)
+  "Update TRACK in QUEUE.
+Reverts TRACK's metadata from the file and updates it in QUEUE,
+including QUEUE's buffer, if any."
+  ;; TODO: Use where appropriate.
+  (listen-queue-revert-track track)
+  (listen-queue-with-buffer queue
+    (listen-save-position
+      (goto-char (point-min))
+      (vtable-update-object (vtable-current-table) track track))))
+
 (declare-function listen-mode "listen")
 (declare-function listen-play "listen")
 ;;;###autoload
