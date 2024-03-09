@@ -150,7 +150,7 @@ Useful for when `save-excursion' does not preserve point."
                                                                   (listen-queue-current listen-queue))))
                                      ;; HACK: Update current track in queue.  I don't know a more
                                      ;; optimal place to do this.
-                                     ;; TODO: Potentially use `listen-queue-track-revert' in more
+                                     ;; TODO: Potentially use `listen-queue-revert-track' in more
                                      ;; places to make this unnecessary.
                                      (setf (seq-elt (listen-queue-tracks listen-queue) position) track)
                                    ;; Old track not found: just add it.
@@ -504,7 +504,7 @@ with \"ffprobe\"."
         (listen-queue--add-track-durations tracks))
       tracks)))
 
-(defun listen-queue-track-revert (track)
+(defun listen-queue-revert-track (track)
   "Revert TRACK's metadata from disk."
   ;; TODO: Use this where appropriate.
   (let ((new-track (car (listen-queue-tracks-for (list (listen-track-filename track))))))
@@ -710,7 +710,7 @@ tracks in the queue unchanged)."
                            (string< (car a) (car b))))))
          :actions (list "q" (lambda (_) (quit-window))
                         "g" (lambda (_)
-                              (listen-queue-track-revert track)
+                              (listen-queue-revert-track track)
                               (vtable-revert-command))
                         "?" (lambda (_) (call-interactively #'listen-menu))
                         "n" (lambda (_) (forward-line 1))
