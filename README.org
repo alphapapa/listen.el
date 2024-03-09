@@ -83,6 +83,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 *Changes*
 + Command ~listen-queue~ switches to existing queue buffers without reverting them.
 + Transient ~qq~ command exits the transient.
++ Optimize updating of individual tracks in queue buffer.
 
 ** v0.6
 

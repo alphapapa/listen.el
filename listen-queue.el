@@ -89,6 +89,17 @@ intended to be set from the `listen-menu'."
          (with-current-buffer ,buffer-var
            ,@body)))))
 
+(defmacro listen-save-position (&rest body)
+  "Eval BODY and go to previous position.
+Useful for when `save-excursion' does not preserve point."
+  (declare (indent defun))
+  (let ((pos-var (gensym)))
+    `(let ((,pos-var (point)))
+       ,@body
+       ;; Ignore errors in case it's now out of range.
+       (ignore-errors
+         (goto-char ,pos-var)))))
+
 ;;;; Commands
 
 ;; (defmacro listen-queue-command (command)
@@ -267,7 +278,8 @@ If BACKWARDP, move it backward."
   (interactive)
   (ring-insert listen-queue-kill-ring track)
   (cl-callf2 remove track (listen-queue-tracks queue))
-  (listen-queue--update-buffer queue))
+  (listen-save-position
+    (vtable-revert-command)))
 
 (defun listen-queue-yank (track position queue)
   "Yank TRACK into QUEUE at POSITION."
@@ -279,7 +291,7 @@ If BACKWARDP, move it backward."
         (nconc (seq-take (listen-queue-tracks queue) position)
                (list track)
                (seq-subseq (listen-queue-tracks queue) position)))
-  (listen-queue--update-buffer queue))
+  (vtable-revert-command))
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
@@ -307,13 +319,16 @@ select track as well."
      (list queue track)))
   (let ((player (listen-current-player)))
     (listen-play player (listen-track-filename track))
-    (setf (listen-queue-current queue) track
-          (map-elt (listen-player-etc player) :queue) queue)
-    ;; TODO: Use `vtable-update-object' in `listen-queue--highlight-current' to just update the
-    ;; playing track instead of refreshing the whole buffer (see
-    ;; <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69664>), and call it here instead of
-    ;; `listen-queue--update-buffer'.
-    (listen-queue--update-buffer queue))
+    (let ((previous-track (listen-queue-current queue)))
+      (setf (listen-queue-current queue) track
+            (map-elt (listen-player-etc player) :queue) queue)
+      (listen-queue-with-buffer queue
+        (listen-save-position
+          (goto-char (point-min))
+          (when previous-track
+            (listen-queue--vtable-update-object (vtable-current-table) previous-track previous-track))
+          (listen-queue--vtable-update-object (vtable-current-table) track track))
+        (listen-queue--highlight-current))))
   (unless listen-mode
     (listen-mode))
   queue)
@@ -869,6 +884,52 @@ Delay according to `listen-queue-delay-time-range', which see."
       (goto-char (point-min))
       (hl-line-mode 1)
       (pop-to-buffer (current-buffer)))))
+
+;;;; Compatibility
+
+(defalias 'listen-queue--vtable-update-object
+  (if (version<= emacs-version "29.2")
+      ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69664>.
+      (lambda (table object old-object)
+        "Replace OLD-OBJECT in TABLE with OBJECT."
+        (let* ((objects (vtable-objects table))
+               (inhibit-read-only t))
+          ;; First replace the object in the object storage.
+          (if (eq old-object (car objects))
+              ;; It's at the head, so replace it there.
+              (setf (vtable-objects table)
+                    (cons object (cdr objects)))
+            ;; Otherwise splice into the list.
+            (while (and (cdr objects)
+                        (not (eq (cadr objects) old-object)))
+              (setq objects (cdr objects)))
+            (unless objects
+              (error "Can't find the old object"))
+            (setcar (cdr objects) object))
+          ;; Then update the cache...
+          (let* ((line-number (seq-position (car (vtable--cache table)) old-object
+                                            (lambda (a b)
+                                              (equal (car a) b))))
+                 (line (elt (car (vtable--cache table)) line-number)))
+            (unless line
+              (error "Can't find cached object"))
+            (setcar line object)
+            (setcdr line (vtable--compute-cached-line table object))
+            ;; ... and redisplay the line in question.
+            (save-excursion
+              (vtable-goto-object old-object)
+              (let ((keymap (get-text-property (point) 'keymap))
+                    (start (point)))
+                (delete-line)
+                (vtable--insert-line table line line-number
+                                     (nth 1 (vtable--cache table))
+                                     (vtable--spacer table))
+                (add-text-properties start (point) (list 'keymap keymap
+                                                         'vtable table))))
+            ;; We may have inserted a non-numerical value into a previously
+            ;; all-numerical table, so recompute.
+            (vtable--recompute-numerical table (cdr line)))))
+    #'vtable-update-object))
 
 ;;;; Footer
 
