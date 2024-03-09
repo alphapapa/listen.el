@@ -308,6 +308,8 @@ select track as well."
   "Jump to current track."
   (interactive)
   (when-let ((current-track (listen-queue-current listen-queue)))
+    ;; Ensure point is within the vtable.
+    (goto-char (point-min))
     (vtable-goto-object current-track)))
 
 (defun listen-queue-complete-track (queue)
