@@ -279,7 +279,12 @@ If BACKWARDP, move it backward."
   (ring-insert listen-queue-kill-ring track)
   (cl-callf2 remove track (listen-queue-tracks queue))
   (listen-save-position
-    (vtable-revert-command)))
+    (goto-char (point-min))
+    (vtable-goto-object track)
+    ;; NOTE: We don't update the subsequent tracks, which means their position number will be off,
+    ;; though still in order.  This is because in large queues (e.g. 2k tracks), refreshing the
+    ;; whole vtable, or even the rest of it, is too slow.
+    (vtable-remove-object (vtable-current-table) track)))
 
 (defun listen-queue-yank (track position queue)
   "Yank TRACK into QUEUE at POSITION."
@@ -287,11 +292,13 @@ If BACKWARDP, move it backward."
    (list (ring-ref listen-queue-kill-ring 0)
          (seq-position (listen-queue-tracks listen-queue) (vtable-current-object))
          listen-queue))
-  (setf (listen-queue-tracks queue)
-        (nconc (seq-take (listen-queue-tracks queue) position)
-               (list track)
-               (seq-subseq (listen-queue-tracks queue) position)))
-  (vtable-revert-command))
+  (let ((previous-track (seq-elt (listen-queue-tracks queue) position)))
+    (setf (listen-queue-tracks queue)
+          (nconc (seq-take (listen-queue-tracks queue) position)
+                 (list track)
+                 (seq-subseq (listen-queue-tracks queue) position)))
+    (vtable-insert-object (vtable-current-table) track previous-track)
+    (vtable-update-object (vtable-current-table) previous-track previous-track)))
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
