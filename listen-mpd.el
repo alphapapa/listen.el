@@ -80,6 +80,7 @@ If SELECT-TAG-P, read TAG with completion."
                                 ('file "MPC Search (track): ")
                                 (_ (format "MPC Search (%s): " tag))))))
 
+;;;###autoload
 (cl-defun listen-mpd-tracks-matching (query &key (tag "file") select-tag-p)
   "Return tracks matching QUERY on TAG.
 If SELECT-TAG-P, prompt for TAG with completion.  If QUERY is
