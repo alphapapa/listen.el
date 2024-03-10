@@ -44,7 +44,10 @@
 
 (cl-defstruct listen-player
   ;; TODO: Add queue slot.
-  process command args etc)
+  process command args
+  (max-volume
+   100 :documentation "Maximum volume in percent (may be greater than 100 for some players).")
+  etc)
 
 (cl-defstruct listen-queue
   name tracks current etc)

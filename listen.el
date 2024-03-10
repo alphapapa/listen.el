@@ -362,8 +362,9 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
      :transient t)
     ("V" "Up" (lambda ()
                 (interactive)
-                (let ((player (listen-current-player)))
-                  (listen-volume player (min 100 (+ (listen--volume player) 5)))))
+                (let* ((player (listen-current-player))
+                       (max-volume (listen-player-max-volume player)))
+                  (listen-volume player (min max-volume (+ (listen--volume player) 5)))))
      :transient t)]
    ["Repeat"
     ("rn" "None" (lambda () (interactive) (setopt listen-queue-repeat-mode nil))

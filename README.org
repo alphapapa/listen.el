@@ -84,6 +84,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Command ~listen-queue~ switches to existing queue buffers without reverting them.
 + Transient ~qq~ command exits the transient.
 + Optimize updating of individual tracks in queue buffer.
++ Improve handling of maximum volume with VLC (allowing boosting over 100%).
 
 ** v0.6
 

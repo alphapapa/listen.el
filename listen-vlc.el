@@ -31,10 +31,19 @@
 
 ;;;; Types
 
-(cl-defstruct (listen-player-vlc
-               (:include listen-player
-                         (command "vlc")
-                         (args '("-I" "rc")))))
+(cl-defstruct
+    (listen-player-vlc
+     (:include listen-player
+               (command "vlc")
+               (args '("-I" "rc"))
+               (max-volume
+                ;; VLC allows very large volume percentages to boost volume far beyond what would be
+                ;; practical (but it's sometimes useful).  It's not clear what the actual maximum
+                ;; percentage is, even from looking at VLC's source code, but testing shows that
+                ;; values up to at least 800 seem to work.  The Qt GUI for VLC 3.0.20 allows up to
+                ;; 200% (in the OSD text, while showing a max of 125% in the slider), so let's go
+                ;; with that.
+                200))))
 
 ;;;; Functions
 
@@ -116,11 +125,17 @@ Stops playing, clears playlist, adds FILE, and plays it."
 (cl-defmethod listen--volume ((player listen-player-vlc) &optional volume)
   "Return or set PLAYER's VOLUME.
 VOLUME is an integer percentage."
-  (if volume
-      (progn
-        (cl-assert (<= 0 volume 100) nil "VOLUME must be 0-100")
-        (listen--send player (format "volume %s" (* 255 (/ volume 100.0)))))
-    (* 100 (/ (string-to-number (listen--send player "volume")) 255.0))))
+  ;; While it is unclear from VLC's documentation, and even its source code at some revisions,
+  ;; testing shows that the "rc" interface handles volume on a scale of 256 steps, where 255 = 100%
+  ;; (and values >255 are >100%).  See <https://code.videolan.org/videolan/vlc/-/issues/25143> and
+  ;; <https://code.videolan.org/videolan/vlc/-/commits/80b8c8254cb2fddd59d31ba3a46a6640d7ef23da>.
+  (pcase-let (((cl-struct listen-player max-volume) player))
+    (if volume
+        (progn
+          (unless (<= 0 volume max-volume)
+            (user-error "VOLUME must be 0-%s" max-volume))
+          (listen--send player (format "volume %s" (* 255 (/ volume 100.0)))))
+      (* 100 (/ (string-to-number (listen--send player "volume")) 255.0)))))
 
 (provide 'listen-vlc)
 
