@@ -636,6 +636,7 @@ queue buffer."
   "Revert QUEUE's buffer.
 When RELOADP (interactively, with prefix), reload tracks from
 disk."
+  ;; TODO: Revise the terminology (i.e. "revert" should mean to revert from disk).
   (interactive (list listen-queue :reloadp current-prefix-arg))
   (when reloadp
     (listen-queue-reload queue))
