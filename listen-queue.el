@@ -639,7 +639,12 @@ disk."
   ;; TODO: Revise the terminology (i.e. "revert" should mean to revert from disk).
   (interactive (list listen-queue :reloadp current-prefix-arg))
   (when reloadp
-    (listen-queue-reload queue))
+    (listen-queue-reload queue)
+    (when (listen-queue-current queue)
+      ;; Update current track by filename.
+      (setf (listen-queue-current queue)
+            (cl-find (listen-track-filename (listen-queue-current queue))
+                     (listen-queue-tracks queue) :key #'listen-track-filename :test #'equal))))
   (listen-queue--update-buffer queue))
 
 (defun listen-queue-reload (queue)

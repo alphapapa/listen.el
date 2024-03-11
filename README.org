@@ -86,6 +86,9 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Optimize updating of individual tracks in queue buffer.
 + Improve handling of maximum volume with VLC (allowing boosting over 100%).
 
+*Fixes*
++ When reverting a queue's tracks from disk, re-detect the currently playing track by filename.
+
 ** v0.6
 
 *Additions*
