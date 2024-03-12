@@ -230,7 +230,7 @@ Useful for when `save-excursion' does not preserve point."
         (listen-queue-goto-current)))
     ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
     ;; `listen-queue--bookmark-handler' works correctly.
-    (pop-to-buffer (current-buffer))))
+    (pop-to-buffer buffer)))
 
 (defun listen-queue--annotate-buffer ()
   "Annotate current buffer.
