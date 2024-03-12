@@ -936,28 +936,28 @@ Delay according to `listen-queue-delay-time-range', which see."
               (error "Can't find the old object"))
             (setcar (cdr objects) object))
           ;; Then update the cache...
-          (let* ((line-number (seq-position (car (vtable--cache table)) old-object
-                                            (lambda (a b)
-                                              (equal (car a) b))))
-                 (line (elt (car (vtable--cache table)) line-number)))
-            (unless line
-              (error "Can't find cached object"))
-            (setcar line object)
-            (setcdr line (vtable--compute-cached-line table object))
-            ;; ... and redisplay the line in question.
-            (save-excursion
-              (vtable-goto-object old-object)
-              (let ((keymap (get-text-property (point) 'keymap))
-                    (start (point)))
-                (delete-line)
-                (vtable--insert-line table line line-number
-                                     (nth 1 (vtable--cache table))
-                                     (vtable--spacer table))
-                (add-text-properties start (point) (list 'keymap keymap
-                                                         'vtable table))))
-            ;; We may have inserted a non-numerical value into a previously
-            ;; all-numerical table, so recompute.
-            (vtable--recompute-numerical table (cdr line)))))
+          (if-let ((line-number (seq-position (car (vtable--cache table)) old-object
+                                              (lambda (a b)
+                                                (equal (car a) b))))
+                   (line (elt (car (vtable--cache table)) line-number)))
+              (progn
+                (setcar line object)
+                (setcdr line (vtable--compute-cached-line table object))
+                ;; ... and redisplay the line in question.
+                (save-excursion
+                  (vtable-goto-object old-object)
+                  (let ((keymap (get-text-property (point) 'keymap))
+                        (start (point)))
+                    (delete-line)
+                    (vtable--insert-line table line line-number
+                                         (nth 1 (vtable--cache table))
+                                         (vtable--spacer table))
+                    (add-text-properties start (point) (list 'keymap keymap
+                                                             'vtable table))))
+                ;; We may have inserted a non-numerical value into a previously
+                ;; all-numerical table, so recompute.
+                (vtable--recompute-numerical table (cdr line)))
+            (error "Can't find cached object in vtable"))))
     #'vtable-update-object))
 
 ;;;; Footer
