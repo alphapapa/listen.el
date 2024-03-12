@@ -152,7 +152,8 @@ specified in which to show the view."
                                 (list tracks)))
                    ;; (taxy-sort #'string< #'listen-queue-track-)
                    (taxy-sort* #'string< #'taxy-name)
-                   taxy-magit-section-insert))
+                   taxy-magit-section-insert)
+      (goto-char (point-min)))
     (pop-to-buffer buffer)))
 
 ;;;; Commands
