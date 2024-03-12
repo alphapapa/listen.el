@@ -85,6 +85,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + Transient ~qq~ command exits the transient.
 + Optimize updating of individual tracks in queue buffer.
 + Improve handling of maximum volume with VLC (allowing boosting over 100%).
++ Library buffer name defaults to given path.
 
 *Fixes*
 + When reverting a queue's tracks from disk, re-detect the currently playing track by filename.

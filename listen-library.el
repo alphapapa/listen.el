@@ -129,10 +129,12 @@ specified in which to show the view."
                              (listen-queue-tracks-for
                               (if (file-directory-p path)
                                   (directory-files-recursively path ".")
-                                (list path))))))
-     (list tracks-function
-           :name (when current-prefix-arg
-                   (read-string "Library name: ")))))
+                                (list path)))))
+          (name (cond (current-prefix-arg
+                       (read-string "Library name: "))
+                      ((file-directory-p path)
+                       path))))
+     (list tracks-function :name name)))
   (let* ((tracks (cl-etypecase tracks
                    (function (funcall tracks))
                    (list tracks)))
