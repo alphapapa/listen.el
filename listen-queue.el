@@ -446,7 +446,7 @@ the queue's buffer is updated, if any."
         (cl-delete-duplicates (listen-queue-tracks queue)
                               :key (lambda (track)
                                      (expand-file-name (listen-track-filename track)))
-                              :test #'equal))
+                              :test #'file-equal-p))
   (listen-queue--update-buffer queue))
 
 (cl-defun listen-queue-add-from-playlist-file (filename queue)
@@ -657,13 +657,19 @@ disk."
       ;; Update current track by filename.
       (setf (listen-queue-current queue)
             (cl-find (listen-track-filename (listen-queue-current queue))
-                     (listen-queue-tracks queue) :key #'listen-track-filename :test #'equal))))
+                     (listen-queue-tracks queue) :key #'listen-track-filename :test #'file-equal-p))))
   (listen-queue--update-buffer queue))
 
 (defun listen-queue-reload (queue)
   "Reload QUEUE's tracks from disk."
+  ;; FIXME: If a track's metadata can't be read by `listen-info--decode-info-fields',
+  ;; `listen-queue-track' will return nil for it instead of a track.  This means that, for a few
+  ;; filetypes that, e.g. MPD can read but `listen-info' can't, this function will end up discarding
+  ;; tracks that might have metadata from MPD and that VLC could play.
   (setf (listen-queue-tracks queue)
-        (listen-queue-tracks-for (mapcar #'listen-track-filename (listen-queue-tracks queue)))))
+        (listen-queue-tracks-for (mapcar (lambda (track)
+                                           (expand-file-name (listen-track-filename track)))
+                                         (listen-queue-tracks queue)))))
 
 (defun listen-queue-order-by ()
   "Order the queue by the column at point.
