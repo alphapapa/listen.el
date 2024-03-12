@@ -135,10 +135,7 @@ specified in which to show the view."
                       ((file-directory-p path)
                        path))))
      (list tracks-function :name name)))
-  (let* ((tracks (cl-etypecase tracks
-                   (function (funcall tracks))
-                   (list tracks)))
-         (buffer-name (if name
+  (let* ((buffer-name (if name
                           (format "*Listen library: %s*" name)
                         (generate-new-buffer-name (format "*Listen library*"))))
          (buffer (or buffer (get-buffer-create buffer-name)))
@@ -150,7 +147,9 @@ specified in which to show the view."
       (erase-buffer)
       (thread-last listen-library-taxy
                    taxy-emptied
-                   (taxy-fill tracks)
+                   (taxy-fill (cl-etypecase tracks
+                                (function (funcall tracks))
+                                (list tracks)))
                    ;; (taxy-sort #'string< #'listen-queue-track-)
                    (taxy-sort* #'string< #'taxy-name)
                    taxy-magit-section-insert))
