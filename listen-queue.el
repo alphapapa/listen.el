@@ -226,7 +226,6 @@ Useful for when `save-excursion' does not preserve point."
                           "l" (lambda (_) "Show (selected) tracks in library view."
                                 (call-interactively #'listen-library-from-queue))
                           "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
-        (setf (listen-queue-buffer queue) (current-buffer))
         (listen-queue--annotate-buffer)
         (listen-queue-goto-current)))
     ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
