@@ -437,8 +437,17 @@ which see."
   queue)
 
 (defun listen-queue-add-tracks (tracks queue)
-  "Add TRACKS to QUEUE."
-  (cl-callf append (listen-queue-tracks queue) tracks))
+  "Add TRACKS to QUEUE.
+Duplicate tracks (by filename) are removed from the queue, and
+the queue's buffer is updated, if any."
+  (cl-callf append (listen-queue-tracks queue) tracks)
+  ;; TODO: Consider updating the metadata of any duplicate tracks.
+  (setf (listen-queue-tracks queue)
+        (cl-delete-duplicates (listen-queue-tracks queue)
+                              :key (lambda (track)
+                                     (expand-file-name (listen-track-filename track)))
+                              :test #'equal))
+  (listen-queue--update-buffer queue))
 
 (cl-defun listen-queue-add-from-playlist-file (filename queue)
   "Add tracks to QUEUE selected from playlist at FILENAME.
@@ -557,7 +566,8 @@ tracks no longer backed by a file are removed."
   ;; an apparent duplicate that does have a file.
   (setf (listen-queue-tracks queue)
         (cl-remove-if-not #'file-exists-p (listen-queue-tracks queue)
-                          :key #'listen-track-filename)
+                          :key (lambda (track)
+                                 (expand-file-name (listen-track-filename track))))
         (listen-queue-tracks queue)
         (cl-remove-duplicates
          (listen-queue-tracks queue)

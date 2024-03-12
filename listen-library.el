@@ -161,15 +161,11 @@ specified in which to show the view."
 (defun listen-library-to-queue (tracks queue)
   "Add current library buffer's TRACKS to QUEUE.
 Interactively, add TRACKS in sections at point and select QUEUE
-with completion.  Duplicate tracks (by filename) are removed from
-the queue."
+with completion."
   (interactive
    (list (listen-library--selected-tracks)
          (listen-queue-complete :prompt "Add to queue" :allow-new-p t)))
-  (cl-callf2 append (listen-queue-tracks queue) tracks)
-  (setf (listen-queue-tracks queue)
-        (cl-delete-duplicates (listen-queue-tracks queue)
-                              :key #'listen-track-filename :test #'equal)))
+  (listen-queue-add-tracks tracks queue))
 
 (declare-function listen-play "listen")
 (declare-function listen-queue-add-tracks "listen-queue")
