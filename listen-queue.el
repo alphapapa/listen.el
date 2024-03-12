@@ -532,7 +532,10 @@ with \"ffprobe\"."
 (defun listen-queue-revert-track (track)
   "Revert TRACK's metadata from disk."
   ;; TODO: Use this where appropriate.
-  (let ((new-track (car (listen-queue-tracks-for (list (listen-track-filename track))))))
+  (when-let ((new-track (car (listen-queue-tracks-for (list (listen-track-filename track))))))
+    ;; If `listen-queue-track' (and thereby `listen-queue-tracks-for') returns nil for a track
+    ;; (e.g. if its metadata can't be read), leave it alone (e.g. its metadata might have come from
+    ;; by MPD).
     (dolist (slot '(artist title album number date genre etc))
       ;; FIXME: Store metadata in its own slot and don't misuse etc slot.
       (setf (cl-struct-slot-value 'listen-track slot track)
@@ -662,14 +665,7 @@ disk."
 
 (defun listen-queue-reload (queue)
   "Reload QUEUE's tracks from disk."
-  ;; FIXME: If a track's metadata can't be read by `listen-info--decode-info-fields',
-  ;; `listen-queue-track' will return nil for it instead of a track.  This means that, for a few
-  ;; filetypes that, e.g. MPD can read but `listen-info' can't, this function will end up discarding
-  ;; tracks that might have metadata from MPD and that VLC could play.
-  (setf (listen-queue-tracks queue)
-        (listen-queue-tracks-for (mapcar (lambda (track)
-                                           (expand-file-name (listen-track-filename track)))
-                                         (listen-queue-tracks queue)))))
+  (mapc #'listen-queue-revert-track (listen-queue-tracks queue)))
 
 (defun listen-queue-order-by ()
   "Order the queue by the column at point.
