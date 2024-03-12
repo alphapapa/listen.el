@@ -258,7 +258,8 @@ Interactively, jump to current queue's current track."
              (track (listen-queue-current queue))
              (rating (or (listen-track-rating track)
                          (map-elt (listen-track-etc track) "fmps_rating"))))
-    (format "[%s]" (* 5 (string-to-number rating)))))
+    (unless (equal "-1" rating)
+      (format "[%s]" (* 5 (string-to-number rating))))))
 
 (declare-function listen-queue-play "listen-queue")
 (declare-function listen-queue-next-track "listen-queue")
