@@ -123,9 +123,16 @@ returns them.  Interactively, with prefix, NAME may be specified
 to show in the mode line and bookmark name.  BUFFER may be
 specified in which to show the view."
   (interactive
-   (list (list (read-file-name "View library for: "))
-         :name (when current-prefix-arg
-                 (read-string "Library name: "))))
+   (let* ((path (read-file-name "View library for: "))
+          (tracks-function (lambda ()
+                             ;; TODO: Use "&rest" for `listen-queue-tracks-for'?
+                             (listen-queue-tracks-for
+                              (if (file-directory-p path)
+                                  (directory-files-recursively path ".")
+                                (list path))))))
+     (list tracks-function
+           :name (when current-prefix-arg
+                   (read-string "Library name: ")))))
   (let* ((tracks (cl-etypecase tracks
                    (function (funcall tracks))
                    (list tracks)))
