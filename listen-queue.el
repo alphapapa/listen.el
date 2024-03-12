@@ -127,7 +127,8 @@ Useful for when `save-excursion' does not preserve point."
       (progn
         (pop-to-buffer buffer)
         (listen-queue-goto-current))
-    (with-current-buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue)))
+    (with-current-buffer
+        (setf buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue))))
       (let ((inhibit-read-only t))
         (listen-queue-mode)
         (setf listen-queue queue)
@@ -225,9 +226,12 @@ Useful for when `save-excursion' does not preserve point."
                           "l" (lambda (_) "Show (selected) tracks in library view."
                                 (call-interactively #'listen-library-from-queue))
                           "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
+        (setf (listen-queue-buffer queue) (current-buffer))
         (listen-queue--annotate-buffer)
-        (listen-queue-goto-current))
-      (pop-to-buffer (current-buffer)))))
+        (listen-queue-goto-current)))
+    ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
+    ;; `listen-queue--bookmark-handler' works correctly.
+    (pop-to-buffer (current-buffer))))
 
 (defun listen-queue--annotate-buffer ()
   "Annotate current buffer.

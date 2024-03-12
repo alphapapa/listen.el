@@ -88,6 +88,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 
 *Fixes*
 + When reverting a queue's tracks from disk, re-detect the currently playing track by filename.
++ Queue bookmark handler.
 
 ** v0.6
 
