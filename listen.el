@@ -338,6 +338,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
   :refresh-suffixes t
   ["Listen"
    :description
+   ;; TODO: Try using `transient-info' class for this line.
    (lambda ()
      (if listen-player
          (concat "Listening: " (listen-mode-lighter))
