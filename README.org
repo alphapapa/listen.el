@@ -91,6 +91,7 @@ Use the command ~listen~ to show the Transient menu.  From there, it is--hopeful
 + When reverting a queue's tracks from disk, re-detect the currently playing track by filename.
 + Queue bookmark handler.
 + Open library buffer with point at beginning.
++ In queue buffer, sort track numbers numerically.
 
 ** v0.6
 

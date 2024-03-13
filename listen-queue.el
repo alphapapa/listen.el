@@ -188,7 +188,9 @@ Useful for when `save-excursion' does not preserve point."
                                              'face 'listen-album)))
                  (list :name "#" :align 'right
                        :getter (lambda (track _table)
-                                 (or (listen-track-number track) "")))
+                                 (or (when-let ((number (listen-track-number track)))
+                                       (string-to-number number))
+                                     "")))
                  (list :name "Date"
                        :getter (lambda (track _table)
                                  (or (map-elt (listen-track-etc track) "originalyear")
