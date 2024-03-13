@@ -1,7 +1,13 @@
 #+title: listen.el
 
+# NOTE: It would be preferable to put these at the bottom of the file under the export options heading, but it seems that "TEXINFO_DIR_CATEGORY" only works at the top of the file.
+#+EXPORT_FILE_NAME: listen.texi
+#+TEXINFO_DIR_CATEGORY: Emacs
+#+TEXINFO_DIR_TITLE: Listen: (listen)
+#+TEXINFO_DIR_DESC: Audio/Music player
+
 # ELPA badge image.
-[[https://elpa.gnu.org/packages/listen.html][https://elpa.gnu.org/packages/listen.svg]]
+[[file:https:/elpa.gnu.org/packages/listen.html][https://elpa.gnu.org/packages/listen.svg]]
 
 This package aims to provide a simple audio/music player for Emacs.  It should "just work," with little-to-no configuration, have intuitive commands, and be easily extended and customized.  (Contrast to setting up EMMS, or having to configure external players like MPD.)  A Transient menu, under the command ~listen~, is the primary entry point.
 
@@ -205,13 +211,7 @@ Listen.el is published in GNU ELPA and is considered part of GNU Emacs.  Therefo
 
 ** Info export options
 
-#+EXPORT_FILE_NAME: listen.texi
-#+TEXINFO_DIR_CATEGORY: Emacs
-#+TEXINFO_DIR_TITLE: Listen: (listen)
-#+TEXINFO_DIR_DESC: Audio/Music player
-
-# NOTE: We could use these, but that causes a pointless error, "org-compile-file: File "..README.info" wasn't produced...", so we just rename the files in the after-save-hook instead.
-# #+TEXINFO_FILENAME: listen.info
+# NOTE: See note at top of file.
 
 ** File-local variables
 
