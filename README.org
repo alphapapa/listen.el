@@ -23,10 +23,9 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 
 * Contents                                                         :noexport:
 :PROPERTIES:
-:TOC:      :include siblings :depth 0 :force (nothing) :ignore (this) :local (nothing)
+:TOC:      :include siblings :depth 0 :force (depth) :ignore (this) :local (nothing)
 :END:
 :CONTENTS:
-- [[#screenshots][Screenshots]]
 - [[#installation][Installation]]
 - [[#configuration][Configuration]]
 - [[#usage][Usage]]
@@ -34,7 +33,7 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 - [[#development][Development]]
 :END:
 
-* Screenshots
+* Screenshots                                                      :noexport:
 
 [[file:images/screenshot-modus-vivendi-tinted.png]]
 
@@ -74,14 +73,158 @@ One might also use systems like [[https://github.com/progfolio/elpaca][Elpaca]] 
 Listen is intended to work with little-to-no configuration.  You can set the ~listen-directory~ to the location of your music library if it's not at ~~/Music~.  See ~M-x customize-group RET listen RET~.
 
 * Usage
+:PROPERTIES:
+:TOC:      :include descendants :depth 1 :force (nothing) :ignore (nothing) :local (nothing)
+:END:
 
-Use the command ~listen~ to show the Transient menu.  From there, it is--hopefully--self-explanatory.  Please feel free to give feedback if it doesn't seem so.
+Use the command ~listen~ to show the Transient menu.  From there, it is--hopefully--self-explanatory.  Please feel free to give feedback if it doesn't seem so.  For more information, see the following sections.
+
+:CONTENTS:
+- [[#queues][Queues]]
+- [[#library][Library]]
+- [[#players][Players]]
+- [[#mode][Mode]]
+- [[#tips][Tips]]
+:END:
+
+** Queues
+
+While ~listen~ can simply play one track and stop, playing multiple tracks sequentially is provided by /queues/ (what other players may call /playlists/).  A queue is a list of tracks, each of which is backed by a file on disk, and which may have associated metadata (provided by reading the file in Emacs with the ~listen-info~ library, or from an external source, like an MPD server).
+
+Queues are automatically persisted to disk in the variable ~listen-queues~.
+
+A new, empty queue may be made with the command ~listen-queue-new~, but it's usually more convenient to use a command that adds tracks to a queue and enter a new queue name.
+
+A queue's tracks may be de-duplicated using the command ~listen-queue-deduplicate~.  Tracks that appear to have the same metadata (artist, album, and title, compared case-insensitively) are de-duplicated.  Also, any tracks no longer backed by a file are removed.
+
+*** Adding tracks to a queue
+
+Tracks can be added to a queue from various sources using these commands:
+
++ Files and directories: ~listen-queue-add-files~.  Individual files may be chosen, or a directory may be, which will be searched recursively for tracks, which are added to the selected queue.
++ From an MPD server: ~listen-queue-add-from-mpd~.  An MPD search query will be read with completion, and matching tracks are added to the selected queue.
++ From a playlist file: ~listen-queue-add-from-playlist-file~.  The playlist file is read, and its tracks are added to the selected queue.
+
+*** Queue buffer
+
+A queue may be shown in a buffer with the command ~listen-queue~, which shows its tracks in a [[info:vtable#Introduction][vtable]] with columns for metadata and filename.
+
+**** Commands
+
+In the buffer, you can use these commands:
+
+| Listen to track | {{{command-binding(listen-queue-play,RET)}}} |
+
+| Move point forward/backward     | {{{command-binding(forward-line,n)}}} / {{{command-binding(previous-line,p)}}} |
+| Move track forward              | {{{command-binding(listen-queue-transpose-forward,N)}}}                        |
+| Move track backward             | {{{command-binding(listen-queue-transpose-backward,P)}}}                       |
+| Kill track                      | {{{command-binding(listen-queue-kill-track,C-k)}}}                             |
+| Yank track                      | {{{command-binding(listen-queue-yank,C-y)}}}                                   |
+| Show track's metadata           | {{{command-binding(listen-view-track,m)}}}                                     |
+| Jump to track's file in Dired   | {{{command-binding(listen-jump,j)}}}                                           |
+
+| Show tracks (at point or selected) in library buffer | {{{command-binding(listen-library-from-queue,l)}}}  |
+| Run shell command on tracks (at point or selected)   | {{{command-binding(listen-queue-shell-command,!)}}} |
+
+| Order the queue by column at point | {{{command-binding(listen-queue-order-by,o)}}} |
+| Shuffle the queue                  | {{{command-binding(listen-queue-shuffle,s)}}}  |
+
+| Revert the queue buffer         | {{{command-binding(listen-queue-revert,g)}}} |
+| Revert queue's tracks from disk | ~C-u g~                                        |
+| Pause the player                | {{{command-binding(listen-pause,SPC)}}}      |
+| Show the menu                   | {{{command-binding(listen-menu,?)}}}         |
+
+**** Bookmarks
+
+Queue buffers may be bookmarked with {{{command-binding(bookmark-set,C-x r m)}}}.  The bookmark record refers to the queue by name, so if the queue is renamed or discarded, the bookmark will remain.
+
+*** Queue list buffer
+
+The queue list buffer may be shown with the command ~listen-queue-list~.  In the list buffer, you can use these commands:
+
+| Show queue's buffer | {{{command-binding(listen-queue,RET)}}} |
+
+| Move point forward/backward           | {{{command-binding(forward-line,n)}}} / {{{command-binding(previous-line,p)}}} |
+| Rename a queue                        | {{{command-binding(listen-queue-rename,R)}}}                                   |
+| Discard a queue                       | {{{command-binding(listen-queue-discard,C-k)}}}                                |
+| Show queue's tracks in library buffer | {{{command-binding(listen-library-from-queue,l)}}}                             |
+
+| Revert the queue list | {{{command-binding(listen-queue-list,g)}}} |
+| Pause the player                | {{{command-binding(listen-pause,SPC)}}}      |
+| Show the menu                   | {{{command-binding(listen-menu,?)}}}         |
+
+** Library 
+
+To help with exploring and managing a music library, ~listen~ provides various "library" features.  Tracks can be passed between library and queue buffers and operated on with similar commands and bindings.
+
+*** Library buffer
+
+A library buffer provides a hierarchical view of tracks grouped by their metadata using [[info:taxy#Top][Taxy]], rendered with [[info:magit-section#Top][Magit Section]].  Each section can be folded, and it shows the number of tracks in it and its subgroups.
+
+**** Showing a library buffer
+
+Tracks from various sources can be shown in a library using these commands:
+
++ Files and directories: ~listen-library~.  Individual files may be chosen, or a directory may be, which will be searched recursively for tracks.
++ From an MPD server: ~listen-library-from-mpd~.  An MPD search query will be read with completion, and matching tracks are read from the MPD server.
++ From a playlist file: ~listen-library-from-playlist-file~.  Tracks are read from the given playlist file.
+
+**** Commands
+
+In the library buffer, you can use these commands:
+
+| Listen to tracks    | {{{command-binding(listen-library-play,RET)}}}   |
+| Add tracks to queue | {{{command-binding(listen-library-to-queue,a)}}} |
+
+| Move point forward/backward   | {{{command-binding(forward-line,n)}}} / {{{command-binding(previous-line,p)}}} |
+| Show track's metadata         | {{{command-binding(listen-library-view-track,m)}}}                             |
+| Jump to track's file in Dired | {{{command-binding(listen-library-jump,j)}}}                                   |
+
+| Run shell command on tracks | {{{command-binding(listen-library-shell-command,!)}}} |
+
+| Revert the library buffer         | {{{command-binding(listen-library-revert,g)}}} |
+| Pause the player                  | {{{command-binding(listen-pause,SPC)}}}        |
+| Show the menu                     | {{{command-binding(listen-menu,?)}}}           |
+
+**** Bookmarks
+
+Library buffers may be bookmarked with {{{command-binding(bookmark-set,C-x r m)}}}.  The bookmark record refers to the buffer by the way it was created (e.g. the filename paths, queue name, MPD query, or playlist file the tracks came from), so jumping to the bookmark will show an updated view, as if calling the original command with the same arguments.
+
+** Players
+
+~listen~ currently supports audio playback via the VLC backend.  Internally, any number of simultaneous player instances could be controlled, but ~listen~'s UI provides the means to control one at a time.
+
+Controlling the player is mainly done through the main [[info:transient#Top][Transient]] menu, through the command ~listen~.  However, all of the commands provided in it are also available as interactive commands, which could be bound by the user in any keymap (see, e.g. [[elisp:(apropos-command "^listen-")][M-x apropos-command RET ^listen- RET]]).
+
+The player is run in a child process, which is started when playback begins.  The ~listen-quit~ command terminates the player process.
+
+*** Volume
+
+The ~listen-volume~ command is used to set the current player's volume.  Its argument should be an integer percentage.  Some players, e.g. VLC, may allow settings above 100% to boost output beyond normal levels.
+
+*** Seeking
+
+The ~listen-seek~ command is used to seek to a position in the current track.  Its argument should be a timestamp in MM:SS format, and it may include a ~-~ or ~+~ prefix to indicate a position relative to the current one.
+
+*** Repeat modes
+
+Three repeat modes are provided, controlled by the option ~listen-queue-repeat-mode~, which may have these values:
+
++ ~nil~ :: No repeating.  When the last track in the current queue finishes playing, playback stops.
++ ~queue~ :: The current queue is repeated when its last track finishes playing.
++ ~shuffle~ :: When the last track in the current queue finishes playing, the queue is shuffled and played again.
+
+The repeat mode is most easily set using the commands in the ~listen~ menu.
+
+** Mode
+
+The ~listen-mode~ minor mode runs a timer which plays the next track in the current queue when a track finishes playing (when playing a queue).  It is automatically activated when playing a queue.  It also shows the current track in the ~global-mode-string~, which may be displayed in the mode line or tab bar.
 
 ** Tips
 
 + Since VLC is used as a backend, [[https://www.freedesktop.org/wiki/Specifications/mpris-spec/][MPRIS]]-based player info and controls "just work", so you can use things like media hotkeys and various widgets to control ~listen~'s playback.
 + Similarly, you might even see an icon in your task switcher indicating that Emacs is playing sound (e.g. with KDE Plasma).
-
+  
 * Changelog
 
 ** v0.7-pre
@@ -208,6 +351,10 @@ Listen.el is published in GNU ELPA and is considered part of GNU Emacs.  Therefo
 # Copied from org-super-agenda's readme, in which much was borrowed from Org's =org-manual.org=.
 
 #+OPTIONS: broken-links:t *:t num:1 toc:1
+
+** Macros
+
+#+MACRO: command-binding ~$1~ (~$2~)
 
 ** Info export options
 
