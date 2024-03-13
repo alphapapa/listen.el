@@ -344,15 +344,24 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
          (concat "Listening: " (listen-mode-lighter))
        "Not listening"))
    ;; Getting this layout to work required a lot of trial-and-error.
-   [("Q" "Quit" listen-quit)]
-   [("m" "Metadata" listen-view-track)]]
+   [("Q" "Quit" listen-quit
+     :inapt-if-not (lambda ()
+                     listen-player))]
+   [("m" "Metadata" listen-view-track
+     :inapt-if-not (lambda ()
+                     (and listen-player
+                          (listen--playing-p listen-player))))]]
   [["Player"
+    :if (lambda ()
+          listen-player)
     ("SPC" "Pause" listen-pause)
     ("p" "Play" listen-play)
     ;; ("ESC" "Stop" listen-stop)
     ("n" "Next" listen-next)
     ("s" "Seek" listen-seek)]
    ["Volume"
+    :if (lambda ()
+          listen-player)
     :description
     (lambda ()
       (if listen-player
@@ -402,7 +411,8 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
                            (interactive)
                            (listen-queue (map-elt (listen-player-etc (listen-current-player)) :queue)))
      :if (lambda ()
-           (map-elt (listen-player-etc (listen-current-player)) :queue)))
+           (if-let ((player listen-player))
+               (map-elt (listen-player-etc player) :queue))))
     ("qo" "View other" listen-queue)
     ("qp" "Play other" listen-queue-play
      :transient t)
