@@ -330,7 +330,6 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 
 ;; It seems that autoloading the transient prefix command doesn't work
 ;; as expected, so we'll try this workaround.
-;; FIXME(v0.7): This doesn't seem to work either.
 
 ;;;###autoload
 (defalias 'listen #'listen-menu)
