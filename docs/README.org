@@ -1,6 +1,7 @@
 #+title: listen.el
 
 # NOTE: It would be preferable to put these at the bottom of the file under the export options heading, but it seems that "TEXINFO_DIR_CATEGORY" only works at the top of the file.
+#+OPTIONS: broken-links:t *:t num:1 toc:1 author:nil timestamp:nil
 #+EXPORT_FILE_NAME: listen.texi
 #+TEXINFO_DIR_CATEGORY: Emacs
 #+TEXINFO_DIR_TITLE: Listen: (listen)
@@ -21,11 +22,12 @@ A simple "library" view is provided that shows a list of files organized into a 
 
 Note a silly limitation: a track may be present in a queue only once (but who would want to have a track more than once in a playlist).
 
-* Contents                                                         :noexport:
+* Contents
 :PROPERTIES:
 :TOC:      :include siblings :depth 0 :force (depth) :ignore (this) :local (nothing)
 :END:
 :CONTENTS:
+- [[#screenshots][Screenshots]]
 - [[#installation][Installation]]
 - [[#configuration][Configuration]]
 - [[#usage][Usage]]
@@ -33,7 +35,7 @@ Note a silly limitation: a track may be present in a queue only once (but who wo
 - [[#development][Development]]
 :END:
 
-* Screenshots                                                      :noexport:
+* Screenshots
 
 [[file:images/screenshot-modus-vivendi-tinted.png]]
 
@@ -349,8 +351,6 @@ Listen.el is published in GNU ELPA and is considered part of GNU Emacs.  Therefo
 :END:
 
 # Copied from org-super-agenda's readme, in which much was borrowed from Org's =org-manual.org=.
-
-#+OPTIONS: broken-links:t *:t num:1 toc:1 author:nil
 
 ** Macros
 

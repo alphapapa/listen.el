@@ -1,4 +1,4 @@
-# Created 2024-03-13 Wed 23:15
+#+options: broken-links:t *:t num:1 toc:1 author:nil timestamp:nil
 #+title: listen.el
 #+export_file_name: listen.texi
 #+texinfo_dir_category: Emacs
@@ -18,6 +18,20 @@ The primary interface to one's music library is through the filesystem, by selec
 A simple "library" view is provided that shows a list of files organized into a hierarchy by genre, date, artist, album, etc.  (This will be made more configurable and useful in the future.)
 
 Note a silly limitation: a track may be present in a queue only once (but who would want to have a track more than once in a playlist).
+
+* Contents
+:CONTENTS:
+- [[#screenshots][Screenshots]]
+- [[#installation][Installation]]
+- [[#configuration][Configuration]]
+- [[#usage][Usage]]
+- [[#changelog][Changelog]]
+- [[#development][Development]]
+:END:
+
+* Screenshots
+
+[[file:images/screenshot-modus-vivendi-tinted.png]]
 
 * Installation
 
