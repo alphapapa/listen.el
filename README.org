@@ -221,6 +221,9 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 ** v0.7-pre
 
+*Additions*
+- Info manual.
+
 *Changes*
 - Command ~listen-queue~ switches to existing queue buffers without reverting them.
 - Transient ~qq~ command exits the transient.
