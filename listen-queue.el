@@ -61,7 +61,7 @@
   "Queues."
   :group 'listen)
 
-(defcustom listen-queue-max-probe-processes 16
+(defcustom listen-queue-max-probe-processes (max 1 (/ (num-processors) 2))
   "Maximum number of processes to run while probing track durations."
   :type 'natnum)
 
@@ -78,6 +78,28 @@ intended to be set from the `listen-menu'."
                  ;; (const :tag "Repeat track" track)
                  ))
 
+;;;; Macros
+
+(defmacro listen-queue-with-buffer (queue &rest body)
+  "Eval BODY in QUEUE's buffer, if it has a live one."
+  (declare (indent defun))
+  (let ((buffer-var (gensym)))
+    `(when-let ((,buffer-var (listen-queue-buffer ,queue)))
+       (when (buffer-live-p ,buffer-var)
+         (with-current-buffer ,buffer-var
+           ,@body)))))
+
+(defmacro listen-save-position (&rest body)
+  "Eval BODY and go to previous position.
+Useful for when `save-excursion' does not preserve point."
+  (declare (indent defun) (debug (body)))
+  (let ((pos-var (gensym)))
+    `(let ((,pos-var (point)))
+       ,@body
+       ;; Ignore errors in case it's now out of range.
+       (ignore-errors
+         (goto-char ,pos-var)))))
+
 ;;;; Commands
 
 ;; (defmacro listen-queue-command (command)
@@ -91,114 +113,125 @@ intended to be set from the `listen-menu'."
 (declare-function listen-jump "listen")
 (declare-function listen-menu "listen")
 (declare-function listen-pause "listen")
+
+(define-derived-mode listen-queue-mode special-mode "Listen-Queue"
+  (toggle-truncate-lines 1)
+  (hl-line-mode 1)
+  (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record))
+
 ;;;###autoload
 (defun listen-queue (queue)
   "Show listen QUEUE."
   (interactive (list (listen-queue-complete)))
-  (let* ((buffer-name (format "*Listen Queue: %s*" (listen-queue-name queue)))
-         (buffer (get-buffer buffer-name)))
-    (unless buffer
-      (with-current-buffer (setf buffer (get-buffer-create buffer-name))
-        (let ((inhibit-read-only t))
-          (setf listen-queue queue)
-          (read-only-mode)
-          (erase-buffer)
-          (toggle-truncate-lines 1)
-          (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record)
-          (when (listen-queue-tracks listen-queue)
-            (make-vtable
-             :columns
-             (list (list :name "▶" :primary 'descend
-                         :getter
-                         (lambda (track _table)
-                           ;; We compare filenames in case the queue's files
-                           ;; have been refreshed from disk, in which case
-                           ;; the track objects would no longer be `eq'.
-                           (if-let ((current-track (listen-queue-current queue))
-                                    ((equal (listen-track-filename track)
-                                            (listen-track-filename current-track))))
-                               (progn
-                                 (unless (eq (listen-queue-current listen-queue) track)
-                                   ;; HACK: Update current track in queue.  I don't know a
-                                   ;; more optimal place to do this.
-                                   (setf (seq-elt (listen-queue-tracks listen-queue)
-                                                  (seq-position (listen-queue-tracks listen-queue)
-                                                                (listen-queue-current listen-queue)))
-                                         track
-                                         (listen-queue-current listen-queue) track))
-                                 "▶")
-                             " ")))
-                   (list :name "#" :primary 'descend
-                         :getter (lambda (track _table)
-                                   (cl-position track (listen-queue-tracks queue))))
-                   (list :name "Duration"
-                         :getter (lambda (track _table)
-                                   (when-let ((duration (listen-track-duration track)))
-                                     (listen-format-seconds duration))))
-                   (list :name "r/5"
-                         :getter (lambda (track _table)
-                                   (if-let ((rating (map-elt (listen-track-etc track) "fmps_rating"))
-                                            ((not (equal "-1" rating))))
-                                       (progn
-                                         (setf rating (number-to-string (* 5 (string-to-number rating))))
-                                         (propertize rating 'face 'listen-rating))
+  (if-let ((buffer (listen-queue-buffer queue)))
+      (progn
+        (pop-to-buffer buffer)
+        (listen-queue-goto-current))
+    (with-current-buffer
+        (setf buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue))))
+      (let ((inhibit-read-only t))
+        (listen-queue-mode)
+        (setf listen-queue queue)
+        (erase-buffer)
+        (when (listen-queue-tracks listen-queue)
+          (make-vtable
+           :columns
+           (list (list :name "▶" :primary 'descend
+                       :getter
+                       (lambda (track _table)
+                         ;; We compare filenames in case the queue's files
+                         ;; have been refreshed from disk, in which case
+                         ;; the track objects would no longer be `eq'.
+                         (if-let ((current-track (listen-queue-current queue))
+                                  ((equal (listen-track-filename track)
+                                          (listen-track-filename current-track))))
+                             (progn
+                               (unless (eq track (listen-queue-current listen-queue))
+                                 (if-let ((position (seq-position (listen-queue-tracks listen-queue)
+                                                                  (listen-queue-current listen-queue))))
+                                     ;; HACK: Update current track in queue.  I don't know a more
+                                     ;; optimal place to do this.
+                                     ;; TODO: Potentially use `listen-queue-revert-track' in more
+                                     ;; places to make this unnecessary.
+                                     (setf (seq-elt (listen-queue-tracks listen-queue) position) track)
+                                   ;; Old track not found: just add it.
+                                   (push track (listen-queue-tracks queue)))
+                                 (setf (listen-queue-current listen-queue) track))
+                               "▶")
+                           " ")))
+                 (list :name "#" :primary 'descend
+                       :getter (lambda (track _table)
+                                 (cl-position track (listen-queue-tracks queue))))
+                 (list :name "Duration"
+                       :getter (lambda (track _table)
+                                 (when-let ((duration (listen-track-duration track)))
+                                   (listen-format-seconds duration))))
+                 (list :name "r/5"
+                       :getter (lambda (track _table)
+                                 (if-let ((rating (map-elt (listen-track-etc track) "fmps_rating"))
+                                          ((not (equal "-1" rating))))
+                                     (progn
+                                       (setf rating (number-to-string (* 5 (string-to-number rating))))
+                                       (propertize rating 'face 'listen-rating))
+                                   "")))
+                 (list :name "Artist" :max-width 20 :align 'right
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-artist track) "")
+                                             'face 'listen-artist)))
+                 (list :name "Title" :max-width 35
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-title track) "")
+                                             'face 'listen-title)))
+                 (list :name "Album" :max-width 30
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-album track) "")
+                                             'face 'listen-album)))
+                 (list :name "#" :align 'right
+                       :getter (lambda (track _table)
+                                 (or (when-let ((number (listen-track-number track)))
+                                       (string-to-number number))
                                      "")))
-                   (list :name "Artist" :max-width 20 :align 'right
-                         :getter (lambda (track _table)
-                                   (propertize (or (listen-track-artist track) "")
-                                               'face 'listen-artist)))
-                   (list :name "Title" :max-width 35
-                         :getter (lambda (track _table)
-                                   (propertize (or (listen-track-title track) "")
-                                               'face 'listen-title)))
-                   (list :name "Album" :max-width 30
-                         :getter (lambda (track _table)
-                                   (propertize (or (listen-track-album track) "")
-                                               'face 'listen-album)))
-                   (list :name "#" :align 'right
-                         :getter (lambda (track _table)
-                                   (or (listen-track-number track) "")))
-                   (list :name "Date"
-                         :getter (lambda (track _table)
-                                   (or (map-elt (listen-track-etc track) "originalyear")
-                                       (map-elt (listen-track-etc track) "originaldate")
-                                       (listen-track-date track)
-                                       "")))
-                   (list :name "Genre"
-                         :getter (lambda (track _table)
-                                   (propertize (or (listen-track-genre track) "")
-                                               'face 'listen-genre)))
-                   (list :name "File"
-                         :getter (lambda (track _table)
-                                   (propertize (listen-track-filename track)
-                                               'face 'listen-filename))))
-             :objects-function (lambda ()
-                                 (or (listen-queue-tracks listen-queue)
-                                     (list (make-listen-track :artist "[Empty queue]"))))
-             :sort-by '((1 . ascend))
-             ;; TODO: Add a transient to show these bindings when pressing "?".
-             :actions (list "q" (lambda (_) (bury-buffer))
-                            "?" (lambda (_) (call-interactively #'listen-menu))
-                            "g" (lambda (_) (call-interactively #'listen-queue-revert))
-                            "j" #'listen-jump
-                            "n" (lambda (_) (forward-line 1))
-                            "p" (lambda (_) (forward-line -1))
-                            "m" #'listen-view-track
-                            "N" (lambda (track) (listen-queue-transpose-forward track queue))
-                            "P" (lambda (track) (listen-queue-transpose-backward track queue))
-                            "C-k" (lambda (track) (listen-queue-kill-track track queue))
-                            "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
-                            "RET" (lambda (track) (listen-queue-play queue track))
-                            "SPC" (lambda (_) (call-interactively #'listen-pause))
-                            "o" (lambda (_) (call-interactively #'listen-queue-order-by))
-                            "s" (lambda (_) (listen-queue-shuffle listen-queue))
-                            "l" (lambda (_) "Show (selected) tracks in library view."
-                                  (call-interactively #'listen-library-from-queue))
-                            "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
-          (goto-char (point-min))
-          (listen-queue--annotate-buffer)
-          (listen-queue-goto-current)
-          (hl-line-mode 1))))
+                 (list :name "Date"
+                       :getter (lambda (track _table)
+                                 (or (map-elt (listen-track-etc track) "originalyear")
+                                     (map-elt (listen-track-etc track) "originaldate")
+                                     (listen-track-date track)
+                                     "")))
+                 (list :name "Genre"
+                       :getter (lambda (track _table)
+                                 (propertize (or (listen-track-genre track) "")
+                                             'face 'listen-genre)))
+                 (list :name "File"
+                       :getter (lambda (track _table)
+                                 (propertize (listen-track-filename track)
+                                             'face 'listen-filename))))
+           :objects-function (lambda ()
+                               (or (listen-queue-tracks listen-queue)
+                                   (list (make-listen-track :artist "[Empty queue]"))))
+           :sort-by '((1 . ascend))
+           ;; TODO: Add a transient to show these bindings when pressing "?".
+           :actions (list "q" (lambda (_) (bury-buffer))
+                          "?" (lambda (_) (call-interactively #'listen-menu))
+                          "g" (lambda (_) (call-interactively #'listen-queue-revert))
+                          "j" #'listen-jump
+                          "n" (lambda (_) (forward-line 1))
+                          "p" (lambda (_) (forward-line -1))
+                          "m" #'listen-view-track
+                          "N" (lambda (track) (listen-queue-transpose-forward track queue))
+                          "P" (lambda (track) (listen-queue-transpose-backward track queue))
+                          "C-k" (lambda (track) (listen-queue-kill-track track queue))
+                          "C-y" (lambda (_) (call-interactively #'listen-queue-yank))
+                          "RET" (lambda (track) (listen-queue-play queue track))
+                          "SPC" (lambda (_) (call-interactively #'listen-pause))
+                          "o" (lambda (_) (call-interactively #'listen-queue-order-by))
+                          "s" (lambda (_) (listen-queue-shuffle listen-queue))
+                          "l" (lambda (_) "Show (selected) tracks in library view."
+                                (call-interactively #'listen-library-from-queue))
+                          "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
+        (listen-queue--annotate-buffer)
+        (listen-queue-goto-current)))
+    ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
+    ;; `listen-queue--bookmark-handler' works correctly.
     (pop-to-buffer buffer)))
 
 (defun listen-queue--annotate-buffer ()
@@ -207,7 +240,8 @@ To be called in a queue's buffer."
   (let* ((queue listen-queue)
          ;; HACK: Update duration here (for now).
          (duration (cl-reduce #'+ (listen-queue-tracks queue)
-                              :key #'listen-track-duration)))
+                              :key #'listen-track-duration))
+         (inhibit-read-only t))
     (setf (map-elt (listen-queue-etc queue) :duration) duration)
     (vtable-end-of-table)
     (when duration
@@ -236,6 +270,8 @@ If BACKWARDP, move it backward."
     ;; Hey, a chance to use `rotatef'!
     (cl-rotatef (seq-elt (listen-queue-tracks queue) next-position)
                 (seq-elt (listen-queue-tracks queue) position))
+    ;; TODO: Use `vtable-insert-object' and `vtable-remove-object' to avoid calling
+    ;; `listen-queue--update-buffer'.
     (listen-queue--update-buffer queue)
     (vtable-goto-object track)))
 
@@ -249,7 +285,13 @@ If BACKWARDP, move it backward."
   (interactive)
   (ring-insert listen-queue-kill-ring track)
   (cl-callf2 remove track (listen-queue-tracks queue))
-  (listen-queue--update-buffer queue))
+  (listen-save-position
+    (goto-char (point-min))
+    (vtable-goto-object track)
+    ;; NOTE: We don't update the subsequent tracks, which means their position number will be off,
+    ;; though still in order.  This is because in large queues (e.g. 2k tracks), refreshing the
+    ;; whole vtable, or even the rest of it, is too slow.
+    (vtable-remove-object (vtable-current-table) track)))
 
 (defun listen-queue-yank (track position queue)
   "Yank TRACK into QUEUE at POSITION."
@@ -257,23 +299,35 @@ If BACKWARDP, move it backward."
    (list (ring-ref listen-queue-kill-ring 0)
          (seq-position (listen-queue-tracks listen-queue) (vtable-current-object))
          listen-queue))
-  (setf (listen-queue-tracks queue)
-        (nconc (seq-take (listen-queue-tracks queue) position)
-               (list track)
-               (seq-subseq (listen-queue-tracks queue) position)))
-  (listen-queue--update-buffer queue))
+  (let ((previous-track (seq-elt (listen-queue-tracks queue) position)))
+    (setf (listen-queue-tracks queue)
+          (nconc (seq-take (listen-queue-tracks queue) position)
+                 (list track)
+                 (seq-subseq (listen-queue-tracks queue) position)))
+    (vtable-insert-object (vtable-current-table) track previous-track)
+    (vtable-update-object (vtable-current-table) previous-track previous-track)))
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
-  (when-let ((buffer (listen-queue-buffer queue)))
-    (with-current-buffer buffer
-      ;; `save-excursion' doesn't work because of the table's being reverted.
-      (let ((inhibit-read-only t))
-        (goto-char (point-min))
-        (when (vtable-current-table)
-          (vtable-revert-command))
-        (listen-queue--annotate-buffer))
-      (listen-queue-goto-current))))
+  (listen-queue-with-buffer queue
+    ;; `save-excursion' doesn't work because of the table's being reverted.
+    (let ((inhibit-read-only t))
+      (goto-char (point-min))
+      (when (vtable-current-table)
+        (vtable-revert-command))
+      (listen-queue--annotate-buffer))
+    (listen-queue-goto-current)))
+
+(defun listen-queue-update-track (track queue)
+  "Update TRACK in QUEUE.
+Reverts TRACK's metadata from the file and updates it in QUEUE,
+including QUEUE's buffer, if any."
+  ;; TODO: Use where appropriate.
+  (listen-queue-revert-track track)
+  (listen-queue-with-buffer queue
+    (listen-save-position
+      (goto-char (point-min))
+      (vtable-update-object (vtable-current-table) track track))))
 
 (declare-function listen-mode "listen")
 (declare-function listen-play "listen")
@@ -290,9 +344,16 @@ select track as well."
      (list queue track)))
   (let ((player (listen-current-player)))
     (listen-play player (listen-track-filename track))
-    (setf (listen-queue-current queue) track
-          (map-elt (listen-player-etc player) :queue) queue)
-    (listen-queue--update-buffer queue))
+    (let ((previous-track (listen-queue-current queue)))
+      (setf (listen-queue-current queue) track
+            (map-elt (listen-player-etc player) :queue) queue)
+      (listen-queue-with-buffer queue
+        (listen-save-position
+          (goto-char (point-min))
+          (when previous-track
+            (listen-queue--vtable-update-object (vtable-current-table) previous-track previous-track))
+          (listen-queue--vtable-update-object (vtable-current-table) track track))
+        (listen-queue--highlight-current))))
   (unless listen-mode
     (listen-mode))
   queue)
@@ -301,6 +362,8 @@ select track as well."
   "Jump to current track."
   (interactive)
   (when-let ((current-track (listen-queue-current listen-queue)))
+    ;; Ensure point is within the vtable.
+    (goto-char (point-min))
     (vtable-goto-object current-track)))
 
 (defun listen-queue-complete-track (queue)
@@ -324,11 +387,11 @@ return a new one having it.  PROMPT is passed to `format-prompt',
 which see."
   (cl-labels ((read-queue ()
                 (let* ((player (listen-current-player))
-                       (default-queue-name (or (when listen-queue
-                                                 ;; In a listen buffer: offer its queue as default.
-                                                 (listen-queue-name listen-queue))
-                                               (when (listen--playing-p player)
-                                                 (listen-queue-name (map-elt (listen-player-etc player) :queue)))))
+                       (default-queue-name
+                        (when-let ((queue (or listen-queue
+                                              (when (listen--playing-p player)
+                                                (map-elt (listen-player-etc player) :queue)))))
+                          (listen-queue-name queue)))
                        (queue-names (mapcar #'listen-queue-name listen-queues))
                        (prompt (format-prompt prompt default-queue-name))
                        (selected (completing-read prompt queue-names nil (not allow-new-p)
@@ -373,8 +436,20 @@ which see."
            queue)))
   (cl-callf append (listen-queue-tracks queue) (listen-queue-tracks-for files))
   (listen-queue queue)
-  (listen-queue-play queue)
   queue)
+
+(defun listen-queue-add-tracks (tracks queue)
+  "Add TRACKS to QUEUE.
+Duplicate tracks (by filename) are removed from the queue, and
+the queue's buffer is updated, if any."
+  (cl-callf append (listen-queue-tracks queue) tracks)
+  ;; TODO: Consider updating the metadata of any duplicate tracks.
+  (setf (listen-queue-tracks queue)
+        (cl-delete-duplicates (listen-queue-tracks queue)
+                              :key (lambda (track)
+                                     (expand-file-name (listen-track-filename track)))
+                              :test #'file-equal-p))
+  (listen-queue--update-buffer queue))
 
 (cl-defun listen-queue-add-from-playlist-file (filename queue)
   "Add tracks to QUEUE selected from playlist at FILENAME.
@@ -405,14 +480,25 @@ buffer, if any)."
                      ;; In a queue buffer and the region is active: use it.
                      listen-queue
                    (listen-queue-complete :allow-new-p t)))
-          (tracks (or (if-let ((buffer (listen-queue-buffer queue)))
-                          (with-current-buffer buffer
-                            (when (region-active-p)
-                              (listen-queue-selected))))
-                      (listen-queue-tracks queue))))
-     (list :tracks tracks)))
-  (let ((tracks (or tracks (listen-queue-tracks queue))))
-    (listen-library (mapcar #'listen-track-filename tracks))))
+          (tracks (when-let ((buffer (listen-queue-buffer queue)))
+                    (with-current-buffer buffer
+                      (when (region-active-p)
+                        (listen-queue-selected))))))
+     (list :tracks tracks :queue queue)))
+  (listen-library (or tracks
+                      (lambda ()
+                        (listen-queue-tracks
+                         ;; In case the queue gets renamed, or gets replaced by a
+                         ;; different one with the same name:
+                         (or (when (member queue listen-queues)
+                               ;; Ensure the queue is in the queue list (one from a bookmark
+                               ;; record wouldn't be the same object anymore).  This allows
+                               ;; a queue to be renamed during a session and still match
+                               ;; here.
+                               queue)
+                             (cl-find (listen-queue-name queue) listen-queues
+                                      :key #'listen-queue-name :test #'equal)
+                             (error "Queue not found: %S" queue))))) ))
 
 (defun listen-queue-track (filename)
   "Return track for FILENAME."
@@ -445,10 +531,13 @@ with \"ffprobe\"."
         (listen-queue--add-track-durations tracks))
       tracks)))
 
-(defun listen-queue-track-revert (track)
+(defun listen-queue-revert-track (track)
   "Revert TRACK's metadata from disk."
   ;; TODO: Use this where appropriate.
-  (let ((new-track (car (listen-queue-tracks-for (list (listen-track-filename track))))))
+  (when-let ((new-track (car (listen-queue-tracks-for (list (listen-track-filename track))))))
+    ;; If `listen-queue-track' (and thereby `listen-queue-tracks-for') returns nil for a track
+    ;; (e.g. if its metadata can't be read), leave it alone (e.g. its metadata might have come from
+    ;; by MPD).
     (dolist (slot '(artist title album number date genre etc))
       ;; FIXME: Store metadata in its own slot and don't misuse etc slot.
       (setf (cl-struct-slot-value 'listen-track slot track)
@@ -482,7 +571,8 @@ tracks no longer backed by a file are removed."
   ;; an apparent duplicate that does have a file.
   (setf (listen-queue-tracks queue)
         (cl-remove-if-not #'file-exists-p (listen-queue-tracks queue)
-                          :key #'listen-track-filename)
+                          :key (lambda (track)
+                                 (expand-file-name (listen-track-filename track))))
         (listen-queue-tracks queue)
         (cl-remove-duplicates
          (listen-queue-tracks queue)
@@ -564,15 +654,20 @@ queue buffer."
   "Revert QUEUE's buffer.
 When RELOADP (interactively, with prefix), reload tracks from
 disk."
+  ;; TODO: Revise the terminology (i.e. "revert" should mean to revert from disk).
   (interactive (list listen-queue :reloadp current-prefix-arg))
   (when reloadp
-    (listen-queue-reload queue))
+    (listen-queue-reload queue)
+    (when (listen-queue-current queue)
+      ;; Update current track by filename.
+      (setf (listen-queue-current queue)
+            (cl-find (listen-track-filename (listen-queue-current queue))
+                     (listen-queue-tracks queue) :key #'listen-track-filename :test #'file-equal-p))))
   (listen-queue--update-buffer queue))
 
 (defun listen-queue-reload (queue)
   "Reload QUEUE's tracks from disk."
-  (setf (listen-queue-tracks queue)
-        (listen-queue-tracks-for (mapcar #'listen-track-filename (listen-queue-tracks queue)))))
+  (mapc #'listen-queue-revert-track (listen-queue-tracks queue)))
 
 (defun listen-queue-order-by ()
   "Order the queue by the column at point.
@@ -651,7 +746,7 @@ tracks in the queue unchanged)."
                            (string< (car a) (car b))))))
          :actions (list "q" (lambda (_) (quit-window))
                         "g" (lambda (_)
-                              (listen-queue-track-revert track)
+                              (listen-queue-revert-track track)
                               (vtable-revert-command))
                         "?" (lambda (_) (call-interactively #'listen-menu))
                         "n" (lambda (_) (forward-line 1))
@@ -742,8 +837,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
       (with-timeout ((* 0.1 (length tracks)) (error "Probing for track duration timed out"))
         (while (or tracks processes)
           (probe-more)
-          (while (accept-process-output nil 0.01))
-          (sleep-for 0.01))))))
+          (while (accept-process-output nil 0.01)))))))
 
 ;;;;; Queue delay mode
 
@@ -833,6 +927,52 @@ Delay according to `listen-queue-delay-time-range', which see."
       (goto-char (point-min))
       (hl-line-mode 1)
       (pop-to-buffer (current-buffer)))))
+
+;;;; Compatibility
+
+(defalias 'listen-queue--vtable-update-object
+  (if (version<= emacs-version "29.2")
+      ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69664>.
+      (lambda (table object old-object)
+        "Replace OLD-OBJECT in TABLE with OBJECT."
+        (let* ((objects (vtable-objects table))
+               (inhibit-read-only t))
+          ;; First replace the object in the object storage.
+          (if (eq old-object (car objects))
+              ;; It's at the head, so replace it there.
+              (setf (vtable-objects table)
+                    (cons object (cdr objects)))
+            ;; Otherwise splice into the list.
+            (while (and (cdr objects)
+                        (not (eq (cadr objects) old-object)))
+              (setq objects (cdr objects)))
+            (unless objects
+              (error "Can't find the old object"))
+            (setcar (cdr objects) object))
+          ;; Then update the cache...
+          (if-let ((line-number (seq-position (car (vtable--cache table)) old-object
+                                              (lambda (a b)
+                                                (equal (car a) b))))
+                   (line (elt (car (vtable--cache table)) line-number)))
+              (progn
+                (setcar line object)
+                (setcdr line (vtable--compute-cached-line table object))
+                ;; ... and redisplay the line in question.
+                (save-excursion
+                  (vtable-goto-object old-object)
+                  (let ((keymap (get-text-property (point) 'keymap))
+                        (start (point)))
+                    (delete-line)
+                    (vtable--insert-line table line line-number
+                                         (nth 1 (vtable--cache table))
+                                         (vtable--spacer table))
+                    (add-text-properties start (point) (list 'keymap keymap
+                                                             'vtable table))))
+                ;; We may have inserted a non-numerical value into a previously
+                ;; all-numerical table, so recompute.
+                (vtable--recompute-numerical table (cdr line)))
+            (error "Can't find cached object in vtable"))))
+    #'vtable-update-object))
 
 ;;;; Footer
 

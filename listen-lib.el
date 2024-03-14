@@ -44,17 +44,19 @@
 
 (cl-defstruct listen-player
   ;; TODO: Add queue slot.
-  process command args etc)
+  process command args
+  (max-volume
+   100 :documentation "Maximum volume in percent (may be greater than 100 for some players).")
+  etc)
 
 (cl-defstruct listen-queue
   name tracks current etc)
 
 (cl-defstruct listen-track
   ;; FIXME: Store rating in the slot I already made for it.
-  filename artist title album number genre (duration 0) date rating etc)
-
-(cl-defmethod cl-print-object ((track listen-track) stream)
-  (prin1 (listen-track-filename track) stream))
+  ;; FIXME: Put metadata in its slot rather than etc.
+  ;; NOTE: All of the metadata values are stored as strings, except for duration.
+  filename artist title album number genre (duration 0) date rating etc metadata)
 
 ;;;; Variables
 
@@ -75,7 +77,7 @@
 (defface listen-title '((t :inherit font-lock-function-name-face))
   "Track title.")
 
-(defface listen-album '((t :inherit font-lock-doc-face))
+(defface listen-album '((t :slant italic :inherit font-lock-doc-face))
   "Track album.")
 
 (defface listen-filename '((t :inherit fixed-pitch))

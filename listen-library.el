@@ -40,7 +40,7 @@
 (defvar listen-directory)
 
 (defvar-local listen-library-name nil)
-(defvar-local listen-library-paths nil)
+(defvar-local listen-library-tracks nil)
 
 (defvar listen-library-taxy
   (cl-labels ((with-face (face string)
@@ -53,7 +53,8 @@
                     (map-elt (listen-track-etc track) "originaldate")
                     (listen-track-date track)))
               (artist (track)
-                (or (with-face 'listen-artist (listen-track-artist track))
+                (or (with-face 'listen-artist (or (map-elt (listen-track-etc track) "albumartist")
+                                                  (listen-track-artist track)))
                     "[unknown artist]"))
               (album (track)
                 (or (when-let ((album (with-face 'listen-album (listen-track-album track))))
@@ -63,7 +64,10 @@
                                 (date (format " (%s)" date)))))
                     "[unknown album]"))
               (number (track)
-                (or (listen-track-number track) ""))
+                (concat (when-let ((disc-number (map-elt (listen-track-etc track) "discnumber")))
+                          (format "%s:" disc-number))
+                        (when-let ((track-number (listen-track-number track)))
+                          track-number)))
               (title (track)
                 (concat (pcase (number track)
                           ("" "")
@@ -102,71 +106,81 @@
   :parent magit-section-mode-map
   "?" #'listen-menu
   "!" #'listen-library-shell-command
-  "a" #'listen-library-add-tracks
+  "a" #'listen-library-to-queue
   "g" #'listen-library-revert
   "j" #'listen-library-jump
   "m" #'listen-library-view-track
-  "RET" #'listen-library-play-or-add)
+  "RET" #'listen-library-play)
 
 (define-derived-mode listen-library-mode magit-section-mode "Listen-Library"
   (setq-local bookmark-make-record-function #'listen-library--bookmark-make-record))
 
 ;;;###autoload
-(cl-defun listen-library (paths &key name buffer)
-  "Show a library view of PATHS.
-PATHS is a list of paths to files and/or directories.
-Interactively, with prefix, NAME may be specified to show in the
-mode line and bookmark name.  BUFFER may be specified in which to
-show the view."
+(cl-defun listen-library (tracks &key name buffer)
+  "Show a library view of TRACKS.
+PATHS is a list of `listen-track' objects, or a function which
+returns them.  Interactively, with prefix, NAME may be specified
+to show in the mode line and bookmark name.  BUFFER may be
+specified in which to show the view."
   (interactive
-   (list (list (read-file-name "View library for: "))
-         :name (when current-prefix-arg
-                 (read-string "Library name: "))))
-  (let* ((filenames (cl-loop for path in paths
-                             if (file-directory-p path)
-                             append (directory-files-recursively path "." t)
-                             else collect path))
-         (tracks (listen-queue-tracks-for filenames))
-         (buffer-name (if name
-                          (format "*Listen library: %s" name)
+   (let* ((path (read-file-name "View library for: "))
+          (tracks-function (lambda ()
+                             ;; TODO: Use "&rest" for `listen-queue-tracks-for'?
+                             (listen-queue-tracks-for
+                              (if (file-directory-p path)
+                                  (directory-files-recursively path ".")
+                                (list path)))))
+          (name (cond (current-prefix-arg
+                       (read-string "Library name: "))
+                      ((file-directory-p path)
+                       path))))
+     (list tracks-function :name name)))
+  (let* ((buffer-name (if name
+                          (format "*Listen library: %s*" name)
                         (generate-new-buffer-name (format "*Listen library*"))))
          (buffer (or buffer (get-buffer-create buffer-name)))
          (inhibit-read-only t))
     (with-current-buffer buffer
       (listen-library-mode)
-      (setf listen-library-paths paths
+      (setf listen-library-tracks tracks
             listen-library-name name)
       (erase-buffer)
       (thread-last listen-library-taxy
                    taxy-emptied
-                   (taxy-fill tracks)
+                   (taxy-fill (cl-etypecase tracks
+                                (function (funcall tracks))
+                                (list tracks)))
                    ;; (taxy-sort #'string< #'listen-queue-track-)
                    (taxy-sort* #'string< #'taxy-name)
-                   taxy-magit-section-insert))
+                   taxy-magit-section-insert)
+      (goto-char (point-min)))
     (pop-to-buffer buffer)))
 
 ;;;; Commands
 
-(defun listen-library-add-tracks (queue tracks)
-  "Add TRACKS to QUEUE.
-Interactively, play tracks in sections at point and select QUEUE
+(defun listen-library-to-queue (tracks queue)
+  "Add current library buffer's TRACKS to QUEUE.
+Interactively, add TRACKS in sections at point and select QUEUE
 with completion."
   (interactive
-   (list (listen-queue-complete :prompt "Add to queue" :allow-new-p t)
-         (listen-library--selected-tracks)))
-  (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue))
+   (list (listen-library--selected-tracks)
+         (listen-queue-complete :prompt "Add to queue" :allow-new-p t)))
+  (listen-queue-add-tracks tracks queue))
 
 (declare-function listen-play "listen")
-(defun listen-library-play-or-add (tracks &optional queue)
+(declare-function listen-queue-add-tracks "listen-queue")
+(defun listen-library-play (tracks &optional queue)
   "Play or add TRACKS.
-If TRACKS is a list of one track, play it immediately; otherwise
-prompt for a QUEUE to add them to."
+If TRACKS is a list of one track, play it; otherwise, prompt for
+a QUEUE to add them to and play it."
   (interactive
    (let ((tracks (listen-library--selected-tracks)))
      (list tracks (when (length> tracks 1)
                     (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t)))))
   (if queue
-      (listen-queue-add-files (mapcar #'listen-track-filename tracks) queue)
+      (progn
+        (listen-queue-add-tracks tracks queue)
+        (listen-queue-play queue))
     (listen-play (listen-current-player) (listen-track-filename (car tracks)))))
 
 (defun listen-library-jump (track)
@@ -195,8 +209,8 @@ Interactively, read COMMAND and use tracks at point in
 (defun listen-library-revert ()
   "Revert current listen library buffer."
   (interactive)
-  (cl-assert listen-library-paths)
-  (listen-library listen-library-paths :name listen-library-name :buffer (current-buffer)))
+  (cl-assert listen-library-tracks)
+  (listen-library listen-library-tracks :name listen-library-name :buffer (current-buffer)))
 
 (cl-defun listen-library-from-playlist-file (filename)
   "Show library view tracks in playlist at FILENAME."
@@ -205,7 +219,9 @@ Interactively, read COMMAND and use tracks at point in
                          (lambda (filename)
                            (pcase (file-name-extension filename)
                              ("m3u" t))))))
-  (listen-library (listen-queue--m3u-filenames filename)))
+  (listen-library (lambda ()
+                    (listen-queue-tracks-for
+                     (listen-queue--m3u-filenames filename)))))
 
 ;;;; Functions
 
@@ -232,11 +248,12 @@ Interactively, read COMMAND and use tracks at point in
 
 (defun listen-library--bookmark-make-record ()
   "Return a bookmark record for the current library buffer."
-  (cl-assert listen-library-paths)
-  `(,(format "Listen library: %s" (or listen-library-name listen-library-paths))
+  (cl-assert listen-library-tracks)
+  `(,(format "Listen library: %s" (or listen-library-name listen-library-tracks))
     (handler . listen-library--bookmark-handler)
     (name . ,listen-library-name)
-    (paths . ,listen-library-paths)))
+    ;; NOTE: Leaving key as `paths' for backward compatibility.
+    (paths . ,listen-library-tracks)))
 
 ;;;###autoload
 (defun listen-library--bookmark-handler (bookmark)
