@@ -237,6 +237,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 *Additions*
 + Info manual.
++ Option ~listen-lighter-format~ now allows customizing the mode line lighter.
 
 *Changes*
 + Command ~listen-queue~ switches to existing queue buffers without reverting them.
