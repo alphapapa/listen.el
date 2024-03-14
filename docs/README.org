@@ -152,12 +152,16 @@ The queue list buffer may be shown with the command ~listen-queue-list~.  In the
 | Show queue's tracks in library buffer | {{{command-binding(listen-library-from-queue,l)}}}                             |
 
 | Revert the queue list | {{{command-binding(listen-queue-list,g)}}} |
-| Pause the player                | {{{command-binding(listen-pause,SPC)}}}      |
-| Show the menu                   | {{{command-binding(listen-menu,?)}}}         |
+| Pause the player      | {{{command-binding(listen-pause,SPC)}}}    |
+| Show the menu         | {{{command-binding(listen-menu,?)}}}       |
 
 ** Library 
 
 To help with exploring and managing a music library, ~listen~ provides various "library" features.  Tracks can be passed between library and queue buffers and operated on with similar commands and bindings.
+
+~listen~ does not maintain its own database of audio files; they are simply read from the filesystem as needed.  But if a local MPD server is available, tracks can be loaded from its database (which does a fine job of indexing audio files and their metadata); this is generally much faster, because it avoids having to read tracks' metadata with Emacs Lisp or their durations with ~ffprobe~.
+
+~listen~ does not provide features to modify tracks' metadata, but it provides commands to run shell commands on tracks' filenames, which works well with external tools like [[https://picard.musicbrainz.org/][Picard]].
 
 *** Library buffer
 
