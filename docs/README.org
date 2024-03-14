@@ -1,5 +1,7 @@
 #+title: listen.el
 
+# NOTE: This file is the one that /should/ be modified.  The "README.org" file in the project root is exported from this file for GitHub's sake (processing Org macros, etc), and it should /not/ be directly modified.
+
 # NOTE: It would be preferable to put these at the bottom of the file under the export options heading, but it seems that "TEXINFO_DIR_CATEGORY" only works at the top of the file.
 #+OPTIONS: broken-links:t *:t num:1 toc:1 author:nil timestamp:nil
 #+EXPORT_FILE_NAME: listen.texi
