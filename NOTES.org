@@ -8,3 +8,44 @@
 :END:
 
 Since MPD doesn't provide the rating tag in its metadata, we don't get it when adding tracks directly from MPD.  Of course, we want to avoid reading the track's metadata again, but there may be no alternative.
+
+* Ideas
+
+** TODO Collect bindings for docs automatically
+:LOGBOOK:
+- State "TODO"       from              [2024-03-13 Wed 22:35]
+:END:
+
+Nic Vollmer was kind enough to share this code he wrote for Elpaca:
+
+#+begin_src emacs-lisp :lexical t :exports results :results table
+(with-temp-buffer
+  (require 'elpaca-process)
+  (let ((program `(with-temp-buffer
+                    (setq load-prefer-newer t)
+                    (require 'elpaca-ui)
+                    (describe-map-tree elpaca-ui-mode-map)
+                    (princ (buffer-substring-no-properties (point-min) (point-max)))))
+        print-level print-circle print-length)
+    (insert
+     (elpaca-process-output "emacs" "-Q" "-L" ".." "--batch" "--eval" (pp-to-string program))))
+  (goto-char (point-min))
+  (let (rows)
+    (while (re-search-forward "elpaca" nil 'noerror)
+      (push (split-string (buffer-substring-no-properties
+                           (line-beginning-position) (line-end-position))
+                          "\t+")
+            rows))
+    (setq rows (mapcar (lambda (it)
+                         (append
+                          (list (car (split-string
+                                      (documentation (intern (cadr it)))
+                                      "\n")))
+                          it))
+                       rows))
+    (setq rows (cl-sort (mapcar #'nreverse rows) #'string< :key #'cadr))
+    (push 'hline rows)
+    (push (list "Command" "Binding" "Description") rows)
+    rows))
+#+end_src
+
