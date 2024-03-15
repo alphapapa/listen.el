@@ -225,7 +225,8 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 ** v0.8-pre
 
-Nothing new yet.
+*Additions*
+- The ~listen-queue-list~ buffer can be bookmarked.
 
 ** v0.7
 

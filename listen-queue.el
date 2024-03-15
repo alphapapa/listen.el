@@ -780,6 +780,16 @@ tracks in the queue unchanged)."
       (error "No Listen queue found named %S" queue-name))
     (listen-queue queue)))
 
+(defun listen-queue-list--bookmark-make-record ()
+  "Return a bookmark record for the `listen-queue-list' buffer."
+  `("*Listen Queues*"
+    (handler . ,#'listen-queue-list--bookmark-handler)))
+
+;;;###autoload
+(defun listen-queue-list--bookmark-handler (_bookmark)
+  "Set current buffer to `listen-queue-list'."
+  (listen-queue-list))
+
 ;;;;; M3U playlist support
 
 (defun listen-queue--m3u-filenames (filename)
@@ -880,11 +890,13 @@ Delay according to `listen-queue-delay-time-range', which see."
 (defun listen-queue-list ()
   "Show queue list."
   (interactive)
-  (with-current-buffer (get-buffer-create "*Listen Queues*")
-    (let ((inhibit-read-only t))
+  (let ((buffer (get-buffer-create "*Listen Queues*"))
+        (inhibit-read-only t))
+    (with-current-buffer buffer
       (read-only-mode)
       (erase-buffer)
       (toggle-truncate-lines 1)
+      (setq-local bookmark-make-record-function #'listen-queue-list--bookmark-make-record)
       (when listen-queues
         (make-vtable
          :columns
@@ -925,8 +937,10 @@ Delay according to `listen-queue-delay-time-range', which see."
                         ;; "!" (lambda (_) (call-interactively #'listen-queue-shell-command))
                         )))
       (goto-char (point-min))
-      (hl-line-mode 1)
-      (pop-to-buffer (current-buffer)))))
+      (hl-line-mode 1))
+    ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
+    ;; `listen-queue--bookmark-handler' works correctly.
+    (pop-to-buffer buffer)))
 
 ;;;; Compatibility
 
