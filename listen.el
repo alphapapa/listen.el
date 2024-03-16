@@ -85,7 +85,7 @@
 Used for mode line lighter and transient menu."
   :type 'natnum)
 
-(defcustom listen-lighter-format "🎵:%s %a: %>15t (%r)%E "
+(defcustom listen-lighter-format "🎵:%s %a: %>.15t (%r)%E "
   "Format for mode line lighter.
 Uses `format-spec', which see.  These format specs are available:
 
