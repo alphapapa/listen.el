@@ -240,6 +240,9 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 *Additions*
 + The ~listen-queue-list~ buffer can be bookmarked.
 
+*Fixes*
++ Command ~listen-queue-add-from-mpd~.
+
 ** v0.7
 
 *Additions*
