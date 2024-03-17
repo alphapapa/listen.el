@@ -530,10 +530,10 @@ buffer, if any)."
      :number (map-elt metadata "tracknumber")
      :date (map-elt metadata "date")
      :genre (map-elt metadata "genre")
-     ;; TODO: Since we're storing all of the metadata in the etc slot,
-     ;; consider whether to consolidate there or add slots for,
-     ;; e.g. rating.
-     :etc metadata)))
+     :rating (map-elt metadata "fmps_rating")
+     ;; TODO: Stop also storing metadata in etc slot.
+     :etc metadata
+     :metadata metadata)))
 
 (defun listen-queue-tracks-for (filenames)
   "Return tracks for FILENAMES.
