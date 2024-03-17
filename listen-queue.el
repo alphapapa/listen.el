@@ -82,7 +82,7 @@ intended to be set from the `listen-menu'."
 
 (defmacro listen-queue-with-buffer (queue &rest body)
   "Eval BODY in QUEUE's buffer, if it has a live one."
-  (declare (indent defun))
+  (declare (indent defun) (debug (sexp body)))
   (let ((buffer-var (gensym)))
     `(when-let ((,buffer-var (listen-queue-buffer ,queue)))
        (when (buffer-live-p ,buffer-var)
