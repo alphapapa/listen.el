@@ -58,6 +58,24 @@
   ;; NOTE: All of the metadata values are stored as strings, except for duration.
   filename artist title album number genre (duration 0) date rating etc metadata)
 
+(defun listen-track-metadata-get (key track)
+  "Return value of KEY in TRACK's metadata.
+If KEY appears in metadata multiple times (as multiple instances
+of the key, or as a single instance with null-separated values),
+return a list of values; otherwise return the sole value."
+  ;; Don't use the null character directly, because it makes Git think it's a binary file.
+  (cl-macrolet ((null-byte-string () (char-to-string #x0)))
+    (let ((values (cl-loop for (k . v) in (listen-track-metadata track)
+                           when (equal k key)
+                           collect v)))
+      (pcase (length values)
+        (0 nil)
+        (1 (let ((values (split-string (car values) (null-byte-string))))
+             (pcase-exhaustive (length values)
+               (1 (car values))
+               (_ values))))
+        (_ values)))))
+
 ;;;; Variables
 
 (defvar listen-player nil)
