@@ -353,12 +353,19 @@ select track as well."
       (setf (listen-queue-current queue) track
             (map-elt (listen-player-etc player) :queue) queue)
       (listen-queue-with-buffer queue
-        (listen-save-position
-          (goto-char (point-min))
-          (when previous-track
-            (listen-queue--vtable-update-object (vtable-current-table) previous-track previous-track))
-          (listen-queue--vtable-update-object (vtable-current-table) track track))
-        (listen-queue--highlight-current))))
+        ;; HACK: Only update the vtable if its buffer is visible.
+        (when-let ((buffer-window (get-buffer-window (current-buffer))))
+          (with-selected-window buffer-window
+            (listen-save-position
+              (goto-char (point-min))
+              (ignore-errors
+                ;; HACK: Ignore errors, because if the window size has changed, the vtable's cache
+                ;; will miss and it will signal an error.
+                (when previous-track
+                  (listen-queue--vtable-update-object (vtable-current-table)
+                                                      previous-track previous-track))
+                (listen-queue--vtable-update-object (vtable-current-table) track track)))
+            (listen-queue--highlight-current))))))
   (unless listen-mode
     (listen-mode))
   queue)
@@ -970,6 +977,10 @@ Delay according to `listen-queue-delay-time-range', which see."
               (error "Can't find the old object"))
             (setcar (cdr objects) object))
           ;; Then update the cache...
+          ;; NOTE: This only works if the vtable's buffer is visible and its window has the same
+          ;; width, or if the selected window happens to have the same width as the one last used to
+          ;; display the vtable; otherwise, the cache will always be empty, so the old-object will
+          ;; never be found, and an error will be signaled.
           (if-let ((line-number (seq-position (car (vtable--cache table)) old-object
                                               (lambda (a b)
                                                 (equal (car a) b))))

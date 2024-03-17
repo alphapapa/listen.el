@@ -365,6 +365,10 @@ Feedback and patches are welcome.
 
 Listen.el is published in GNU ELPA and is considered part of GNU Emacs.  Therefore, cumulative contributions of more than 15 lines of code require that the author assign copyright of such contributions to the FSF.  Authors who are interested in doing so may contact [[mailto:assign@gnu.org][assign@gnu.org]] to request the appropriate form.
 
+** Known issues
+
++ Queue buffers that are not visible during playback are not updated automatically (i.e. to show the currently playing track).  This is due to a limitation of the ~vtable~ library (see [[https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69837][bug #69837]]).
+
 * COMMENT Export setup                                             :noexport:
 :PROPERTIES:
 :TOC:      :ignore this
