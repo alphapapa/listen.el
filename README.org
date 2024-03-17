@@ -234,6 +234,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 - Command ~listen-queue-add-from-mpd~.
 - Indication of currently playing queue in queue list.
 - Set metadata slot when reverting track from disk.
+- Don't highlight current track in non-playing queues.
 
 ** v0.7
 

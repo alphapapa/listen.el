@@ -147,7 +147,9 @@ Useful for when `save-excursion' does not preserve point."
                          ;; We compare filenames in case the queue's files
                          ;; have been refreshed from disk, in which case
                          ;; the track objects would no longer be `eq'.
-                         (if-let ((current-track (listen-queue-current queue))
+                         (if-let ((player listen-player)
+                                  ((eq queue (alist-get :queue (listen-player-etc player))))
+                                  (current-track (listen-queue-current queue))
                                   ((equal (listen-track-filename track)
                                           (listen-track-filename current-track))))
                              (progn
