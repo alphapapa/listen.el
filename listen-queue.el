@@ -552,6 +552,7 @@ with \"ffprobe\"."
     ;; by MPD).
     (dolist (slot '(artist title album number date genre etc))
       ;; FIXME: Store metadata in its own slot and don't misuse etc slot.
+      (setf (listen-track-metadata track) (listen-track-etc new-track))
       (setf (cl-struct-slot-value 'listen-track slot track)
             (cl-struct-slot-value 'listen-track slot new-track)))))
 
