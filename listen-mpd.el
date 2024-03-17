@@ -69,6 +69,7 @@ applied to the buffer."
          (queue (listen-queue-complete :prompt "Add to queue" :allow-new-p t)))
      (list tracks queue)))
   (require 'listen-mpd)
+  (declare-function listen-queue-add-tracks "listen-queue")
   (listen-queue-add-tracks tracks queue))
 
 (cl-defun listen-mpd-read-query (&key (tag 'file) select-tag-p)
