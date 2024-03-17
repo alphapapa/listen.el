@@ -116,6 +116,13 @@ return a list of values; otherwise return the sole value."
   (or listen-player
       (setf listen-player (make-listen-player-vlc))))
 
+(cl-defun listen-current-track (&optional (player listen-player))
+  "Return track playing on PLAYER, if any."
+  ;; TODO: Use this where appropriate.
+  (when-let ((player)
+             (queue (alist-get :queue (listen-player-etc player))))
+    (listen-queue-current queue)))
+
 (defun listen-format-seconds (seconds)
   "Return SECONDS formatted as an hour:minute:second-style duration."
   (format-seconds "%h:%z%.2m:%.2s" seconds))
@@ -127,6 +134,9 @@ return a list of values; otherwise return the sole value."
 
 (cl-defgeneric listen--length (player)
   "Return duration in seconds of PLAYER's current track.")
+
+(cl-defgeneric listen--playing-p (player)
+  "Return non-nil if PLAYER is playing.")
 
 (cl-defmethod listen--running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
