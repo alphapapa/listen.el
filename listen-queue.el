@@ -117,7 +117,12 @@ Useful for when `save-excursion' does not preserve point."
 (define-derived-mode listen-queue-mode special-mode "Listen-Queue"
   (toggle-truncate-lines 1)
   (hl-line-mode 1)
-  (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record))
+  (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record
+              mode-name
+              '("Listen-Queue"
+                (:eval (when (and listen-player
+                                  (eq listen-queue (alist-get :queue (listen-player-etc listen-player))))
+                         (propertize ":current" 'face 'font-lock-builtin-face))))))
 
 ;;;###autoload
 (defun listen-queue (queue)
