@@ -243,6 +243,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 *Fixes*
 + Command ~listen-queue-add-from-mpd~.
++ Indication of currently playing queue in queue list.
 
 ** v0.7
 

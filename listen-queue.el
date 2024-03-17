@@ -907,7 +907,7 @@ Delay according to `listen-queue-delay-time-range', which see."
          :columns
          (list (list :name "▶" :primary 'descend
                      :getter (lambda (queue _table)
-                               (when-let ((player (listen-current-player)))
+                               (when-let ((player listen-player))
                                  (if (eq queue (map-elt (listen-player-etc player) :queue))
                                      "▶" " "))))
                (list :name "Name" :primary 'ascend
@@ -942,7 +942,8 @@ Delay according to `listen-queue-delay-time-range', which see."
                         ;; "!" (lambda (_) (call-interactively #'listen-queue-shell-command))
                         )))
       (goto-char (point-min))
-      (hl-line-mode 1))
+      (hl-line-mode 1)
+      (listen-queue--highlight-current))
     ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
     ;; `listen-queue--bookmark-handler' works correctly.
     (pop-to-buffer buffer)))
