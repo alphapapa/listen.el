@@ -240,6 +240,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 *Additions*
 + The ~listen-queue-list~ buffer can be bookmarked.
 + Queue buffers showing the currently playing queue indicate so in the mode line.
++ Support for ~mood~ metadata tag in MP3 files (added in ID3v2.4; other filetypes need no specific support).
 
 *Fixes*
 + Command ~listen-queue-add-from-mpd~.
