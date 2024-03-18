@@ -235,6 +235,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 - Indication of currently playing queue in queue list.
 - Set metadata slot when reverting track from disk.
 - Don't highlight current track in non-playing queues.
+- Increase minimum ~ffprobe~ timeout for a single track.
 
 ** v0.7
 
