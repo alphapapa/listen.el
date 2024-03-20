@@ -102,7 +102,7 @@ Uses `format-spec', which see.  These format specs are available:
 %s: Player status icon
 
 %E: Extra data specified in `listen-lighter-extra-functions',
- which see."
+    which see."
   :type 'string)
 
 (defcustom listen-lighter-extra-functions nil
