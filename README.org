@@ -230,6 +230,9 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 - Queue buffers showing the currently playing queue indicate so in the mode line.
 - Support for ~mood~ metadata tag in MP3 files (added in ID3v2.4; other filetypes need no specific support).
 
+*Changes*
+- Truncate track titles for display using option ~listen-lighter-title-max-length~ (because the ~format-spec~ specifier used in ~listen-lighter-format~ does not add an ellipsis where truncation occurs).
+
 *Fixes*
 - Command ~listen-queue-add-from-mpd~.
 - Indication of currently playing queue in queue list.

@@ -80,12 +80,16 @@
   "Default music directory."
   :type 'directory)
 
-(defcustom listen-lighter-title-max-length 15
+(defcustom listen-lighter-title-max-length 19
   "Truncate track titles to this many characters.
-Used for mode line lighter and transient menu."
+Used for mode line lighter and transient menu.  Since the
+truncation precision specifier that may be used in
+`listen-lighter-format' can't add an ellipsis where truncation
+happens, this option truncates before that format spec is applied
+and adds an ellipsis where it occurs."
   :type 'natnum)
 
-(defcustom listen-lighter-format "🎵:%s %a: %>.15t (%r)%E "
+(defcustom listen-lighter-format "🎵:%s %a: %t (%r)%E "
   "Format for mode line lighter.
 Uses `format-spec', which see.  These format specs are available:
 
@@ -237,7 +241,10 @@ According to `listen-lighter-format', which see."
                    (?A . ,(lambda ()
                             (or (alist-get "album" info nil nil #'equal) "")))
                    (?t . ,(lambda ()
-                            (or (alist-get "title" info nil nil #'equal) "")))
+                            (if-let ((title (alist-get "title" info nil nil #'equal)))
+                                (truncate-string-to-width title listen-lighter-title-max-length
+                                                          nil nil t)
+                              "")))
                    (?e . ,(lambda ()
                             (listen-format-seconds (listen--elapsed listen-player))))
                    (?r . ,(lambda ()
