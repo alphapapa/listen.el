@@ -930,7 +930,7 @@ Delay according to `listen-queue-delay-time-range', which see."
                                (length (listen-queue-tracks queue))))
                (list :name "Duration" :align 'right
                      :getter (lambda (queue _table)
-                               (when-let ((duration (map-elt (listen-queue-etc queue) :duration)))
+                               (when-let ((duration (alist-get :duration (listen-queue-etc queue))))
                                  (listen-format-seconds duration)))))
          :objects-function (lambda ()
                              listen-queues)
