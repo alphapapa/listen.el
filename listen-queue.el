@@ -139,7 +139,7 @@ Useful for when `save-excursion' does not preserve point."
         (setf listen-queue queue)
         (erase-buffer)
         (when (listen-queue-tracks listen-queue)
-          (make-vtable
+          (listen-make-vtable
            :columns
            (list (list :name "▶" :primary 'descend
                        :getter
@@ -313,7 +313,7 @@ If BACKWARDP, move it backward."
                  (list track)
                  (seq-subseq (listen-queue-tracks queue) position)))
     (vtable-insert-object (vtable-current-table) track previous-track)
-    (vtable-update-object (vtable-current-table) previous-track previous-track)))
+    (listen-queue--vtable-update-object (vtable-current-table) previous-track previous-track)))
 
 (defun listen-queue--update-buffer (queue)
   "Update QUEUE's buffer, if any."
@@ -326,16 +326,6 @@ If BACKWARDP, move it backward."
       (listen-queue--annotate-buffer))
     (listen-queue-goto-current queue)))
 
-(defun listen-queue-update-track (track queue)
-  "Update TRACK in QUEUE.
-Reverts TRACK's metadata from the file and updates it in QUEUE,
-including QUEUE's buffer, if any."
-  ;; TODO: Use where appropriate.
-  (listen-queue-revert-track track)
-  (listen-queue-with-buffer queue
-    (listen-save-position
-      (goto-char (point-min))
-      (vtable-update-object (vtable-current-table) track track))))
 
 (declare-function listen-mode "listen")
 (declare-function listen-play "listen")
@@ -772,7 +762,7 @@ tracks in the queue unchanged)."
       (cl-labels ((get (slot)
                     (cons (capitalize (symbol-name slot))
                           (cl-struct-slot-value 'listen-track slot track))))
-        (make-vtable
+        (listen-make-vtable
          :columns
          (list (list :name "Key" :getter (lambda (row _table) (car row)))
                (list :name "Value" :getter (lambda (row _table) (cdr row))))
@@ -944,7 +934,7 @@ Delay according to `listen-queue-delay-time-range', which see."
       (toggle-truncate-lines 1)
       (setq-local bookmark-make-record-function #'listen-queue-list--bookmark-make-record)
       (when listen-queues
-        (make-vtable
+        (listen-make-vtable
          :columns
          (list (list :name "▶" :primary 'descend
                      :getter (lambda (queue _table)
@@ -990,7 +980,33 @@ Delay according to `listen-queue-delay-time-range', which see."
     ;; `listen-queue--bookmark-handler' works correctly.
     (pop-to-buffer buffer)))
 
-;;;; Compatibility
+;;;; Vtable
+
+(require 'vtable)
+
+(cl-defmacro listen-with-vtable-at (position &rest body)
+  "FIXME: Docstring."
+  (declare (indent defun))
+  (let ((positionᵥ (gensym)))
+    `(let ((,positionᵥ ,position))
+       (save-excursion
+         (goto-char ,positionᵥ)
+         (cl-letf* (((symbol-function 'vtable--cache-key)
+                     (lambda ()
+                       (cons listen-vtable-frame-terminal listen-vtable-window-width)))
+                    (table (vtable-current-table))
+                    ((symbol-function 'vtable-current-table)
+                     (lambda ()
+                       table)))
+           ,@body)))))
+
+(defvar-local listen-vtable-frame-terminal nil)
+(defvar-local listen-vtable-window-width nil)
+
+(defun listen-make-vtable (&rest args)
+  (apply #'make-vtable args)
+  (setq-local listen-vtable-frame-terminal (frame-terminal)
+              listen-vtable-window-width (window-width)))
 
 (defalias 'listen-queue--vtable-update-object
   (if (version<= emacs-version "30")
@@ -1039,6 +1055,53 @@ Delay according to `listen-queue-delay-time-range', which see."
                 (vtable--recompute-numerical table (cdr line)))
             (error "Can't find cached object in vtable"))))
     #'vtable-update-object))
+
+;;;;; Functions using these vtable workarounds
+
+(defun listen-queue-update-track (track queue)
+  "Update TRACK in QUEUE.
+Reverts TRACK's metadata from the file and updates it in QUEUE,
+including QUEUE's buffer, if any."
+  ;; TODO: Use where appropriate.
+  (listen-queue-revert-track track)
+  (listen-queue-with-buffer queue
+    (listen-save-position
+      (listen-with-vtable-at (point-min)
+        (listen-queue--vtable-update-object table track track)))))
+
+;;;###autoload
+(cl-defun listen-queue-play (queue &optional (track (car (listen-queue-tracks queue))))
+  "Play QUEUE and optionally TRACK in it.
+Interactively, selected queue with completion; and with prefix,
+select track as well."
+  (interactive
+   (let* ((queue (listen-queue-complete))
+          (track (if current-prefix-arg
+                     (listen-queue-complete-track queue)
+                   (car (listen-queue-tracks queue)))))
+     (list queue track)))
+  (declare-function listen-mode "listen")
+  (declare-function listen-play "listen")
+  (let ((player (listen-current-player)))
+    (listen-play player (listen-track-filename track))
+    (let ((previous-track (listen-queue-current queue)))
+      (setf (listen-queue-current queue) track
+            (map-elt (listen-player-etc player) :queue) queue)
+      (listen-queue-with-buffer queue
+        ;; HACK: Only update the vtable if its buffer is visible.
+        (when-let ((buffer-window (get-buffer-window (current-buffer))))
+          (with-selected-window buffer-window
+            (listen-save-position
+              (listen-with-vtable-at (point-min)
+                ;; HACK: Ignore errors, because if the window size has changed, the vtable's cache
+                ;; will miss and it will signal an error.
+                (when previous-track
+                  (listen-queue--vtable-update-object table previous-track previous-track))
+                (listen-queue--vtable-update-object table track track)))
+            (listen-queue--highlight-current))))))
+  (unless listen-mode
+    (listen-mode))
+  queue)
 
 ;;;; Footer
 
