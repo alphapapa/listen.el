@@ -82,7 +82,7 @@ intended to be set from the `listen-menu'."
 
 (defmacro listen-queue-with-buffer (queue &rest body)
   "Eval BODY in QUEUE's buffer, if it has a live one."
-  (declare (indent defun))
+  (declare (indent defun) (debug (sexp body)))
   (let ((buffer-var (gensym)))
     `(when-let ((,buffer-var (listen-queue-buffer ,queue)))
        (when (buffer-live-p ,buffer-var)
@@ -117,7 +117,12 @@ Useful for when `save-excursion' does not preserve point."
 (define-derived-mode listen-queue-mode special-mode "Listen-Queue"
   (toggle-truncate-lines 1)
   (hl-line-mode 1)
-  (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record))
+  (setq-local bookmark-make-record-function #'listen-queue--bookmark-make-record
+              mode-name
+              '("Listen-Queue"
+                (:eval (when (and listen-player
+                                  (eq listen-queue (alist-get :queue (listen-player-etc listen-player))))
+                         (propertize ":current" 'face 'font-lock-builtin-face))))))
 
 ;;;###autoload
 (defun listen-queue (queue)
@@ -142,7 +147,9 @@ Useful for when `save-excursion' does not preserve point."
                          ;; We compare filenames in case the queue's files
                          ;; have been refreshed from disk, in which case
                          ;; the track objects would no longer be `eq'.
-                         (if-let ((current-track (listen-queue-current queue))
+                         (if-let ((player listen-player)
+                                  ((eq queue (alist-get :queue (listen-player-etc player))))
+                                  (current-track (listen-queue-current queue))
                                   ((equal (listen-track-filename track)
                                           (listen-track-filename current-track))))
                              (progn
@@ -348,12 +355,19 @@ select track as well."
       (setf (listen-queue-current queue) track
             (map-elt (listen-player-etc player) :queue) queue)
       (listen-queue-with-buffer queue
-        (listen-save-position
-          (goto-char (point-min))
-          (when previous-track
-            (listen-queue--vtable-update-object (vtable-current-table) previous-track previous-track))
-          (listen-queue--vtable-update-object (vtable-current-table) track track))
-        (listen-queue--highlight-current))))
+        ;; HACK: Only update the vtable if its buffer is visible.
+        (when-let ((buffer-window (get-buffer-window (current-buffer))))
+          (with-selected-window buffer-window
+            (listen-save-position
+              (goto-char (point-min))
+              (ignore-errors
+                ;; HACK: Ignore errors, because if the window size has changed, the vtable's cache
+                ;; will miss and it will signal an error.
+                (when previous-track
+                  (listen-queue--vtable-update-object (vtable-current-table)
+                                                      previous-track previous-track))
+                (listen-queue--vtable-update-object (vtable-current-table) track track)))
+            (listen-queue--highlight-current))))))
   (unless listen-mode
     (listen-mode))
   queue)
@@ -516,10 +530,10 @@ buffer, if any)."
      :number (map-elt metadata "tracknumber")
      :date (map-elt metadata "date")
      :genre (map-elt metadata "genre")
-     ;; TODO: Since we're storing all of the metadata in the etc slot,
-     ;; consider whether to consolidate there or add slots for,
-     ;; e.g. rating.
-     :etc metadata)))
+     :rating (map-elt metadata "fmps_rating")
+     ;; TODO: Stop also storing metadata in etc slot.
+     :etc metadata
+     :metadata metadata)))
 
 (defun listen-queue-tracks-for (filenames)
   "Return tracks for FILENAMES.
@@ -540,6 +554,7 @@ with \"ffprobe\"."
     ;; by MPD).
     (dolist (slot '(artist title album number date genre etc))
       ;; FIXME: Store metadata in its own slot and don't misuse etc slot.
+      (setf (listen-track-metadata track) (listen-track-etc new-track))
       (setf (cl-struct-slot-value 'listen-track slot track)
             (cl-struct-slot-value 'listen-track slot new-track)))))
 
@@ -780,6 +795,16 @@ tracks in the queue unchanged)."
       (error "No Listen queue found named %S" queue-name))
     (listen-queue queue)))
 
+(defun listen-queue-list--bookmark-make-record ()
+  "Return a bookmark record for the `listen-queue-list' buffer."
+  `("*Listen Queues*"
+    (handler . ,#'listen-queue-list--bookmark-handler)))
+
+;;;###autoload
+(defun listen-queue-list--bookmark-handler (_bookmark)
+  "Set current buffer to `listen-queue-list'."
+  (listen-queue-list))
+
 ;;;;; M3U playlist support
 
 (defun listen-queue--m3u-filenames (filename)
@@ -834,7 +859,8 @@ MAX-PROCESSES limits the number of parallel probing processes."
            (while (and tracks (length< processes max-processes))
              (let ((track (pop tracks)))
                (push (probe-duration track) processes)))))
-      (with-timeout ((* 0.1 (length tracks)) (error "Probing for track duration timed out"))
+      (with-timeout ((max 0.2 (* 0.1 (length tracks)))
+                     (error "Probing for track duration timed out"))
         (while (or tracks processes)
           (probe-more)
           (while (accept-process-output nil 0.01)))))))
@@ -880,17 +906,19 @@ Delay according to `listen-queue-delay-time-range', which see."
 (defun listen-queue-list ()
   "Show queue list."
   (interactive)
-  (with-current-buffer (get-buffer-create "*Listen Queues*")
-    (let ((inhibit-read-only t))
+  (let ((buffer (get-buffer-create "*Listen Queues*"))
+        (inhibit-read-only t))
+    (with-current-buffer buffer
       (read-only-mode)
       (erase-buffer)
       (toggle-truncate-lines 1)
+      (setq-local bookmark-make-record-function #'listen-queue-list--bookmark-make-record)
       (when listen-queues
         (make-vtable
          :columns
          (list (list :name "▶" :primary 'descend
                      :getter (lambda (queue _table)
-                               (when-let ((player (listen-current-player)))
+                               (when-let ((player listen-player))
                                  (if (eq queue (map-elt (listen-player-etc player) :queue))
                                      "▶" " "))))
                (list :name "Name" :primary 'ascend
@@ -899,7 +927,7 @@ Delay according to `listen-queue-delay-time-range', which see."
                (list :name "Tracks" :align 'right
                      :getter (lambda (queue _table)
                                (length (listen-queue-tracks queue))))
-               (list :name "Duration"
+               (list :name "Duration" :align 'right
                      :getter (lambda (queue _table)
                                (when-let ((duration (map-elt (listen-queue-etc queue) :duration)))
                                  (listen-format-seconds duration)))))
@@ -926,7 +954,10 @@ Delay according to `listen-queue-delay-time-range', which see."
                         )))
       (goto-char (point-min))
       (hl-line-mode 1)
-      (pop-to-buffer (current-buffer)))))
+      (listen-queue--highlight-current))
+    ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
+    ;; `listen-queue--bookmark-handler' works correctly.
+    (pop-to-buffer buffer)))
 
 ;;;; Compatibility
 
@@ -950,6 +981,10 @@ Delay according to `listen-queue-delay-time-range', which see."
               (error "Can't find the old object"))
             (setcar (cdr objects) object))
           ;; Then update the cache...
+          ;; NOTE: This only works if the vtable's buffer is visible and its window has the same
+          ;; width, or if the selected window happens to have the same width as the one last used to
+          ;; display the vtable; otherwise, the cache will always be empty, so the old-object will
+          ;; never be found, and an error will be signaled.
           (if-let ((line-number (seq-position (car (vtable--cache table)) old-object
                                               (lambda (a b)
                                                 (equal (car a) b))))

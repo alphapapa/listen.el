@@ -6,7 +6,7 @@
 ;; Maintainer: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13") (transient "0.5.3"))
-;; Version: 0.7
+;; Version: 0.8
 ;; URL: https://github.com/alphapapa/listen.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -80,12 +80,16 @@
   "Default music directory."
   :type 'directory)
 
-(defcustom listen-lighter-title-max-length 15
+(defcustom listen-lighter-title-max-length 19
   "Truncate track titles to this many characters.
-Used for mode line lighter and transient menu."
+Used for mode line lighter and transient menu.  Since the
+truncation precision specifier that may be used in
+`listen-lighter-format' can't add an ellipsis where truncation
+happens, this option truncates before that format spec is applied
+and adds an ellipsis where it occurs."
   :type 'natnum)
 
-(defcustom listen-lighter-format "🎵:%s %a: %>15t (%r)%E "
+(defcustom listen-lighter-format "🎵:%s %a: %t (%r)%E "
   "Format for mode line lighter.
 Uses `format-spec', which see.  These format specs are available:
 
@@ -98,7 +102,7 @@ Uses `format-spec', which see.  These format specs are available:
 %s: Player status icon
 
 %E: Extra data specified in `listen-lighter-extra-functions',
- which see."
+    which see."
   :type 'string)
 
 (defcustom listen-lighter-extra-functions nil
@@ -227,31 +231,36 @@ Interactively, jump to current queue's current track."
 (defun listen-mode-lighter ()
   "Return lighter for `listen-mode'.
 According to `listen-lighter-format', which see."
-  (if-let (((listen--running-p listen-player))
-           ((listen--playing-p listen-player))
-           (info (listen--info listen-player)))
-      (format-spec listen-lighter-format
-                   `((?a . ,(lambda ()
-                              (alist-get "artist" info nil nil #'equal)))
-                     (?A . ,(lambda ()
-                              (alist-get "album" info nil nil #'equal)))
-                     (?t . ,(lambda ()
-                              (alist-get "title" info nil nil #'equal)))
-                     (?e . ,(lambda ()
-                              (listen-format-seconds (listen--elapsed listen-player))))
-                     (?r . ,(lambda ()
-                              (concat "-" (listen-format-seconds
-                                           (- (listen--length listen-player)
-                                              (listen--elapsed listen-player))))))
-                     (?s . ,(lambda ()
-                              (pcase (listen--status listen-player)
-                                ("playing" "▶")
-                                ("paused" "⏸")
-                                ("stopped" "■"))))
-                     (?E . ,(lambda ()
-                              (if-let ((extra (mapconcat #'funcall listen-lighter-extra-functions " ")))
-                                  (concat " " extra)
-                                "")))))))
+  (when-let ((listen-player)
+             ((listen--running-p listen-player))
+             ((listen--playing-p listen-player))
+             (info (listen--info listen-player)))
+    (format-spec listen-lighter-format
+                 `((?a . ,(lambda ()
+                            (or (alist-get "artist" info nil nil #'equal) "")))
+                   (?A . ,(lambda ()
+                            (or (alist-get "album" info nil nil #'equal) "")))
+                   (?t . ,(lambda ()
+                            (if-let ((title (alist-get "title" info nil nil #'equal)))
+                                (truncate-string-to-width title listen-lighter-title-max-length
+                                                          nil nil t)
+                              "")))
+                   (?e . ,(lambda ()
+                            (listen-format-seconds (listen--elapsed listen-player))))
+                   (?r . ,(lambda ()
+                            (concat "-" (listen-format-seconds
+                                         (- (listen--length listen-player)
+                                            (listen--elapsed listen-player))))))
+                   (?s . ,(lambda ()
+                            (pcase (listen--status listen-player)
+                              ("playing" "▶")
+                              ("paused" "⏸")
+                              ("stopped" "■")
+                              (_ ""))))
+                   (?E . ,(lambda ()
+                            (if-let ((extra (mapconcat #'funcall listen-lighter-extra-functions " ")))
+                                (concat " " extra)
+                              "")))))))
 
 (defun listen-lighter-format-rating ()
   "Return the rating of the current track for display in the lighter."

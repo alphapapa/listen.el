@@ -541,6 +541,7 @@ Return the comment block data in a vector."
     ("TPA"  . "discnumber")
     ("TPOS" . "discnumber")
     ("TCON" . genre)
+    ("TMOO" . "mood")
     ("TPUB" . "label")
     ("TDOR" . "originaldate")
     ("TOR"  . "originalyear")

@@ -58,6 +58,24 @@
   ;; NOTE: All of the metadata values are stored as strings, except for duration.
   filename artist title album number genre (duration 0) date rating etc metadata)
 
+(defun listen-track-metadata-get (key track)
+  "Return value of KEY in TRACK's metadata.
+If KEY appears in metadata multiple times (as multiple instances
+of the key, or as a single instance with null-separated values),
+return a list of values; otherwise return the sole value."
+  ;; Don't use the null character directly, because it makes Git think it's a binary file.
+  (cl-macrolet ((null-byte-string () (char-to-string #x0)))
+    (let ((values (cl-loop for (k . v) in (listen-track-metadata track)
+                           when (equal k key)
+                           collect v)))
+      (pcase (length values)
+        (0 nil)
+        (1 (let ((values (split-string (car values) (null-byte-string))))
+             (pcase-exhaustive (length values)
+               (1 (car values))
+               (_ values))))
+        (_ values)))))
+
 ;;;; Variables
 
 (defvar listen-player nil)
@@ -98,6 +116,13 @@
   (or listen-player
       (setf listen-player (make-listen-player-vlc))))
 
+(cl-defun listen-current-track (&optional (player listen-player))
+  "Return track playing on PLAYER, if any."
+  ;; TODO: Use this where appropriate.
+  (when-let ((player)
+             (queue (alist-get :queue (listen-player-etc player))))
+    (listen-queue-current queue)))
+
 (defun listen-format-seconds (seconds)
   "Return SECONDS formatted as an hour:minute:second-style duration."
   (format-seconds "%h:%z%.2m:%.2s" seconds))
@@ -109,6 +134,9 @@
 
 (cl-defgeneric listen--length (player)
   "Return duration in seconds of PLAYER's current track.")
+
+(cl-defgeneric listen--playing-p (player)
+  "Return non-nil if PLAYER is playing.")
 
 (cl-defmethod listen--running-p ((player listen-player))
   "Return non-nil if PLAYER is running."
