@@ -918,9 +918,10 @@ Delay according to `listen-queue-delay-time-range', which see."
          :columns
          (list (list :name "▶" :primary 'descend
                      :getter (lambda (queue _table)
-                               (when-let ((player listen-player))
-                                 (if (eq queue (map-elt (listen-player-etc player) :queue))
-                                     "▶" " "))))
+                               (if-let ((player listen-player)
+                                        ((eq queue (alist-get :queue (listen-player-etc player)))))
+                                   "▶"
+                                 " ")))
                (list :name "Name" :primary 'ascend
                      :getter (lambda (queue _table)
                                (listen-queue-name queue)))
