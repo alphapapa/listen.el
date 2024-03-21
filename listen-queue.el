@@ -326,46 +326,6 @@ If BACKWARDP, move it backward."
       (listen-queue--annotate-buffer))
     (listen-queue-goto-current queue)))
 
-
-(declare-function listen-mode "listen")
-(declare-function listen-play "listen")
-;;;###autoload
-(cl-defun listen-queue-play (queue &optional (track (car (listen-queue-tracks queue))))
-  "Play QUEUE and optionally TRACK in it.
-Interactively, selected queue with completion; and with prefix,
-select track as well."
-  (interactive
-   (let* ((queue (listen-queue-complete))
-          (track (if current-prefix-arg
-                     (listen-queue-complete-track queue)
-                   (car (listen-queue-tracks queue)))))
-     (list queue track)))
-  (let ((player (listen-current-player)))
-    (listen-play player (listen-track-filename track))
-    ;; Remember queue position of track so if it gets removed, we can still go to the next track.
-    (setf (map-elt (listen-queue-etc queue) :track-number)
-          (seq-position (listen-queue-tracks queue) track))
-    (let ((previous-track (listen-queue-current queue)))
-      (setf (listen-queue-current queue) track
-            (map-elt (listen-player-etc player) :queue) queue)
-      (listen-queue-with-buffer queue
-        ;; HACK: Only update the vtable if its buffer is visible.
-        (when-let ((buffer-window (get-buffer-window (current-buffer))))
-          (with-selected-window buffer-window
-            (listen-save-position
-              (goto-char (point-min))
-              (ignore-errors
-                ;; HACK: Ignore errors, because if the window size has changed, the vtable's cache
-                ;; will miss and it will signal an error.
-                (when previous-track
-                  (listen-queue--vtable-update-object (vtable-current-table)
-                                                      previous-track previous-track))
-                (listen-queue--vtable-update-object (vtable-current-table) track track)))
-            (listen-queue--highlight-current))))))
-  (unless listen-mode
-    (listen-mode))
-  queue)
-
 (defun listen-queue-goto-current (queue)
   "Jump to current track."
   (interactive (list (listen-queue-complete)))
@@ -991,13 +951,18 @@ Delay according to `listen-queue-delay-time-range', which see."
     `(let ((,positionᵥ ,position))
        (save-excursion
          (goto-char ,positionᵥ)
-         (cl-letf* (((symbol-function 'vtable--cache-key)
-                     (lambda ()
-                       (cons listen-vtable-frame-terminal listen-vtable-window-width)))
+         (cl-letf* (((symbol-function 'frame-terminal)
+                     (lambda (&optional _)
+                       listen-vtable-frame-terminal))
+                    ((symbol-function 'window-width)
+                     (lambda (&optional _ _)
+                       listen-vtable-window-width))
                     (table (vtable-current-table))
                     ((symbol-function 'vtable-current-table)
                      (lambda ()
-                       table)))
+                       table))
+                    ((symbol-function 'vtable--recompute-numerical)
+                     #'listen-queue--vtable--recompute-numerical))
            ,@body)))))
 
 (defvar-local listen-vtable-frame-terminal nil)
@@ -1084,24 +1049,40 @@ select track as well."
   (declare-function listen-play "listen")
   (let ((player (listen-current-player)))
     (listen-play player (listen-track-filename track))
+    ;; Remember queue position of track so if it gets removed, we can still go to the next track.
+    (setf (map-elt (listen-queue-etc queue) :track-number)
+          (seq-position (listen-queue-tracks queue) track))
     (let ((previous-track (listen-queue-current queue)))
       (setf (listen-queue-current queue) track
             (map-elt (listen-player-etc player) :queue) queue)
       (listen-queue-with-buffer queue
-        ;; HACK: Only update the vtable if its buffer is visible.
-        (when-let ((buffer-window (get-buffer-window (current-buffer))))
-          (with-selected-window buffer-window
-            (listen-save-position
-              (listen-with-vtable-at (point-min)
-                ;; HACK: Ignore errors, because if the window size has changed, the vtable's cache
-                ;; will miss and it will signal an error.
-                (when previous-track
-                  (listen-queue--vtable-update-object table previous-track previous-track))
-                (listen-queue--vtable-update-object table track track)))
-            (listen-queue--highlight-current))))))
+        (listen-save-position
+          (listen-with-vtable-at (point-min)
+            (when previous-track
+              (listen-queue--vtable-update-object table previous-track previous-track))
+            (listen-queue--vtable-update-object table track track)))
+        (listen-queue--highlight-current))))
   (unless listen-mode
     (listen-mode))
   queue)
+
+(defalias 'listen-queue--vtable--recompute-numerical
+  ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69927>.
+  ;; TODO: Remove this when not needed.
+  (if (version<= emacs-version "29.2")
+      (lambda (table line)
+        "Recompute numericalness of columns if necessary."
+        (let ((columns (vtable-columns table))
+              (recompute nil))
+          (seq-do-indexed
+           (lambda (elem index)
+             (when (and (vtable-column--numerical (elt columns index))
+                        (not (numberp (car elem))))
+               (setq recompute t)))
+           line)
+          (when recompute
+            (vtable--compute-columns table))))
+    #'vtable--recompute-numerical))
 
 ;;;; Footer
 
