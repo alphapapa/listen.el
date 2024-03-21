@@ -929,13 +929,18 @@ Delay according to `listen-queue-delay-time-range', which see."
     `(let ((,positionᵥ ,position))
        (save-excursion
          (goto-char ,positionᵥ)
-         (cl-letf* (((symbol-function 'vtable--cache-key)
-                     (lambda ()
-                       (cons listen-vtable-frame-terminal listen-vtable-window-width)))
+         (cl-letf* (((symbol-function 'frame-terminal)
+                     (lambda (&optional _)
+                       listen-vtable-frame-terminal))
+                    ((symbol-function 'window-width)
+                     (lambda (&optional _ _)
+                       listen-vtable-window-width))
                     (table (vtable-current-table))
                     ((symbol-function 'vtable-current-table)
                      (lambda ()
-                       table)))
+                       table))
+                    ((symbol-function 'vtable--recompute-numerical)
+                     #'listen-queue--vtable--recompute-numerical))
            ,@body)))))
 
 (defvar-local listen-vtable-frame-terminal nil)
@@ -1026,20 +1031,33 @@ select track as well."
       (setf (listen-queue-current queue) track
             (map-elt (listen-player-etc player) :queue) queue)
       (listen-queue-with-buffer queue
-        ;; HACK: Only update the vtable if its buffer is visible.
-        (when-let ((buffer-window (get-buffer-window (current-buffer))))
-          (with-selected-window buffer-window
-            (listen-save-position
-              (listen-with-vtable-at (point-min)
-                ;; HACK: Ignore errors, because if the window size has changed, the vtable's cache
-                ;; will miss and it will signal an error.
-                (when previous-track
-                  (listen-queue--vtable-update-object table previous-track previous-track))
-                (listen-queue--vtable-update-object table track track)))
-            (listen-queue--highlight-current))))))
+        (listen-save-position
+          (listen-with-vtable-at (point-min)
+            (when previous-track
+              (listen-queue--vtable-update-object table previous-track previous-track))
+            (listen-queue--vtable-update-object table track track)))
+        (listen-queue--highlight-current))))
   (unless listen-mode
     (listen-mode))
   queue)
+
+(defalias 'listen-queue--vtable--recompute-numerical
+  ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69927>.
+  ;; TODO: Remove this when not needed.
+  (if (version<= emacs-version "29.2")
+      (lambda (table line)
+        "Recompute numericalness of columns if necessary."
+        (let ((columns (vtable-columns table))
+              (recompute nil))
+          (seq-do-indexed
+           (lambda (elem index)
+             (when (and (vtable-column--numerical (elt columns index))
+                        (not (numberp (car elem))))
+               (setq recompute t)))
+           line)
+          (when recompute
+            (vtable--compute-columns table))))
+    #'vtable--recompute-numerical))
 
 ;;;; Footer
 
