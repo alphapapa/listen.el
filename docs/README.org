@@ -10,7 +10,7 @@
 #+TEXINFO_DIR_DESC: Audio/Music player
 
 # ELPA badge image.
-[[https:/elpa.gnu.org/packages/listen.html][https://elpa.gnu.org/packages/listen.svg]]
+[[https://elpa.gnu.org/packages/listen.html][file:https://elpa.gnu.org/packages/listen.svg]]
 
 This package aims to provide a simple audio/music player for Emacs.  It should "just work," with little-to-no configuration, have intuitive commands, and be easily extended and customized.  (Contrast to setting up EMMS, or having to configure external players like MPD.)  A Transient menu, under the command ~listen~, is the primary entry point.
 
