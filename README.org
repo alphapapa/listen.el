@@ -228,6 +228,11 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 *Fixes*
 - Currently playing column in queue list buffer.
 
+** v0.8.1
+
+*Fixes*
+- Autoload of ~listen~ / ~listen-menu~ commands.
+
 ** v0.8
 
 *Additions*
