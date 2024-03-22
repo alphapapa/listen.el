@@ -223,7 +223,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 * Changelog
 
-** v0.8.1-pre
+** v0.8.1
 
 *Fixes*
 - Autoload of ~listen~ / ~listen-menu~ commands.
