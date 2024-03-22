@@ -341,7 +341,6 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 ;; as expected, so we'll try this workaround.
 
 ;;;###autoload
-(defalias 'listen #'listen-menu)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
   :info-manual "(listen)"
@@ -449,6 +448,11 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
      :transient t)
     ("qap" "from playlist file" listen-queue-add-from-playlist-file
      :transient t)]])
+
+;; NOTE: This alias must come after the command it refers to, otherwise the autoload file fails to
+;; finish loading (without warning), which breaks a lot of things!
+;;;###autoload
+(defalias 'listen #'listen-menu)
 
 (provide 'listen)
 
