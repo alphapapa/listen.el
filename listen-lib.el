@@ -107,6 +107,36 @@ return a list of values; otherwise return the sole value."
 (defface listen-rating '((t :inherit font-lock-escape-face))
   "Track rating.")
 
+(defgroup listen-lighter-faces nil
+  "Faces used in the mode line lighter."
+  :group 'listen-faces)
+
+(defface listen-lighter-artist '((t :inherit listen-artist))
+  "Track artist.")
+
+(defface listen-lighter-title '((t :inherit listen-title))
+  "Track title.")
+
+(defface listen-lighter-album '((t :inherit listen-album))
+  "Track album.")
+
+(defface listen-lighter-filename '((t :inherit listen-filename))
+  "Track filename.")
+
+(defface listen-lighter-genre '((t :inherit listen-genre))
+  "Track genre.")
+
+(defface listen-lighter-rating '((t :inherit listen-rating))
+  "Track rating.")
+
+(defface listen-lighter-time '((t :inherit fixed-pitch))
+  "Track time elapsed/remaining.")
+
+(defface listen-lighter-extra '((t :inherit font-lock-comment-face))
+  "See `listen-lighter-extra-functions'.")
+
+
+
 ;;;; Functions
 
 ;; FIXME: Declare this differently or something.
