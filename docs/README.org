@@ -239,6 +239,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 *Fixes*
 + Currently playing column in queue list buffer.
++ Autoload of ~listen~ / ~listen-menu~ commands (See [[https://github.com/magit/transient/issues/280][Transient issue]].  Thanks to Jonas Bernoulli.).
 
 ** v0.8.1
 

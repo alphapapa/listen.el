@@ -340,7 +340,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 ;; It seems that autoloading the transient prefix command doesn't work
 ;; as expected, so we'll try this workaround.
 
-;;;###autoload
+;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
   :info-manual "(listen)"
