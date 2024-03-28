@@ -348,8 +348,8 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 
 (defvar listen-queue-repeat-mode)
 
-;; It seems that autoloading the transient prefix command doesn't work
-;; as expected, so we'll try this workaround.
+;; TODO(someday): Simplify autoload when requiring Emacs 30.  See
+;; <https://github.com/magit/transient/issues/280>.
 
 ;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
