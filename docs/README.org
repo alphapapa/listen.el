@@ -10,7 +10,7 @@
 #+TEXINFO_DIR_DESC: Audio/Music player
 
 # ELPA badge image.
-[[file:https:/elpa.gnu.org/packages/listen.html][https://elpa.gnu.org/packages/listen.svg]]
+[[https://elpa.gnu.org/packages/listen.html][file:https://elpa.gnu.org/packages/listen.svg]]
 
 This package aims to provide a simple audio/music player for Emacs.  It should "just work," with little-to-no configuration, have intuitive commands, and be easily extended and customized.  (Contrast to setting up EMMS, or having to configure external players like MPD.)  A Transient menu, under the command ~listen~, is the primary entry point.
 
@@ -234,6 +234,14 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 + Similarly, you might even see an icon in your task switcher indicating that Emacs is playing sound (e.g. with KDE Plasma).
   
 * Changelog
+
+** v0.9
+
+/Released without additional changes due to change in ELPA recipe./
+
+*Fixes*
++ Currently playing column in queue list buffer.
++ Autoload of ~listen~ / ~listen-menu~ commands (See [[https://github.com/magit/transient/issues/280][Transient issue]].  Thanks to Jonas Bernoulli.).
 
 ** v0.8.1
 

@@ -6,7 +6,7 @@
 ;; Maintainer: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13") (transient "0.5.3"))
-;; Version: 0.8.1
+;; Version: 0.9
 ;; URL: https://github.com/alphapapa/listen.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -340,7 +340,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 ;; It seems that autoloading the transient prefix command doesn't work
 ;; as expected, so we'll try this workaround.
 
-;;;###autoload
+;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
   :info-manual "(listen)"
