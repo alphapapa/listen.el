@@ -235,7 +235,9 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
   
 * Changelog
 
-** v0.9-pre
+** v0.9
+
+/Released without additional changes due to change in ELPA recipe./
 
 *Fixes*
 + Currently playing column in queue list buffer.
