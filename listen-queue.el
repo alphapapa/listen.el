@@ -963,7 +963,7 @@ Delay according to `listen-queue-delay-time-range', which see."
 ;;;; Compatibility
 
 (defalias 'listen-queue--vtable-update-object
-  (if (version<= emacs-version "29.2")
+  (if (version<= emacs-version "30")
       ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69664>.
       (lambda (table object old-object)
         "Replace OLD-OBJECT in TABLE with OBJECT."

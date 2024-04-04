@@ -228,6 +228,9 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 *Additions*
 - Faces for parts of mode line lighter.
 
+*Fixes*
+- Updating vtables for Emacs versions before 30.
+
 ** v0.9
 
 /Released without additional changes due to change in ELPA recipe./
