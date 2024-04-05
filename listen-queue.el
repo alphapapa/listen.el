@@ -1067,9 +1067,9 @@ select track as well."
   queue)
 
 (defalias 'listen-queue--vtable--recompute-numerical
+  ;; TODO: Remove this when requiring Emacs 30+.
   ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69927>.
-  ;; TODO: Remove this when not needed.
-  (if (version<= emacs-version "29.2")
+  (if (version<= emacs-version "30")
       (lambda (table line)
         "Recompute numericalness of columns if necessary."
         (let ((columns (vtable-columns table))
