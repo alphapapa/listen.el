@@ -221,9 +221,13 @@ Useful for when `save-excursion' does not preserve point."
                           "?" (lambda (_) (call-interactively #'listen-menu))
                           "g" (lambda (_) (call-interactively #'listen-queue-revert))
                           "j" #'listen-jump
+                          "m" #'listen-queue-mark
+                          "M" (lambda (_) (call-interactively #'listen-queue-mark-all))
                           "n" (lambda (_) (forward-line 1))
                           "p" (lambda (_) (forward-line -1))
-                          "m" #'listen-view-track
+                          "u" #'listen-queue-unmark
+                          "U" (lambda (_) (call-interactively #'listen-queue-unmark-all))
+                          "v" #'listen-view-track
                           "N" (lambda (track) (listen-queue-transpose-forward track queue))
                           "P" (lambda (track) (listen-queue-transpose-backward track queue))
                           "C-k" (lambda (track) (listen-queue-kill-track track queue))
@@ -236,6 +240,7 @@ Useful for when `save-excursion' does not preserve point."
                                 (call-interactively #'listen-library-from-queue))
                           "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
         (listen-queue--annotate-buffer)
+        (listen-queue--update-marks)
         (listen-queue-goto-current queue)))
     ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
     ;; `listen-queue--bookmark-handler' works correctly.
@@ -989,6 +994,66 @@ Delay according to `listen-queue-delay-time-range', which see."
     ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
     ;; `listen-queue--bookmark-handler' works correctly.
     (pop-to-buffer buffer)))
+
+;;;; Marking
+
+;; Marks are implemented as a list of tracks in the queue's `etc' slot.  They are visualized by
+;; putting an overlay on each marked track using the `region' face.  For simplicity, when a track is
+;; marked or unmarked, all of the overlays are replaced (if this proves to be a performance problem,
+;; it could be optimized).
+
+(defun listen-queue-mark (tracks)
+  "Mark the TRACKS in region or at point."
+  (interactive (list (or (listen-queue--vtable-objects-in-region)
+                         (list (vtable-current-object))))
+               listen-queue-mode)
+  (dolist (track (ensure-list tracks))
+    (cl-pushnew track (alist-get 'marked-tracks (listen-queue-etc listen-queue))))
+  (forward-line 1)
+  (listen-queue--update-marks))
+
+(defun listen-queue-unmark (tracks)
+  "Unmark the TRACKS in region or at point."
+  (interactive (list (or (listen-queue--vtable-objects-in-region)
+                         (list (vtable-current-object))))
+               listen-queue-mode)
+  (dolist (track (ensure-list tracks))
+    (cl-callf2 remq track (alist-get 'marked-tracks (listen-queue-etc listen-queue))))
+  (forward-line 1)
+  (listen-queue--update-marks))
+
+(defun listen-queue-mark-all ()
+  "Mark all TRACKS in queue."
+  (interactive nil listen-queue-mode)
+  (setf (alist-get 'marked-tracks (listen-queue-etc listen-queue))
+        (listen-queue-tracks listen-queue))
+  (listen-queue--update-marks))
+
+(defun listen-queue-unmark-all ()
+  "Unmark all TRACKS in queue."
+  (interactive nil listen-queue-mode)
+  (setf (alist-get 'marked-tracks (listen-queue-etc listen-queue)) nil)
+  (listen-queue--update-marks))
+
+(defun listen-queue--vtable-objects-in-region ()
+  "Return list of objects in region."
+  (when (use-region-p)
+    (save-excursion
+      (goto-char (region-beginning))
+      (cl-loop while (< (point) (region-end))
+               collect (vtable-current-object)
+               do (forward-line 1)))))
+
+(defun listen-queue--update-marks ()
+  "Update mark overlays in current queue buffer."
+  (remove-overlays nil nil :listen-queue-mark t)
+  (save-excursion
+    (goto-char (point-min))
+    (dolist (track (alist-get 'marked-tracks (listen-queue-etc listen-queue)))
+      (vtable-goto-object track)
+      (let ((overlay (make-overlay (pos-bol) (pos-eol))))
+        (overlay-put overlay :listen-queue-mark t)
+        (overlay-put overlay 'face 'region)))))
 
 ;;;; Compatibility
 
