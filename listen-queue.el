@@ -452,6 +452,16 @@ which see."
   (listen-queue queue)
   queue)
 
+(cl-defun listen-queue-add-urls (urls queue)
+  "Add URLS to QUEUE."
+  (interactive
+   (let ((queue (listen-queue-complete :allow-new-p t))
+         (urls (split-string (read-string "URLs: ") nil t)))
+     (list urls queue)))
+  (cl-callf append (listen-queue-tracks queue) (listen-queue-tracks-for urls))
+  (listen-queue queue)
+  queue)
+
 (defun listen-queue-add-tracks (tracks queue)
   "Add TRACKS to QUEUE.
 Duplicate tracks (by filename) are removed from the queue, and
@@ -514,16 +524,26 @@ buffer, if any)."
                                       :key #'listen-queue-name :test #'equal)
                              (error "Queue not found: %S" queue))))) ))
 
+(defun listen--filename-remote-p (filename)
+  "Return non-nil if FILENAME appears to be an HTTP URL."
+  ;; I can't find an obviously correct function to use, so this will do.
+  (string-match-p (rx bos "http" (optional "s") "://") filename))
+
 (defun listen-queue-track (filename)
-  "Return track for FILENAME."
-  (when-let ((metadata (listen-info--decode-info-fields filename)))
-    ;; FIXME: This assertion.
-    (cl-assert metadata nil "Track has no metadata: %S" filename)
+  "Return track for FILENAME.
+If FILENAME is not a HTTP URL, read its metadata."
+  (let (metadata)
+    (pcase filename
+      ((pred listen--filename-remote-p)
+       nil)
+      (_ (setf metadata (listen-info--decode-info-fields filename)
+               ;; Abbreviate the filename so as to not include the user's
+               ;; homedir path (so queues could be portable with music
+               ;; libraries).
+               filename (abbreviate-file-name filename))
+         (cl-assert metadata nil "Track has no metadata: %S" filename)))
     (make-listen-track
-     ;; Abbreviate the filename so as to not include the user's
-     ;; homedir path (so queues could be portable with music
-     ;; libraries).
-     :filename (abbreviate-file-name filename)
+     :filename filename
      :artist (map-elt metadata "artist")
      :title (map-elt metadata "title")
      :album (map-elt metadata "album")
@@ -542,7 +562,15 @@ with \"ffprobe\"."
   (with-demoted-errors "listen-queue-tracks-for: %S"
     (let ((tracks (remq nil (mapcar #'listen-queue-track filenames))))
       (when listen-queue-ffprobe-p
-        (listen-queue--add-track-durations tracks))
+        ;; FIXME: Rename this option.
+        (listen-queue--add-track-durations
+         (cl-remove-if (lambda (track)
+                         (listen--filename-remote-p (listen-track-filename track)))
+                       tracks))
+        (listen-queue--add-remote-track-metadata
+         (cl-remove-if-not (lambda (track)
+                             (listen--filename-remote-p (listen-track-filename track)))
+                           tracks)))
       tracks)))
 
 (defun listen-queue-revert-track (track)
@@ -865,6 +893,67 @@ MAX-PROCESSES limits the number of parallel probing processes."
         (while (or tracks processes)
           (probe-more)
           (while (accept-process-output nil 0.01)))))))
+
+(cl-defun listen-queue--add-remote-track-metadata
+    (tracks &key then (max-processes listen-queue-max-probe-processes))
+  "Add durations to TRACKS by probing with \"ffprobe\".
+MAX-PROCESSES limits the number of parallel probing processes.
+THEN may be a function to call with no arguments after fetching
+is done."
+  ;; TODO: Generalize this.
+  (let* ((processes)
+         (timer)
+         (timeout (max 5 (* 5 (length tracks)))))
+    (cl-labels
+        ((timed-out (processes)
+           (mapc #'kill-process processes))
+         (fetch-metadata (track)
+           (with-demoted-errors "Unable to get metadata for %S"
+             (with-current-buffer (generate-new-buffer " *listen: fetch-metadata*")
+               (let* ((stderr-buffer (generate-new-buffer " *listen: fetch-metadata-stderr*"))
+                      (sentinel (lambda (process status)
+                                  (unwind-protect
+                                      (pcase status
+                                        ((or "killed\n" "interrupt\n"
+                                             (pred numberp)
+                                             (rx "exited abnormally with code " (1+ digit))))
+                                        ("finished\n"
+                                         (with-current-buffer (process-buffer process)
+                                           (goto-char (point-min))
+                                           (let ((metadata (json-parse-buffer)))
+                                             (setf (listen-track-artist track)
+                                                   (map-elt metadata "channel")
+                                                   (listen-track-title track) (map-elt metadata "title")
+                                                   (map-elt (listen-track-etc track) "description")
+                                                   (map-elt metadata "description")
+                                                   (listen-track-duration track)
+                                                   (map-elt metadata "duration"))
+                                             (message "Metadata for %S: %S" track metadata)
+                                             ))))
+                                    (kill-buffer (process-buffer process))
+                                    (kill-buffer stderr-buffer) ; ARGH.
+                                    (cl-callf2 remove process processes)
+                                    (probe-more))))
+                      (command (list "yt-dlp" "--dump-json"
+                                     (listen-track-filename track)))
+                      (process (make-process
+                                :name "listen:fetch-metadata" :stderr stderr-buffer
+                                :noquery t :type 'pipe :buffer (current-buffer)
+                                :sentinel sentinel :command (if listen-queue-nice-p
+                                                                (cons "nice" command)
+                                                              command))))
+                 process))))
+         (probe-more ()
+           (if tracks
+               (while (and tracks (length< processes max-processes))
+                 (let ((track (pop tracks)))
+                   (push (fetch-metadata track) processes)))
+             (when (timerp timer)
+               (cancel-timer timer))
+             (when then
+               (funcall then)))))
+      (probe-more)
+      (setf timer (run-at-time timeout nil #'timed-out processes)))))
 
 ;;;;; Queue delay mode
 

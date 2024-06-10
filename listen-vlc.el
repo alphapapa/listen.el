@@ -45,6 +45,12 @@
                 ;; with that.
                 200))))
 
+(cl-defstruct
+    (listen-player-vlc-audio-only
+     (:include listen-player-vlc
+               ;; HACK: The first two arguments are duplicated instead of adding --novideo.
+               (args '("-I" "rc" "--novideo")))))
+
 ;;;; Functions
 
 (cl-defmethod listen--info ((player listen-player-vlc))
@@ -76,7 +82,7 @@
 (cl-defmethod listen--play ((player listen-player-vlc) file)
   "Play FILE with PLAYER.
 Stops playing, clears playlist, adds FILE, and plays it."
-  (dolist (command `("stop" "clear" ,(format "add %s" (expand-file-name file)) "play"))
+  (dolist (command `("stop" "clear" ,(format "add %s" file) "play"))
     (listen--send player command)))
 
 ;; (cl-defmethod listen--stop ((player listen-player-vlc))

@@ -119,6 +119,11 @@ Called with one argument, the player (if the player has a queue,
 its current track will be the one that just finished playing)."
   :type 'hook)
 
+(defcustom listen-show-video t
+  "Allow the player to show a window for video if applicable.
+Intended to be toggled from `listen-menu'."
+  :type 'boolean)
+
 ;;;; Commands
 
 (defun listen-quit (player)
@@ -155,6 +160,8 @@ Interactively, uses the default player."
   (interactive
    (list (listen-current-player)
          (read-file-name "Play file: " listen-directory nil t)))
+  (unless (listen--filename-remote-p file)
+    (setf file (expand-file-name file)))
   (listen--play player file))
 
 (defun listen-volume (player volume)
@@ -351,6 +358,15 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 ;; TODO(someday): Simplify autoload when requiring Emacs 30.  See
 ;; <https://github.com/magit/transient/issues/280>.
 
+(defun listen-toggle-video ()
+  "Toggle video."
+  (interactive)
+  (setf listen-show-video (not listen-show-video))
+  ;; (when (listen--playing-p listen-player)
+  ;;   (listen-quit listen-player)
+  ;;   ())
+  )
+
 ;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
@@ -366,7 +382,12 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
    ;; Getting this layout to work required a lot of trial-and-error.
    [("Q" "Quit" listen-quit
      :inapt-if-not (lambda ()
-                     listen-player))]
+                     listen-player))
+    ("W" "Video window" listen-toggle-video
+     :description (lambda ()
+                    (concat "Video window: "
+                            (if listen-show-video
+                                "on" "off"))))]
    [("m" "Metadata" listen-view-track
      :inapt-if-not (lambda ()
                      (and listen-player
