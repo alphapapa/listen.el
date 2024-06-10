@@ -541,6 +541,7 @@ If FILENAME is not a HTTP URL, read its metadata."
                ;; homedir path (so queues could be portable with music
                ;; libraries).
                filename (abbreviate-file-name filename))
+         ;; TODO: Don't use an assertion here, because some files may have no metadata, and that shouldn't cause an error (which bubbles up and stops processing of other tracks).
          (cl-assert metadata nil "Track has no metadata: %S" filename)))
     (make-listen-track
      :filename filename
@@ -888,6 +889,7 @@ MAX-PROCESSES limits the number of parallel probing processes."
            (while (and tracks (length< processes max-processes))
              (let ((track (pop tracks)))
                (push (probe-duration track) processes)))))
+      ;; TODO: Make this per-file timeout configurable (on some systems it just times out).
       (with-timeout ((max 0.2 (* 0.1 (length tracks)))
                      (error "Probing for track duration timed out"))
         (while (or tracks processes)
