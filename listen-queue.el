@@ -351,6 +351,12 @@ select track as well."
      (list queue track)))
   (let ((player (listen-current-player)))
     (listen-play player (listen-track-filename track))
+    (when-let ((position (map-elt (listen-track-etc track) 'position)))
+      ;; Try to restore previous position.
+      ;; TODO: Make this optional.
+      (declare-function listen-seek "listen")
+      (listen--after-playback-starts player (lambda ()
+                                              (listen-seek player position))))
     (let ((previous-track (listen-queue-current queue)))
       (setf (listen-queue-current queue) track
             (map-elt (listen-player-etc player) :queue) queue)
@@ -371,6 +377,27 @@ select track as well."
   (unless listen-mode
     (listen-mode))
   queue)
+
+(cl-defun listen--after-playback-starts (player fn &key has-played-p (timeout 120))
+  "Call FN when PLAYER has STATUS."
+  (let (run-again-p)
+    (if (zerop timeout)
+        (warn "listen--after-playback-starts: Timed out.")
+      (declare-function listen--status "listen-vlc")
+      (if (equal "playing" (listen--status player))
+          (progn
+            (setf has-played-p t)
+            (if (> (listen--elapsed player) 0)
+                (funcall fn)
+              (setf run-again-p t)))
+        ;; Not playing.
+        (if has-played-p
+            (warn "listen--after-playback-starts: Player stopped.")
+          ;; Wait for playing.
+          (setf run-again-p t))))
+    (when run-again-p
+      (run-at-time 1 nil #'listen--after-playback-starts
+                   player fn :timeout (1- timeout) :has-played-p has-played-p))))
 
 (defun listen-queue-goto-current ()
   "Jump to current track."

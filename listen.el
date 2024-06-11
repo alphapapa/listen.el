@@ -294,9 +294,18 @@ According to `listen-lighter-format', which see."
 (declare-function listen-queue-next-track "listen-queue")
 (defun listen-mode--update (&rest _ignore)
   "Play next track and/or update variable `listen-mode-lighter'."
-  (let (playing-next-p)
+  (let ((playingp (and listen-player (listen--playing-p listen-player)))
+        (current-track (listen-current-track))
+        playing-next-p)
     (when listen-player
-      (unless (or (listen--playing-p listen-player)
+      (when (and playingp current-track
+                 ;; Don't update the position unless we're at least 10 seconds in.  This gives us a
+                 ;; grace period in which to try to set the position to one from last time.
+                 ;; TODO: Make this configurable.
+                 (> (listen--elapsed listen-player) 10))
+        (setf (map-elt (listen-track-etc current-track) 'position)
+              (listen--elapsed listen-player)))
+      (unless (or playingp
                   ;; HACK: It seems that sometimes the player gets restarted
                   ;; even when paused: this extra check should prevent that.
                   (member (listen--status listen-player) '("playing" "paused")))
