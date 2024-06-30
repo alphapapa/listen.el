@@ -214,5 +214,40 @@ completion."
                 (expand-file-name filename (or mpc-mpd-music-directory listen-directory)))
               result))))
 
+(require 'peg)
+
+(defun listen-mpd--parse-query (query-string)
+  "FIXME: Docstring."
+  (with-temp-buffer
+    (insert query-string)
+    (goto-char (point-min))
+    (peg-parse
+     (query (and (* [blank]) (+ (and term (* [blank])))))
+     (term (or (and negation (list positive-term)
+                    ;; This is a bit confusing, but it seems to work.  There's probably a better way.
+                    `(pred -- (list 'not (car pred))))
+               positive-term empty-quote))
+     (positive-term (or (and predicate-with-args `(pred args -- (cons (intern pred) args)))
+                        (and predicate-without-args `(pred -- (list (intern pred))))
+                        (and plain-string `(s -- (list "any" s)))))
+     (plain-string (or quoted-arg unquoted-arg))
+     (predicate-with-args (substring predicate) ":" args)
+     (predicate-without-args (substring predicate) ":")
+     (predicate (or "artist" "album" "title" "track" "name" "genre" "date" "composer" "performer" "comment"
+                    "disc" "file" "any"))
+     (args (list (+ (and (or keyword-arg quoted-arg unquoted-arg) (opt separator)))))
+     (keyword-arg (and keyword "=" `(kw -- (intern (concat ":" kw)))))
+     (keyword (substring (+ (not (or separator "=" "\"" (syntax-class whitespace))) (any))))
+     (quoted-arg "\"" (substring (+ (not (or separator "\"")) (any))) "\"")
+     (unquoted-arg (substring (+ (not (or separator "\"" (syntax-class whitespace))) (any))))
+     (empty-quote
+      ;; This avoids aborting parsing or signaling an
+      ;; error if the user types in two successive
+      ;; quotation marks while typing a query (e.g. when
+      ;; using electric-pair-mode).
+      "\"\"")
+     (negation "!")
+     (separator "," ))))
+
 (provide 'listen-mpd)
 ;;; listen-mpd.el ends here
