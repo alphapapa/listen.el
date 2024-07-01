@@ -116,10 +116,8 @@ nil, read it."
                           alist))))
 
 ;;;###autoload
-(cl-defun listen-mpd-completing-read (&key (tag 'file) select-tag-p)
-  "Return files selected from MPD library.
-Searches by TAG; or if SELECT-TAG-P, tag is selected with
-completion."
+(cl-defun listen-mpd-completing-read ()
+  "Return files selected from MPD library."
   (cl-assert (file-directory-p (or mpc-mpd-music-directory listen-directory)))
   (cl-labels ((search-any (queries)
                 (mpc-proc-buf-to-alists
@@ -138,78 +136,85 @@ completion."
                           string)))
               (affix (completions)
                 (when completions
-                  (let* ((artist-width (column-size 'Artist completions))
-                         ;; (album-width (column-size 'Album completions))
-                         (title-width (column-size 'Title completions))
-                         (title-start (+ artist-width 2))
-                         (album-start (+ title-start title-width 2)))
-                    (cl-loop for completion in completions
-                             for alist = (get-text-property 0 :mpc-alist completion)
-                             for artist = (alist-get 'Artist alist)
-                             for album = (alist-get 'Album alist)
-                             for title = (alist-get 'Title alist)
-                             for date = (alist-get 'Date alist)
-                             do (progn
-                                  (add-face-text-property 0 (length prefix)
-                                                          'font-lock-doc-face t prefix)
-                                  (add-face-text-property 0 (length album)
-                                                          '(:slant italic) nil album)
-                                  (add-face-text-property 0 (length title)
-                                                          '(:underline t) nil title)
-                                  (when album
-                                    (setf album (align-to album-start album)))
-                                  (when title
-                                    (setf title (align-to title-start title)))
-                                  (when date
-                                    (setf date (format " (%s)" date))))
-                             for prefix = (concat artist "  " title "" album "" date)
-                             collect (list (align-to 'center completion)
-                                           prefix
-                                           "")))))
+                  (if (not (get-text-property 0 :mpc-alist (car completions)))
+                      ;; Completing tag values: just return them as-is.
+                      (cl-loop for completion in completions
+                               collect (list completion "" ""))
+                    ;; Completing tracks: affix and align.
+                    (let* ((artist-width (column-size 'Artist completions))
+                           ;; (album-width (column-size 'Album completions))
+                           (title-width (column-size 'Title completions))
+                           (title-start (+ artist-width 2))
+                           (album-start (+ title-start title-width 2)))
+                      (cl-loop for completion in completions
+                               for alist = (get-text-property 0 :mpc-alist completion)
+                               for artist = (alist-get 'Artist alist)
+                               for album = (alist-get 'Album alist)
+                               for title = (alist-get 'Title alist)
+                               for date = (alist-get 'Date alist)
+                               do (progn
+                                    (add-face-text-property 0 (length prefix)
+                                                            'font-lock-doc-face t prefix)
+                                    (add-face-text-property 0 (length album)
+                                                            '(:slant italic) nil album)
+                                    (add-face-text-property 0 (length title)
+                                                            '(:underline t) nil title)
+                                    (when album
+                                      (setf album (align-to album-start album)))
+                                    (when title
+                                      (setf title (align-to title-start title)))
+                                    (when date
+                                      (setf date (format " (%s)" date))))
+                               for prefix = (concat artist "  " title "" album "" date)
+                               collect (list (align-to 'center completion)
+                                             prefix
+                                             ""))))))
               (collection (str _pred flag)
                 (pcase flag
-                  ('metadata (pcase tag
-                               ('any
-                                (list 'metadata
-                                      (cons 'affixation-function #'affix)
-                                      ;; (cons 'annotation-function #'annotate)
-                                      ))))
+                  ('metadata (list 'metadata
+                                   (cons 'affixation-function #'affix)
+                                   ;; (cons 'annotation-function #'annotate)
+                                   ))
                   (`t (unless (string-empty-p str)
-                        (let ((tag (pcase tag
-                                     ('any 'file)
-                                     (_ tag))))
-                          (delete-dups
-                           (delq nil
-                                 (mapcar (lambda (row)
-                                           (when-let ((value (alist-get tag row)))
-                                             (propertize value
-                                                         :mpc-alist row)))
-                                         (search-any (split-string str))))))))))
+                        (let ((parsed (listen-mpd--parse-query str)))
+                          (pcase (car parsed)
+                            (`(any ,value)
+                             (tracks-to-strings (tracks-for-query parsed)))
+                            (`(,tag)
+                             ;; Tag without value: complete on values.
+                             (sort (all-values-for tag) #'string<))
+                            (`(,tag ,value)
+                             (if (member value (all-values-for tag))
+                                 ;; Tags with complete value: complete on tracks/files.
+                                 (tracks-to-strings (tracks-for-query parsed))
+                               ;; Tag with incomplete value: complete on values.
+                               (cl-remove-if-not (lambda (candidate)
+                                                   (string-match-p value candidate))
+                                                 (all-values-for tag))))))))))
+              (all-values-for (tag)
+                (seq-remove #'string-empty-p
+                            (mapcar #'cdr
+                                    (mpc-proc-cmd-to-alist
+                                     (list "list" (symbol-name tag))))))
+              (tracks-for-query (query)
+                (let ((command (cons "search"
+                                     (cl-loop for (tag value) in query
+                                              append (list (symbol-name tag) value)))))
+                  (mpc-proc-buf-to-alists (mpc-proc-cmd command))))
+              (tracks-to-strings (tracks)
+                (mapcar (lambda (track)
+                          (propertize (alist-get 'file track)
+                                      :mpc-alist track))
+                        tracks))
               (try (string _table _pred point &optional _metadata)
                 (cons string point))
               (all (string table pred _point)
                 (all-completions string table pred)))
-    (when select-tag-p
-      (let ((tags '( Artist Album Title Track Name Genre Date Composer Performer Comment
-                     Disc file any)))
-        (setf tag (intern (completing-read "Search by tag: " tags nil t)))))
     (let* ((completion-styles '(listen-mpc-completing-read))
            (completion-styles-alist (list (list 'listen-mpc-completing-read #'try #'all
                                                 "Listen-MPC completing read")))
-           (prompt (pcase-exhaustive tag
-                     ('file "MPC Search (track): ")
-                     (_ (format "MPC Search (%s): " tag))))
-           (result (let ((crm-separator ";"))
-                     (ensure-list (completing-read-multiple prompt #'collection nil))))
-           (result (pcase tag
-                     ('any result)
-                     (_ (flatten-list
-                         (mapcar (lambda (result)
-                                   (mapcar (lambda (row)
-                                             (alist-get 'file row))
-                                           (mpc-proc-buf-to-alists
-                                            (mpc-proc-cmd (list "find" (symbol-name tag) result)))))
-                                 result))))))
+           (prompt "MPC Search: ")
+           (result (completing-read prompt #'collection nil)))
       (mapcar (lambda (filename)
                 (expand-file-name filename (or mpc-mpd-music-directory listen-directory)))
               result))))
@@ -229,7 +234,7 @@ completion."
                positive-term empty-quote))
      (positive-term (or (and predicate-with-args `(pred args -- (cons (intern pred) args)))
                         (and predicate-without-args `(pred -- (list (intern pred))))
-                        (and plain-string `(s -- (list "any" s)))))
+                        (and plain-string `(s -- (list 'any s)))))
      (plain-string (or quoted-arg unquoted-arg))
      (predicate-with-args (substring predicate) ":" args)
      (predicate-without-args (substring predicate) ":")
