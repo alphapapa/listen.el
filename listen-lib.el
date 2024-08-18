@@ -139,12 +139,10 @@ return a list of values; otherwise return the sole value."
 
 ;;;; Functions
 
-;; FIXME: Declare this differently or something.
-(declare-function make-listen-player-vlc "listen-vlc")
 (defun listen-current-player ()
   "Return variable `listen-player' or a newly set one if nil."
   (or listen-player
-      (setf listen-player (make-listen-player-vlc))))
+      (setf listen-player (funcall (defvar listen-backend)))))
 
 (cl-defun listen-current-track (&optional (player listen-player))
   "Return track playing on PLAYER, if any."
