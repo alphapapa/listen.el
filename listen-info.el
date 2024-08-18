@@ -337,7 +337,7 @@ Return comments in a list of (FIELD . VALUE) cons cells.  See
 `listen-info--split-vorbis-comment' for details."
   (let* ((packets (listen-info--decode-ogg-packets filename 2))
          (headers (listen-info--decode-ogg-headers packets
-                                                        stream-type))
+                                                   stream-type))
          (comments (bindat-get-field headers
                                      'comment-header
                                      'user-comments)))
@@ -362,8 +362,7 @@ different streams will be mixed together without an error."
         (offset 0)
         (stream (vector)))
     (while (< num-packets packets)
-      (let ((page (listen-info--decode-ogg-page filename
-                                                     offset)))
+      (let ((page (listen-info--decode-ogg-page filename offset)))
         (cl-incf num-packets (or (plist-get page :num-packets) 0))
         (cl-incf offset (plist-get page :num-bytes))
         (setq stream (vconcat stream (plist-get page :stream)))
@@ -746,10 +745,7 @@ fields."
           ;; Skip the extended header.
           (cl-incf offset
                    (listen-info--checked-id3v2-ext-header-size filename)))
-        (listen-info--decode-id3v2-frames filename
-                                               offset
-                                               (+ tag-size 10)
-                                               unsync))
+        (listen-info--decode-id3v2-frames filename offset (+ tag-size 10) unsync))
     (error nil)))
 
 (defun listen-info--decode-id3v2-header (filename)
@@ -782,9 +778,7 @@ Return metadata in a list of (FIELD . VALUE) cons cells."
         comments)
     (condition-case nil
         (while (< offset limit)
-          (let* ((frame-data (listen-info--decode-id3v2-frame filename
-                                                                   offset
-                                                                   unsync))
+          (let* ((frame-data (listen-info--decode-id3v2-frame filename offset unsync))
                  (next-frame-offset (car frame-data))
                  (comment (cdr frame-data)))
             (when comment (push comment comments))
@@ -797,21 +791,16 @@ Return metadata in a list of (FIELD . VALUE) cons cells."
   (if (= listen-info--id3v2-version 2) 6 10))
 
 (defun listen-info--decode-id3v2-frame (filename offset unsync)
-  (let* ((header (listen-info--decode-id3v2-frame-header filename
-                                                              offset))
+  (let* ((header (listen-info--decode-id3v2-frame-header filename offset))
          (info-id (listen-info--id3v2-frame-info-id header))
          (data-offset (car header))
          (size (bindat-get-field (cdr header) 'size)))
     (if (or info-id unsync)
         ;; Note that if unsync is t, we have to always read the frame
         ;; to determine next-frame-offset.
-        (let* ((data (listen-info--read-id3v2-frame-data filename
-                                                              data-offset
-                                                              size
-                                                              unsync))
+        (let* ((data (listen-info--read-id3v2-frame-data filename data-offset size unsync))
                (next-frame-offset (car data))
-               (value (listen-info--decode-id3v2-frame-data (cdr data)
-                                                                 info-id)))
+               (value (listen-info--decode-id3v2-frame-data (cdr data) info-id)))
           (cons next-frame-offset value))
       ;; Skip the frame.
       (cons (+ data-offset size) nil))))
@@ -835,10 +824,7 @@ If there is no such identifier, return nil."
   (cdr (assoc (bindat-get-field frame 'id)
               listen-info--id3v2-frame-to-info)))
 
-(defun listen-info--read-id3v2-frame-data (filename
-                                                begin
-                                                num-bytes
-                                                unsync)
+(defun listen-info--read-id3v2-frame-data (filename begin num-bytes unsync)
   "Read NUM-BYTES of raw id3v2 frame data from FILENAME.
 Start reading from offset BEGIN.  If UNSYNC is t, all 'FF 00'
 byte combinations are replaced by 'FF'.  Replaced byte pairs are
