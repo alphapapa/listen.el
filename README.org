@@ -218,7 +218,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 ** Tips
 
-- Since VLC is used as a backend, [[https://www.freedesktop.org/wiki/Specifications/mpris-spec/][MPRIS]]-based player info and controls "just work", so you can use things like media hotkeys and various widgets to control ~listen~'s playback.
+- When using VLC as a backend, [[https://www.freedesktop.org/wiki/Specifications/mpris-spec/][MPRIS]]-based player info and controls "just work", so you can use things like media hotkeys and various widgets to control ~listen~'s playback.  When using MPV as a backend, see the [[https://github.com/hoyon/mpv-mpris][mpv-mpris]] package.
 - Similarly, you might even see an icon in your task switcher indicating that Emacs is playing sound (e.g. with KDE Plasma).
 
 * Changelog
