@@ -188,7 +188,7 @@ Library buffers may be bookmarked with ~bookmark-set~ (~C-x r m~).  The bookmark
 
 ** Players
 
-~listen~ currently supports audio playback via the VLC backend.  Internally, any number of simultaneous player instances could be controlled, but ~listen~'s UI provides the means to control one at a time.
+~listen~ supports audio playback via MPV or VLC backends.  Internally, any number of simultaneous player instances could be controlled, but ~listen~'s UI provides the means to control one at a time.
 
 Controlling the player is mainly done through the main [[info:transient#Top][Transient]] menu, through the command ~listen~.  However, all of the commands provided in it are also available as interactive commands, which could be bound by the user in any keymap (see, e.g. [[elisp:(apropos-command "^listen-")][M-x apropos-command RET ^listen- RET]]).
 
