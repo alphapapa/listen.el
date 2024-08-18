@@ -50,7 +50,7 @@ The latest development build may be installed from [[https://elpa.gnu.org/devel/
 
 The ~master~ branch of the Git repository is intended to be usable at all times; only minor bugs are expected to be found in it before a new stable release is made.
 
-To install, it is recommended to use [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], like this (using [[https://github.com/alphapapa/unpackaged.el#upgrade-a-quelpa-use-package-forms-package][this helpful command]] for upgrading versions):
+To install from Git, it is recommended to use [[https://github.com/quelpa/quelpa-use-package][quelpa-use-package]], like this (using [[https://github.com/alphapapa/unpackaged.el#upgrade-a-quelpa-use-package-forms-package][this helpful command]] for upgrading versions):
 
 #+begin_src elisp
   ;; Install and load `quelpa-use-package'.
