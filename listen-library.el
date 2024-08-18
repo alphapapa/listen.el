@@ -242,6 +242,154 @@ Interactively, read COMMAND and use tracks at point in
     (or (flatten-list (mapcar #'value-of (magit-region-sections)))
         (value-of (magit-current-section)))))
 
+;;;;; Keys
+
+(eval-and-compile
+  (taxy-define-key-definer listen-library-define-key
+    listen-library-keys "listen-library-key" "FIXME: Docstring."))
+
+(listen-library-define-key album ()
+  (propertize (or (listen-track-album item) "[unknown album]")
+              'face 'listen-album))
+
+(listen-library-define-key artist ()
+  (propertize (or (map-elt (listen-track-etc item) "albumartist")
+                  (listen-track-artist item)
+                  "[unknown artist]")
+              'face 'listen-artist))
+
+(listen-library-define-key genre ()
+  (propertize (or (listen-track-genre item) "[unknown genre]")
+              'face 'listen-genre))
+
+(defvar listen-library-default-keys '(genre artist album))
+
+;;;;; Columns
+
+(eval-and-compile
+  (taxy-magit-section-define-column-definer "listen-library"))
+
+(listen-library-define-column "Artist" (:align 'right :face listen-artist :max-width 20)
+  (or (map-elt (listen-track-etc item) "albumartist")
+      (listen-track-artist item)
+      "[unknown artist]"))
+
+(listen-library-define-column "Album" (:align 'right :face listen-album :max-width 30)
+  (or (listen-track-album item)
+      "[unknown album]"))
+
+(listen-library-define-column "Title" (:face listen-title :max-width 35)
+  (or (listen-track-title item)
+      "[unknown title]"))
+
+(listen-library-define-column "Filename" (:face listen-filename)
+  (listen-track-filename item))
+
+(listen-library-define-column "Date" ()
+  (or (map-elt (listen-track-etc item) "originalyear")
+      (map-elt (listen-track-etc item) "originaldate")
+      (listen-track-date item)))
+
+(listen-library-define-column "Rating" (:face listen-rating)
+  (when-let ((rating (map-elt (listen-track-etc item) "fmps_rating"))
+             ((not (equal "-1" rating))))
+    (number-to-string (* 5 (string-to-number rating)))))
+
+(listen-library-define-column "Number" ()
+  (concat (when-let ((disc-number (map-elt (listen-track-etc item) "discnumber")))
+            (format "%s:" disc-number))
+          (when-let ((track-number (listen-track-number item)))
+            track-number)))
+
+(listen-library-define-column "Genre" ()
+  (or (listen-track-genre item) "[unknown genre]"))
+
+(listen-library-define-column "Duration" (:face listen-lighter-time)
+  (when-let ((duration (listen-track-duration item)))
+    (listen-format-seconds duration)))
+
+(unless listen-library-columns
+  (setq-default listen-library-columns
+                (get 'listen-library-columns 'standard-value)))
+
+(setq listen-library-columns
+      '("Rating" "Duration" "Artist" "Title" "Album" "Number" "Date" "Genre" "Filename"))
+
+(cl-defun listen-library-columns (tracks &key name buffer
+                                         (keys listen-library-default-keys))
+  "Show a library view of TRACKS.
+TRACKS is a list of `listen-track' objects, or a function which
+returns them.  Interactively, with prefix, NAME may be specified
+to show in the mode line and bookmark name.  BUFFER may be
+specified in which to show the view.  KEYS is a list of key
+functions, defined in `listen-library-keys', by which the tracks
+will be grouped."
+  (interactive
+   (let* ((path (read-file-name "View library for: "))
+          (tracks-function (lambda ()
+                             ;; TODO: Use "&rest" for `listen-queue-tracks-for'?
+                             (listen-queue-tracks-for
+                              (if (file-directory-p path)
+                                  (directory-files-recursively path ".")
+                                (list path)))))
+          (name (cond (current-prefix-arg
+                       (read-string "Library name: "))
+                      ((file-directory-p path)
+                       path))))
+     (list tracks-function :name name)))
+  (let (format-table column-sizes)
+    (cl-labels
+        ((format-item (item)
+           (let ((string (concat "" ;; (funcall prefix-item item)
+                                 (gethash item format-table))))
+             ;; (add-text-properties 0 (length string)
+             ;;                      (funcall item-properties item) string)
+             ;; (dolist (face (funcall add-faces item))
+             ;;   (add-face-text-property 0 (length string) face nil string))
+             string))
+         (make-fn (&rest args)
+           (apply #'make-taxy-magit-section
+                  :make #'make-fn
+                  :format-fn #'format-item
+                  ;; FIXME: Make indent an option again.
+                  :level-indent 2
+                  ;; :visibility-fn #'visible-p
+                  ;; :heading-indent 2
+                  :item-indent 0
+                  ;; :heading-face-fn #'heading-face
+                  args)))
+      (let* ((buffer-name (if name
+                              (format "*Listen library: %s*" name)
+                            (generate-new-buffer-name (format "*Listen library*"))))
+             (buffer (or buffer (get-buffer-create buffer-name)))
+             (inhibit-read-only t)
+             (tracks (cl-etypecase tracks
+                       (function (funcall tracks))
+                       (list tracks)))
+             (taxy-magit-section-insert-indent-items nil)
+             ;; (taxy-magit-section-item-indent 0)
+             ;; (taxy-magit-section-level-indent 0)
+             (taxy (taxy-fill tracks
+                              (make-fn :name buffer-name
+                                       :take (taxy-make-take-function keys listen-library-keys))))
+             (format-cons (taxy-magit-section-format-items
+                           listen-library-columns listen-library-column-formatters
+                           taxy)))
+        (with-current-buffer buffer
+          (listen-library-mode)
+          (setf listen-library-tracks tracks
+                listen-library-name name
+                format-table (car format-cons)
+                column-sizes (cdr format-cons)
+                header-line-format (taxy-magit-section-format-header
+                                    column-sizes listen-library-column-formatters))
+          (erase-buffer)
+          (let (magit-section-visibility-cache)
+            (save-excursion
+              (taxy-magit-section-insert taxy :items 'first :initial-depth 0)))
+          (goto-char (point-min)))
+        (pop-to-buffer buffer)))))
+
 ;;;;; Bookmark support
 
 (require 'bookmark)
