@@ -94,9 +94,9 @@ Stops playing, clears playlist, adds FILE, and plays it."
 
 (cl-defmethod listen--pause ((player listen-player-mpv))
   "Pause playing with PLAYER."
-  (if (listen-mpv--get-property listen-player "pause")
-      (listen-mpv--set-property listen-player "pause" "no")
-    (listen-mpv--set-property listen-player "pause" "yes")))
+  (if (listen-mpv--get-property player "pause")
+      (listen-mpv--set-property player "pause" "no")
+    (listen-mpv--set-property player "pause" "yes")))
 
 (cl-defmethod listen--playing-p ((player listen-player-mpv))
   "Return non-nil if PLAYER is playing."
