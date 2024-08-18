@@ -118,15 +118,12 @@ Stops playing, clears playlist, adds FILE, and plays it."
   (pcase-let* (((cl-struct listen-player (etc (map :network-process))) player)
                (request-id (cl-incf (map-elt (listen-player-etc player) :request-id))))
     (with-current-buffer (process-buffer network-process)
-      (let ((pos (marker-position (process-mark network-process)))
-            (json (json-encode
-                   `(("command" ,command ,@args)
-                     ("request_id" . ,request-id)))))
+      (let ((json (json-encode `(("command" ,command ,@args)
+                                 ("request_id" . ,request-id)))))
         (process-send-string network-process json)
         (process-send-string network-process "\n")
         (with-local-quit
           (accept-process-output network-process 2))
-        ;; TODO: Consider using `json-read', etc.
         (goto-char (point-min))
         (let ((json-false nil))
           (prog1 (cl-loop for result = (json-read)
