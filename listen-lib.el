@@ -141,8 +141,9 @@ return a list of values; otherwise return the sole value."
 
 (defun listen-current-player ()
   "Return variable `listen-player' or a newly set one if nil."
+  (defvar listen-backend)
   (or listen-player
-      (setf listen-player (funcall (defvar listen-backend)))))
+      (setf listen-player (funcall listen-backend))))
 
 (cl-defun listen-current-track (&optional (player listen-player))
   "Return track playing on PLAYER, if any."
