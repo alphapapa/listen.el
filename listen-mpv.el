@@ -70,7 +70,7 @@
       (sleep-for 1)
       (setf (map-elt (listen-player-etc player) :network-process)
             (make-network-process :name "listen-player-mpv-socket" :family 'local
-                                  :remote socket
+                                  :remote socket :noquery t
                                   :buffer (generate-new-buffer " *listen-player-mpv-socket*")))
       (set-process-query-on-exit-flag (listen-player-process player) nil))))
 
