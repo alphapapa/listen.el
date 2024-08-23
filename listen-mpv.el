@@ -74,6 +74,7 @@
         (setf (listen-player-process player)
               (apply #'start-process "listen-player-mpv" process-buffer
                      command args))
+        ;; FIXME: Test in a short loop rather than just sleeping for a second.
         (sleep-for 1)
         (setf (map-elt (listen-player-etc player) :network-process)
               (make-network-process :name "listen-player-mpv-socket" :family 'local
