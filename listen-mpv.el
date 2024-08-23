@@ -67,14 +67,18 @@
                (socket (make-temp-name (expand-file-name "listen-mpv-socket-" temporary-file-directory)))
                (args (append args (list (format "--input-ipc-server=%s" socket)))))
     (unless (process-live-p process)
-      (setf (listen-player-process player)
-            (apply #'start-process "listen-player-mpv" (generate-new-buffer " *listen-player-mpv*")
-                   command args))
-      (sleep-for 1)
-      (setf (map-elt (listen-player-etc player) :network-process)
-            (make-network-process :name "listen-player-mpv-socket" :family 'local
-                                  :remote socket :noquery t
-                                  :buffer (generate-new-buffer " *listen-player-mpv-socket*")))
+      (let ((process-buffer (generate-new-buffer " *listen-player-mpv*"))
+            (socket-buffer (generate-new-buffer " *listen-player-mpv-socket*")))
+        (buffer-disable-undo process-buffer)
+        (buffer-disable-undo socket-buffer)
+        (setf (listen-player-process player)
+              (apply #'start-process "listen-player-mpv" process-buffer
+                     command args))
+        (sleep-for 1)
+        (setf (map-elt (listen-player-etc player) :network-process)
+              (make-network-process :name "listen-player-mpv-socket" :family 'local
+                                    :remote socket :noquery t
+                                    :buffer socket-buffer)))
       (set-process-query-on-exit-flag (listen-player-process player) nil))))
 
 (cl-defmethod listen--play ((player listen-player-mpv) file)
