@@ -43,11 +43,14 @@
 ;;;; Functions
 
 (cl-defmethod listen--info ((player listen-player-mpv))
-  (map-apply (lambda (key value)
-               ;; TODO: Consider using symbols as keys (VLC returns strings, MPV's decodes as
-               ;; symbols).
-               (cons (downcase (symbol-name key)) value))
-             (listen-mpv--get-property player "metadata")))
+  "Return metadata from MPV PLAYER, or nil if a track is not playing."
+  ;; If the metadata property isn't available, ignore the error.
+  (when-let ((metadata (ignore-errors (listen-mpv--get-property player "metadata"))))
+    (map-apply (lambda (key value)
+                 ;; TODO: Consider using symbols as keys (VLC returns strings, MPV's decodes as
+                 ;; symbols).
+                 (cons (downcase (symbol-name key)) value))
+               metadata)))
 
 (cl-defmethod listen--filename ((player listen-player-mpv))
   "Return filename of PLAYER's current track."
