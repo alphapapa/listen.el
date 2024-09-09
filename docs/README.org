@@ -239,6 +239,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 *Additions*
 + [[https://mpv.io/][MPV]] support.
++ Command ~listen-queue-add-tracks~, when used in a Dired buffer, uses the marked files or the one at point.
 + Option ~listen-backend~, which sets the backend to use: MPV or VLC.  (The default is to auto-detect which is available at load time, with MPV being preferred due to more robust IPC support.)
 + Faces for parts of mode line lighter.
 

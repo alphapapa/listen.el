@@ -438,16 +438,26 @@ which see."
   (interactive (list (listen-queue-complete :prompt "Discard queue: ")))
   (cl-callf2 delete queue listen-queues))
 
+(defun listen-complete-files ()
+  ;; FIXME: Use this function in more places as appropriate.
+  "Return files selected with completion.
+In a Dired buffer, use `dired-get-marked-files'."
+  (declare-function dired-get-marked-files "dired")
+  (cl-case major-mode
+    (dired-mode (dired-get-marked-files))
+    (otherwise (let ((path (expand-file-name (read-file-name "Enqueue file/directory: "
+                                                             listen-directory nil t))))
+                 (if (file-directory-p path)
+                     (directory-files-recursively path ".")
+                   (list path))))))
+
 ;;;###autoload
 (cl-defun listen-queue-add-files (files queue)
-  "Add FILES to QUEUE."
+  "Add FILES to QUEUE.
+Completes files with `listen-complete-files', which see."
   (interactive
-   (let ((queue (listen-queue-complete :allow-new-p t))
-         (path (expand-file-name (read-file-name "Enqueue file/directory: " listen-directory nil t))))
-     (list (if (file-directory-p path)
-               (directory-files-recursively path ".")
-             (list path))
-           queue)))
+   (let ((queue (listen-queue-complete :allow-new-p t)))
+     (list (listen-complete-files) queue)))
   (cl-callf append (listen-queue-tracks queue) (listen-queue-tracks-for files))
   (listen-queue queue)
   queue)
