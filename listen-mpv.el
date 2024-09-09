@@ -145,8 +145,8 @@ Stops playing, clears playlist, adds FILE, and plays it."
              for result = (condition-case-unless-debug err
                               (json-read)
                             (error
-                             (error "listen--send: JSON-READ signaled error: %S  BUFFER-CONTENTS:%S  POS:%s  BUFFER-SIZE:%s  EOBP:%s"
-                                    err (buffer-string) (point) (buffer-size) (eobp))))
+                             (message "listen--send: JSON-READ signaled error: %S  BUFFER-CONTENTS:%S  POS:%s  BUFFER-SIZE:%s  EOBP:%s"
+                                      err (buffer-string) (point) (buffer-size) (eobp))))
              while result
              for value = (pcase (map-elt result 'request_id)
                            ((pred (equal request-id))
