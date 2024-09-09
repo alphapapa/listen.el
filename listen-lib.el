@@ -19,7 +19,7 @@
 
 ;;; Commentary:
 
-;; 
+;; Library functions for Listen.
 
 ;;; Code:
 
@@ -134,8 +134,6 @@ return a list of values; otherwise return the sole value."
 
 (defface listen-lighter-extra '((t :inherit font-lock-comment-face))
   "See `listen-lighter-extra-functions'.")
-
-
 
 ;;;; Functions
 
