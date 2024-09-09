@@ -187,7 +187,10 @@ VOLUME is an integer percentage."
   (pcase-let (((map error data) (listen--send player "get_property" property)))
     (pcase error
       ("success" data)
-      (_ (error "listen-mpv--get-property: Getting property %S failed: %S" property error)))))
+      (_ (condition-case-unless-debug _
+             ;; Between tracks, getting a property may fail, which should generally be ignored.
+             (error "listen-mpv--get-property: Getting property %S failed: %S" property error)
+           (error nil))))))
 
 (cl-defmethod listen-mpv--set-property ((player listen-player-mpv) property &rest args)
   (pcase-let (((map error data) (apply #'listen--send player "set_property" property args)))
