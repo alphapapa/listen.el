@@ -36,7 +36,7 @@
     (listen-player-mpv
      (:include listen-player
                (command "mpv")
-               (args '("--no-msg-color" "--idle"))
+               (args '("--no-msg-color" "--idle" "--audio-display=no"))
                (max-volume 100)
                (etc '((:request-id . 0))))))
 
