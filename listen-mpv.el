@@ -30,6 +30,16 @@
 
 (require 'listen-lib)
 
+;;;; Customization
+
+(defgroup listen-mpv nil
+  "MPV-related options."
+  :group 'listen)
+
+(defcustom listen-mpv-volume 50
+  "Initial volume for MPV instance."
+  :type 'natnum)
+
 ;;;; Types
 
 (cl-defstruct
@@ -65,7 +75,8 @@
   "Ensure PLAYER is ready."
   (pcase-let* (((cl-struct listen-player command args process) player)
                (socket (make-temp-name (expand-file-name "listen-mpv-socket-" temporary-file-directory)))
-               (args (append args (list (format "--input-ipc-server=%s" socket)))))
+               (args (append args (list (format "--input-ipc-server=%s" socket)
+                                        (format "--volume=%s" listen-mpv-volume)))))
     (unless (process-live-p process)
       (let ((process-buffer (generate-new-buffer " *listen-player-mpv*"))
             (socket-buffer (generate-new-buffer " *listen-player-mpv-socket*")))
