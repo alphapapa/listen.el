@@ -298,7 +298,7 @@ According to `listen-lighter-format', which see."
 (defun listen-mode--update (&rest _ignore)
   "Play next track and/or update variable `listen-mode-lighter'."
   (let (playing-next-p)
-    (when listen-player
+    (when (and listen-player (listen--running-p listen-player))
       (unless (or (listen--playing-p listen-player)
                   ;; HACK: It seems that sometimes the player gets restarted
                   ;; even when paused: this extra check should prevent that.
