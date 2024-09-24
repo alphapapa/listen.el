@@ -462,16 +462,18 @@ Completes files with `listen-complete-files', which see."
   (listen-queue queue)
   queue)
 
-(defun listen-queue-add-tracks (tracks queue)
+(cl-defun listen-queue-add-tracks (tracks queue &key replacep)
   "Add TRACKS to QUEUE.
+If REPLACEP, replace QUEUE's tracks rather than adding to them.
 Duplicate tracks (by filename) are removed from the queue, and
 the queue's buffer is updated, if any."
-  (cl-callf append (listen-queue-tracks queue) tracks)
+  (if replacep
+      (setf (listen-queue-tracks queue) tracks)
+    (cl-callf append (listen-queue-tracks queue) tracks))
   ;; TODO: Consider updating the metadata of any duplicate tracks.
   (setf (listen-queue-tracks queue)
         (cl-delete-duplicates (listen-queue-tracks queue)
-                              :key (lambda (track)
-                                     (expand-file-name (listen-track-filename track)))
+                              :key #'listen-track-filename
                               :test #'file-equal-p))
   (listen-queue--update-buffer queue))
 

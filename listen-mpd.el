@@ -59,18 +59,20 @@ applied to the buffer."
 (declare-function listen-queue-add-files "listen-queue")
 (declare-function listen-queue-complete "listen-queue")
 ;;;###autoload
-(cl-defun listen-queue-add-from-mpd (tracks queue)
-  "Add TRACKS (selected from MPD library) to QUEUE."
+(cl-defun listen-queue-add-from-mpd (tracks queue &key replacep)
+  "Add TRACKS (selected from MPD library) to QUEUE.
+If REPLACEP (interactively, with prefix), replace QUEUE's tracks
+rather than adding to them."
   (interactive
    (let ((tracks (if current-prefix-arg
                      (listen-mpd-completing-read)
                    (pcase-let* ((`(,tag ,query) (listen-mpd-read-query :select-tag-p t)))
                      (listen-mpd-tracks-matching query :tag tag))))
          (queue (listen-queue-complete :prompt "Add to queue" :allow-new-p t)))
-     (list tracks queue)))
+     (list tracks queue :replacep current-prefix-arg)))
   (require 'listen-mpd)
   (declare-function listen-queue-add-tracks "listen-queue")
-  (listen-queue-add-tracks tracks queue))
+  (listen-queue-add-tracks tracks queue :replacep replacep))
 
 (cl-defun listen-mpd-read-query (&key (tag 'file) select-tag-p)
   "Return MPD (TAG QUERY) read from the user.

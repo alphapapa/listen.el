@@ -169,17 +169,20 @@ with completion."
 
 (declare-function listen-play "listen")
 (declare-function listen-queue-add-tracks "listen-queue")
-(defun listen-library-play (tracks &optional queue)
+(cl-defun listen-library-play (tracks &optional queue &key replacep)
   "Play or add TRACKS.
 If TRACKS is a list of one track, play it; otherwise, prompt for
-a QUEUE to add them to and play it."
+a QUEUE to add them to and play it.  If REPLACEP (interactively,
+with prefix argument), replace QUEUE's tracks instead of adding
+to them."
   (interactive
    (let ((tracks (listen-library--selected-tracks)))
      (list tracks (when (length> tracks 1)
-                    (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t)))))
+                    (listen-queue-complete :prompt "Add tracks to queue" :allow-new-p t))
+           :replacep current-prefix-arg)))
   (if queue
       (progn
-        (listen-queue-add-tracks tracks queue)
+        (listen-queue-add-tracks tracks queue :replacep replacep)
         (listen-queue-play queue))
     (listen-play (listen-current-player) (listen-track-filename (car tracks)))))
 
