@@ -92,7 +92,7 @@ exhaustion in case of garbled or malicious inputs.
 This limit is used with Opus and FLAC streams as well, since
 their comments have almost the same format as Vorbis.")
 
-(defconst listen-info--max-vorbis-comment-size (* 64 1024)
+(defconst listen-info--max-vorbis-comment-size (expt 2 32)
   "Maximum length for a single Vorbis comment field.
 Technically a single Vorbis comment may have a length up to 2^32
 bytes, but in practice processing must be constrained to prevent
