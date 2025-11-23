@@ -351,6 +351,9 @@ select track as well."
      (list queue track)))
   (let ((player (listen-current-player)))
     (listen-play player (listen-track-filename track))
+    ;; Remember queue position of track so if it gets removed, we can still go to the next track.
+    (setf (map-elt (listen-queue-etc queue) :track-number)
+          (seq-position (listen-queue-tracks queue) track))
     (let ((previous-track (listen-queue-current queue)))
       (setf (listen-queue-current queue) track
             (map-elt (listen-player-etc player) :queue) queue)
@@ -638,12 +641,24 @@ tracks no longer backed by a file are removed."
       ;; the track metadata and refreshes the queue from disk while
       ;; the track is playing), in which case it won't be able to find
       ;; the track in the queue, so look again by comparing filenames.
-      (seq-elt (listen-queue-tracks queue)
-               (1+ (seq-position (listen-queue-tracks queue)
-                                 (listen-queue-current queue)
-                                 (lambda (a b)
-                                   (equal (listen-track-filename a)
-                                          (listen-track-filename b))))))))
+      (let ((current-track-position
+             (or (seq-position (listen-queue-tracks queue)
+                               (listen-queue-current queue)
+                               (lambda (a b)
+                                 (equal (expand-file-name (listen-track-filename a))
+                                        (expand-file-name (listen-track-filename b)))))
+                 (progn
+                   (display-warning 'listen-queue
+                                    (format-message "listen: Can't find track (%S) in queue (%S)"
+                                                    (listen-queue-current queue)
+                                                    (listen-queue-name queue))
+                                    :debug)
+                   (if-let ((track-number (map-elt (listen-queue-etc queue) :track-number)))
+                       ;; If the track was removed, the next track in the queue should have
+                       ;; taken its place, and we don't want to skip it, so subtract one.
+                       (1- track-number)
+                     (error "listen: Couldn't find track in queue, and track number is nil"))))))
+        (seq-elt (listen-queue-tracks queue) (1+ current-track-position)))))
 
 (declare-function listen-shell-command "listen")
 (defun listen-queue-shell-command (command filenames)
