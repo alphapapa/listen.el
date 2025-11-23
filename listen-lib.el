@@ -106,7 +106,13 @@ keywords are supported:
   process command args
   (max-volume
    100 :documentation "Maximum volume in percent (may be greater than 100 for some players).")
-  etc)
+  etc status
+  (path nil :documentation "Filename path or URL to currently playing track, if any.")
+  volume
+  playback-started-at playback-started-from
+  ;; (position nil :documentation "Position in current track, in seconds.")
+  (duration nil :documentation "Duration of current track, in seconds.")
+  (metadata nil :documentation "Metadata alist."))
 
 (cl-defstruct listen-queue
   name tracks current etc)

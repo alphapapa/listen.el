@@ -52,15 +52,26 @@
 
 ;;;; Functions
 
+(cl-defmethod listen--got-property ((player listen-player-mpv) msg)
+  (pcase-let (((map event id reason data error name) msg))
+    (pcase data
+      ("metadata"))))
+
 (cl-defmethod listen--info ((player listen-player-mpv))
   "Return metadata from MPV PLAYER, or nil if a track is not playing."
-  ;; If the metadata property isn't available, ignore the error.
-  (when-let ((metadata (ignore-errors (listen-mpv--get-property player "metadata"))))
-    (map-apply (lambda (key value)
-                 ;; TODO: Consider using symbols as keys (VLC returns strings, MPV's decodes as
-                 ;; symbols).
-                 (cons (downcase (symbol-name key)) value))
-               metadata)))
+  (or (listen-player-metadata player)
+      (listen--update-metadata player)))
+
+(cl-defmethod listen--update-metadata ((player listen-player-mpv) &optional (callback #'ignore))
+  (let ((callback
+         (lambda (msg)
+           (pcase-let (((map event id reason data error name) msg))
+             (setf (listen-player-metadata player)
+                   (map-apply (lambda (key value)
+                                (cons (intern (downcase (symbol-name key))) value))
+                              data))
+             (funcall callback)))))
+    (listen-mpv--update-property player callback "metadata")))
 
 (cl-defmethod listen--filename ((player listen-player-mpv))
   "Return filename of PLAYER's current track."
@@ -69,14 +80,16 @@
       (match-string 1 status))))
 
 (cl-defmethod listen--title ((player listen-player-mpv))
-  (listen-mpv--get-property player "media-title" ))
+  (map-elt (listen-player-metadata player) 'title))
 
 (cl-defmethod listen--ensure ((player listen-player-mpv))
   "Ensure PLAYER is ready."
   (pcase-let* (((cl-struct listen-player command args process) player)
                (socket (make-temp-name (expand-file-name "listen-mpv-socket-" temporary-file-directory)))
                (args (append args (list (format "--input-ipc-server=%s" socket)
-                                        (format "--volume=%s" listen-mpv-volume)))))
+                                        "--msg-level=ipc=debug"
+                                        (format "--volume=%s" listen-mpv-volume)
+                                        "--terminal=no"))))
     (unless (process-live-p process)
       (let ((process-buffer (generate-new-buffer " *listen-player-mpv*"))
             (socket-buffer (generate-new-buffer " *listen-player-mpv-socket*")))
@@ -90,8 +103,84 @@
         (setf (map-elt (listen-player-etc player) :network-process)
               (make-network-process :name "listen-player-mpv-socket" :family 'local
                                     :remote socket :noquery t
-                                    :buffer socket-buffer)))
-      (set-process-query-on-exit-flag (listen-player-process player) nil))))
+                                    :buffer socket-buffer)
+              (process-filter (map-elt (listen-player-etc player) :network-process))
+              (lambda (proc text)
+                (listen--filter player proc text))
+              (process-sentinel (map-elt (listen-player-etc player) :network-process))
+              (lambda (proc msg)
+                (display-warning 'listen-mpv
+                                 (format-message "listen-process-sentinel: PROC:%S  MSG:%S"
+                                                 proc msg)
+                                 :debug "*listen-mpv*")
+                (internal-default-process-sentinel proc msg))))
+      (set-process-query-on-exit-flag (listen-player-process player) nil)
+      ;; Observe relevant properties.
+      (dolist (property '("volume" "mute" "pause" "playback-time" "duration" "path" "metadata"))
+        (listen--send player "observe_property" property)))))
+
+(cl-defmethod listen--filter ((player listen-player-mpv) proc text)
+  (listen-debug :buffer "*listen-mpv*" (listen-player-process player) proc text)
+  (cl-labels ((next-message ()
+                (if-let ((msg (ignore-errors (json-read))))
+                    (progn
+                      (listen-debug :buffer "*listen-mpv*" "Parsed" msg)
+                      (delete-region (point-min) (point))
+                      msg)
+                  ;; Unparseable: return point so we can try again later.
+                  (listen-debug :buffer "*listen-mpv*" "Unparseable")
+                  (goto-char (point-min))
+                  nil)))
+    (with-current-buffer (process-buffer proc)
+      (goto-char (point-max))
+      (insert text)
+      (goto-char (point-min))
+      (while-let ((msg (next-message)))
+        (listen--act player msg)))))
+
+(cl-defmethod listen--act ((player listen-player-mpv) msg)
+  (listen-debug :buffer "*listen-mpv*" (listen-player-process player) msg)
+  (pcase-let (((map event request_id reason data error name) msg))
+    (pcase event
+      ((or "start-file" "playback-restart")
+       (listen--status-is player 'playing)
+       (setf (listen-player-playback-started-at player) (current-time)
+             (listen-player-playback-started-from player) 0)
+       (listen--update-metadata player)
+       (listen-mpv--update-property
+        player (lambda (msg)
+                 (setf (listen-player-duration player)
+                       (map-elt msg 'data)))
+        "duration")
+       (listen-mpv--update-property
+        player (lambda (msg)
+                 (setf (listen-player-volume player)
+                       (map-elt msg 'data)))
+        "volume"))
+      ((or "end-file" "idle") (listen--status-is player 'stopped))
+      ((or 'nil "data")
+       (if-let ((callback (map-elt (map-elt (listen-player-etc player) :requests) request_id)))
+           (prog1
+               (funcall callback msg)
+             (setf (map-elt (listen-player-etc player) :requests)
+                   (map-delete (map-elt (listen-player-etc player) :requests) request_id)))
+         (listen-debug :buffer "*listen-mpv*" "No callback for" msg)))
+      ("property-change"
+       (pcase name
+         ("duration" (setf (listen-player-duration player) data))
+         ("metadata" (setf (listen-player-metadata player) data))
+         ("path" (setf (listen-player-path player) data))
+         ("pause" (listen--status-is
+                   player (pcase data
+                            ('t 'paused)
+                            ('nil 'playing)
+                            (_ (listen-debug :buffer "*listen-mpv*" "Unrecognized pause" data)))))
+         ;; ("playback-time" (setf (listen-player-position player) data))
+         ("volume" (setf (listen-player-volume player) data))))
+      (_ (listen-debug :buffer "*listen-mpv*" "Unrecognized event" event)))))
+
+(cl-defmethod listen--status-is ((player listen-player-mpv) status)
+  (setf (listen-player-status player) status))
 
 (cl-defmethod listen--play ((player listen-player-mpv) file)
   "Play FILE with PLAYER.
@@ -103,81 +192,58 @@ Stops playing, clears playlist, adds FILE, and plays it."
 ;;   (listen--send player "stop"))
 
 (cl-defmethod listen--status ((player listen-player-mpv))
-  (if (and (listen--playing-p player)
-           (not (listen-mpv--get-property listen-player "pause")))
-      "playing"
-    ;; TODO: Consider using "eof-reached" proeprty.
-    (if (listen-mpv--get-property listen-player "pause")
-        "paused"
-      "stopped")))
+  (or (listen-player-status player)
+      (setf (listen-player-status player)
+            (if (and (listen--playing-p player)
+                     (not (listen-mpv--get-property listen-player "pause")))
+                'playing
+              ;; TODO: Consider using "eof-reached" proeprty.
+              (if (listen-mpv--get-property listen-player "pause")
+                  'paused
+                'stopped)))))
 
 (cl-defmethod listen--pause ((player listen-player-mpv))
   "Pause playing with PLAYER."
-  (if (listen-mpv--get-property player "pause")
-      (listen-mpv--set-property player "pause" "no")
-    (listen-mpv--set-property player "pause" "yes")))
+  (let* ((status (pcase (listen-player-status player)
+                   ('playing "yes")
+                   ('paused "no")
+                   ('nil "no")))
+         (request-id (listen-mpv--set-property player "pause" status)))
+    (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id)
+          (lambda (msg)
+            (pcase (map-elt msg 'error)
+              ("success" (setf (listen-player-status player)
+                               (pcase status
+                                 ("yes" 'paused)
+                                 ("no" 'playing)))))))))
 
 (cl-defmethod listen--playing-p ((player listen-player-mpv))
   "Return non-nil if PLAYER is playing."
-  (not (listen-mpv--get-property player "idle-active")))
+  (equal (listen-player-status player) 'playing))
 
 (cl-defmethod listen--elapsed ((player listen-player-mpv))
   "Return seconds elapsed for PLAYER's track."
-  (listen-mpv--get-property player "time-pos"))
+  (+ (time-to-seconds
+      (time-subtract (current-time) (listen-player-playback-started-at player)))
+     (listen-player-playback-started-from player)))
 
 (cl-defmethod listen--length ((player listen-player-mpv))
   "Return length of PLAYER's track in seconds."
-  (listen-mpv--get-property player "duration"))
+  (listen-player-duration player))
 
 (require 'json)
 
 (cl-defmethod listen--send ((player listen-player-mpv) command &rest args)
-  "Send COMMAND to PLAYER and return output."
+  "Send COMMAND to PLAYER and return request ID."
   (listen--ensure player)
   (pcase-let* (((cl-struct listen-player (etc (map :network-process))) player)
                (request-id (cl-incf (map-elt (listen-player-etc player) :request-id))))
-    (with-current-buffer (process-buffer network-process)
-      (let ((json (json-encode `(("command" ,command ,@args)
-                                 ("request_id" . ,request-id)))))
-        ;; (message "SENDING: %S" json)
-        (process-send-string network-process json)
-        (process-send-string network-process "\n")
-        (goto-char (point-max))
-        (with-local-quit
-          (accept-process-output network-process 2))
-        (save-excursion
-          (goto-char (point-min))
-          (let ((json-false nil))
-            (cl-loop
-             ;; do (message "BUFFER-CONTENTS:%S  POS:%s  BUFFER-SIZE:%s  EOBP:%s"
-             ;;             (buffer-string) (point) (buffer-size) (eobp))
-             until (or (eobp) (looking-at-p (rx (0+ space) eos)))
-             for start-pos = (point)
-             for result = (condition-case-unless-debug err
-                              (json-read)
-                            (error
-                             (message "listen--send: JSON-READ signaled error: %S  BUFFER-CONTENTS:%S  POS:%s  BUFFER-SIZE:%s  EOBP:%s"
-                                      err (buffer-string) (point) (buffer-size) (eobp))))
-             while result
-             for value = (pcase (map-elt result 'request_id)
-                           ((pred (equal request-id))
-                            ;; Event is the one we're looking for: delete the event from the
-                            ;; buffer and return it.
-                            (unless listen-debug-p
-                              (delete-region start-pos (point)))
-                            result)
-                           ('nil
-                            ;; Event has no request ID: delete it from the buffer.
-                            (unless listen-debug-p
-                              (delete-region start-pos (point)))
-                            nil)
-                           (_
-                            ;; Event is for a different request: ignore it (this probably
-                            ;; won't happen in practice, since we process commands
-                            ;; synchronously, but it's good to be careful).
-                            nil))
-             when value
-             return value)))))))
+    (let ((json (json-encode `(("command" ,command ,@args)
+                               ("request_id" . ,request-id)))))
+      (listen-debug :buffer "*listen-mpv*" (listen-player-process player) json)
+      (process-send-string network-process json)
+      (process-send-string network-process "\n"))
+    request-id))
 
 (cl-defmethod listen--seek ((player listen-player-mpv) seconds)
   "Seek PLAYER to SECONDS."
@@ -186,13 +252,25 @@ Stops playing, clears playlist, adds FILE, and plays it."
 (cl-defmethod listen--volume ((player listen-player-mpv) &optional volume)
   "Return or set PLAYER's VOLUME.
 VOLUME is an integer percentage."
-  (pcase-let (((cl-struct listen-player max-volume) player))
+  (pcase-let (((cl-struct listen-player max-volume) player)
+              (callback (lambda (msg)
+                          (setf (listen-player-volume player) (map-elt msg 'data)))))
     (if volume
         (progn
           (unless (<= 0 volume max-volume)
             (error "VOLUME must be 0-%s" max-volume))
-          (listen-mpv--set-property player "volume" volume))
-      (listen-mpv--get-property player "volume"))))
+          (let ((request-id (listen-mpv--set-property player "volume" volume)))
+            (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id)
+                  callback)
+            ;; We assume that the command will work, and we set the volume that is being set,
+            ;; because the Transient description uses the value from the player slot, and the
+            ;; callback can't make the Transient update itself.
+            (setf (listen-player-volume player) volume)))
+      (listen-player-volume player))))
+
+(cl-defmethod listen-mpv--update-property ((player listen-player-mpv) callback property)
+  (let ((request-id (listen--send player "get_property" property)))
+    (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id) callback)))
 
 (cl-defmethod listen-mpv--get-property ((player listen-player-mpv) property)
   (pcase-let (((map error data) (listen--send player "get_property" property)))
@@ -204,10 +282,7 @@ VOLUME is an integer percentage."
            (error nil))))))
 
 (cl-defmethod listen-mpv--set-property ((player listen-player-mpv) property &rest args)
-  (pcase-let (((map error data) (apply #'listen--send player "set_property" property args)))
-    (pcase error
-      ("success" data)
-      (_ (error "listen-mpv--set-property: Setting property %S failed: %S" property error)))))
+  (apply #'listen--send player "set_property" property args))
 
 (provide 'listen-mpv)
 
