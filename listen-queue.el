@@ -131,7 +131,7 @@ Useful for when `save-excursion' does not preserve point."
   (if-let ((buffer (listen-queue-buffer queue)))
       (progn
         (pop-to-buffer buffer)
-        (listen-queue-goto-current))
+        (listen-queue-goto-current queue))
     (with-current-buffer
         (setf buffer (get-buffer-create (format "*Listen Queue: %s*" (listen-queue-name queue))))
       (let ((inhibit-read-only t))
@@ -236,7 +236,7 @@ Useful for when `save-excursion' does not preserve point."
                                 (call-interactively #'listen-library-from-queue))
                           "!" (lambda (_) (call-interactively #'listen-queue-shell-command)))))
         (listen-queue--annotate-buffer)
-        (listen-queue-goto-current)))
+        (listen-queue-goto-current queue)))
     ;; NOTE: We pop to the buffer outside of `with-current-buffer' so
     ;; `listen-queue--bookmark-handler' works correctly.
     (pop-to-buffer buffer)))
@@ -324,7 +324,7 @@ If BACKWARDP, move it backward."
       (when (vtable-current-table)
         (vtable-revert-command))
       (listen-queue--annotate-buffer))
-    (listen-queue-goto-current)))
+    (listen-queue-goto-current queue)))
 
 (defun listen-queue-update-track (track queue)
   "Update TRACK in QUEUE.
@@ -376,13 +376,18 @@ select track as well."
     (listen-mode))
   queue)
 
-(defun listen-queue-goto-current ()
+(defun listen-queue-goto-current (queue)
   "Jump to current track."
-  (interactive)
-  (when-let ((current-track (listen-queue-current listen-queue)))
-    ;; Ensure point is within the vtable.
-    (goto-char (point-min))
-    (vtable-goto-object current-track)))
+  (interactive (list (listen-queue-complete)))
+  (unless (listen-queue-buffer queue)
+    (listen-queue queue))
+  (listen-queue-with-buffer queue
+    (when-let ((current-track (listen-queue-current queue)))
+      ;; Ensure point is within the vtable.
+      (goto-char (point-min))
+      (vtable-goto-object current-track))
+    (unless (get-buffer-window (current-buffer))
+      (display-buffer (current-buffer)))))
 
 (defun listen-queue-complete-track (queue)
   "Return track selected from QUEUE with completion."

@@ -211,6 +211,7 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 
 *Fixes*
 - Playing next track in queue after current track has been removed.
+- Command ~listen-queue-goto-current~ automatically shows the queue's buffer.
 - Updating vtables for Emacs versions before 30.
 ** v0.9
 
