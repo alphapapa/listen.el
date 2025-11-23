@@ -251,6 +251,7 @@ To be called in a queue's buffer."
          (inhibit-read-only t))
     (setf (map-elt (listen-queue-etc queue) :duration) duration)
     (vtable-end-of-table)
+    (delete-region (point) (point-max))
     (when duration
       (insert (format "Duration: %s" (listen-format-seconds duration))))
     (listen-queue--highlight-current)))
