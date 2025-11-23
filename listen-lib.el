@@ -154,6 +154,31 @@ return a list of values; otherwise return the sole value."
   "Return SECONDS formatted as an hour:minute:second-style duration."
   (format-seconds "%h:%z%m:%.2s" seconds))
 
+(define-hash-table-test
+ 'listen-track-equal
+ #'equal
+ (lambda (track)
+   (sxhash-equal (expand-file-name (listen-track-filename track)))))
+
+(cl-defun listen-delete-dups (list &optional (test 'listen-track-equal))
+  "Return LIST having destructively removed duplicates.
+Similar to `delete-dups', but TEST may be specified.
+Unlike `delete-dups', this function always uses a hash table to find
+duplicates; therefore TEST should be compatible with `make-hash-table',
+which see."
+  ;; Copies the body of `delete-dups', passing through TEST, and removing the length-based
+  ;; non-hash-table case..
+  (let ((hash (make-hash-table :test test))
+        (tail list) retail)
+    (puthash (car list) t hash)
+    (while (setq retail (cdr tail))
+      (let ((elt (car retail)))
+        (if (gethash elt hash)
+            (setcdr tail (cdr retail))
+          (puthash elt t hash)
+          (setq tail retail))))
+    list))
+
 ;;;; Methods
 
 (cl-defgeneric listen--elapsed (player)

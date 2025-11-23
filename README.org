@@ -206,6 +206,9 @@ The ~listen-mode~ minor mode runs a timer which plays the next track in the curr
 - Option ~listen-backend~, which sets the backend to use: MPV or VLC.  (The default is to auto-detect which is available at load time, with MPV being preferred due to more robust IPC support.)
 - Faces for parts of mode line lighter.
 
+*Changes*
+- Improve performance of adding large numbers of tracks to large queues (using a hash table for deduplication).
+
 *Fixes*
 - Playing next track in queue after current track has been removed.
 - Updating vtables for Emacs versions before 30.

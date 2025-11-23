@@ -473,10 +473,7 @@ the queue's buffer is updated, if any."
   (cl-callf append (listen-queue-tracks queue) tracks)
   ;; TODO: Consider updating the metadata of any duplicate tracks.
   (setf (listen-queue-tracks queue)
-        (cl-delete-duplicates (listen-queue-tracks queue)
-                              :key (lambda (track)
-                                     (expand-file-name (listen-track-filename track)))
-                              :test #'file-equal-p))
+        (listen-delete-dups (listen-queue-tracks queue) 'listen-track-equal))
   (listen-queue--update-buffer queue))
 
 (cl-defun listen-queue-add-from-playlist-file (filename queue)
