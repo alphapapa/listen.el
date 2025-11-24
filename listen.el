@@ -144,8 +144,8 @@ Interactively, uses the default player."
 (defun listen-next (player)
   "Play next track in PLAYER's queue.
 Interactively, uses the default player."
-  (declare-function listen-queue-next "listen-queue")
   (interactive (list (listen-current-player)))
+  (declare-function listen-queue-next "listen-queue")
   (listen-queue-next (map-elt (listen-player-etc player) :queue)))
 
 (defun listen-pause (player)
