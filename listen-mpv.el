@@ -192,15 +192,7 @@ Stops playing, clears playlist, adds FILE, and plays it."
 ;;   (listen--send player "stop"))
 
 (cl-defmethod listen--status ((player listen-player-mpv))
-  (or (listen-player-status player)
-      (setf (listen-player-status player)
-            (if (and (listen--playing-p player)
-                     (not (listen-mpv--get-property listen-player "pause")))
-                'playing
-              ;; TODO: Consider using "eof-reached" proeprty.
-              (if (listen-mpv--get-property listen-player "pause")
-                  'paused
-                'stopped)))))
+  (listen-player-status player))
 
 (cl-defmethod listen--pause ((player listen-player-mpv))
   "Pause playing with PLAYER."
