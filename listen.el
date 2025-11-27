@@ -59,6 +59,8 @@
 (require 'cl-lib)
 (require 'map)
 
+(require 'svg-lib)
+
 (require 'listen-lib)
 ;; TODO: Can we load these as-needed?
 (require 'listen-mpv)
@@ -361,6 +363,70 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 ;; TODO(someday): Simplify autoload when requiring Emacs 30.  See
 ;; <https://github.com/magit/transient/issues/280>.
 
+(defun listen-toggle-video ()
+  "Toggle video."
+  (interactive)
+  (setf listen-show-video (not listen-show-video))
+  ;; (when (listen--playing-p listen-player)
+  ;;   (listen-quit listen-player)
+  ;;   ())
+  )
+
+(defun listen-center-and-fill (str width)
+  "Wrap STR using `fill-region' to WIDTH."
+  (with-temp-buffer
+    (insert str)
+    (setq fill-column width)
+    (fill-region (point-min) (point-max))
+    (let ((lines (split-string (buffer-string) "\n")))
+      (mapconcat
+       (lambda (line)
+         (let* ((len (length line))
+                (padding (max 0 (/ (- width len) 2))))
+           (concat (make-string padding ?\s) line)))
+       lines
+       "\n"))))
+
+(defun listen-menu-now-playing ()
+  "Return a propertized string showing track name, artist, time and a
+progress bar for the current song."
+  (let* ((elap (listen--elapsed (listen-current-player)))
+         (len (listen--length (listen-current-player)))
+         (elap-str (listen-format-seconds elap))
+         (len-str (listen-format-seconds len))
+         (width 20)
+         (prog-bar-len (+ (length elap-str)
+                          (length len-str)
+                          width
+                          4)) ; 4 spaces
+         (progress (/ elap len))
+         (svg-bar (svg-lib-progress-bar progress nil
+                                        :width width :margin 1
+                                        :stroke 2 :padding 2
+                                        :height 0.5))
+         (status (pcase (listen--status listen-player)
+                   ("playing" (nth 1 listen-lighter-symbols-list))
+                   ("paused" (nth 2 listen-lighter-symbols-list))
+                   ("stopped" (nth 3 listen-lighter-symbols-list))
+                   (_ "")))
+         (info (listen--info listen-player)))
+    (format
+     " %s \n %s \n %s %s %s"
+     ;; Title
+     (propertize
+      (listen-center-and-fill (alist-get "title" info nil nil #'equal)
+                              prog-bar-len)
+      'face 'listen-title)
+     ;; Artist
+     (propertize
+      (listen-center-and-fill (alist-get "artist" info nil nil #'equal)
+                              prog-bar-len)
+      'face 'listen-artist)
+     ;; Progress bar
+     elap-str
+     (propertize " " 'display svg-bar)
+     len-str)))
+
 ;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
@@ -369,10 +435,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
   ["Listen"
    :description
    ;; TODO: Try using `transient-info' class for this line.
-   (lambda ()
-     (if listen-player
-         (concat "Listening: " (listen-mode-lighter))
-       "Not listening"))
+   listen-menu-now-playing
    ;; Getting this layout to work required a lot of trial-and-error.
    [("Q" "Quit" listen-quit
      :inapt-if-not (lambda ()
