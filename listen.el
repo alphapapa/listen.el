@@ -372,6 +372,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
   ;;   ())
   )
 
+;; Scrub bar stuff
 (defun listen-center-and-fill (str width)
   "Wrap STR using `fill-region' to WIDTH."
   (with-temp-buffer
@@ -426,6 +427,15 @@ progress bar for the current song."
      elap-str
      (propertize " " 'display svg-bar)
      len-str)))
+
+;; Attempt to get the menu to auto update once per second
+;; Attaches a timer directly into the listen-menu symbol (is this horrible or fine?)
+(defun listen-menu--timer-cleanup ()
+  "Get the transient updating timer from the `listen-menu' symbol and cancel it."
+  (let ((timer (get 'listen-menu :timer)))
+    (when timer
+      (cancel-timer timer)
+      (put 'listen-menu :timer nil))))
 
 ;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
@@ -531,7 +541,15 @@ progress bar for the current song."
     ("qam" "from MPD" listen-queue-add-from-mpd
      :transient t)
     ("qap" "from playlist file" listen-queue-add-from-playlist-file
-     :transient t)]])
+     :transient t)]]
+  ;; BODY
+  (interactive)
+  (listen-menu--timer-cleanup) ; Just making sure the timer is gone
+  (add-hook 'transient-exit-hook #'listen-menu--timer-cleanup)
+  ;; Start updater timer
+  (put 'listen-menu :timer
+       (run-at-time 0.1 1.0 (lambda () (ignore-errors (transient--show)))))
+  (transient-setup 'listen-menu))
 
 ;; NOTE: This alias must come after the command it refers to, otherwise the autoload file fails to
 ;; finish loading (without warning), which breaks a lot of things!
