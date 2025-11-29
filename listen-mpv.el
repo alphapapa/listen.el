@@ -64,14 +64,13 @@
 
 (cl-defmethod listen--update-metadata ((player listen-player-mpv) &optional then)
   "Update PLAYER's metadata slot, then call THEN without arguments."
-  (let ((callback (lambda (msg)
-                    (pcase-let (((map event id reason data error name) msg))
-                      (setf (listen-player-metadata player)
-                            (map-apply (lambda (key value)
-                                         (cons (intern (downcase (symbol-name key))) value))
-                                       data))
-                      (when then
-                        (funcall then))))))
+  (let ((callback (lambda (metadata)
+                    (setf (listen-player-metadata player)
+                          (map-apply (lambda (key value)
+                                       (cons (intern (downcase (symbol-name key))) value))
+                                     metadata))
+                    (when then
+                      (funcall then)))))
     (if then
         (listen-mpv--get-property player "metadata" :then callback)
       (funcall callback (listen-mpv--get-property player "metadata")))))
