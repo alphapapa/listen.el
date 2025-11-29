@@ -104,15 +104,20 @@ keywords are supported:
 (cl-defstruct listen-player
   ;; TODO: Add queue slot.
   process command args
+  (status
+   nil :documentation "Symbol representing player's playback status (e.g. `playing', `paused', `stopped', or nil if unknown).")
+  (etc nil :documentation "Alist used to store other information about the player.")
+  (path nil :documentation "Filename path or URL to currently playing track, if any.")
+  (metadata nil :documentation "Metadata alist.")
+  (volume nil :documentation "Volume in percent.")
   (max-volume
    100 :documentation "Maximum volume in percent (may be greater than 100 for some players).")
-  etc status
-  (path nil :documentation "Filename path or URL to currently playing track, if any.")
-  volume
-  playback-started-at playback-started-from
-  ;; (position nil :documentation "Position in current track, in seconds.")
-  (duration nil :documentation "Duration of current track, in seconds.")
-  (metadata nil :documentation "Metadata alist."))
+  (playback-started-at
+   nil :documentation "Time at which playback started (used to compute elapsed/remaining).")
+  (playback-started-from
+   nil :documentation "Track position at which playback last started/unpaused, in seconds (used to compute elapsed/remaining).")
+  (duration
+   nil :documentation "Duration of current track, in seconds (used to compute elapsed/remaining)."))
 
 (cl-defstruct listen-queue
   name tracks current etc)
