@@ -1069,7 +1069,7 @@ select track as well."
 (defalias 'listen-queue--vtable--recompute-numerical
   ;; TODO: Remove this when requiring Emacs 30+.
   ;; See <https://debbugs.gnu.org/cgi/bugreport.cgi?bug=69927>.
-  (if (version<= emacs-version "30")
+  (if (version< emacs-version "30.1")
       (lambda (table line)
         "Recompute numericalness of columns if necessary."
         (let ((columns (vtable-columns table))
@@ -1082,7 +1082,24 @@ select track as well."
            line)
           (when recompute
             (vtable--compute-columns table))))
-    #'vtable--recompute-numerical))
+    ;; HACK: This is unique, one the likes of which I've never quite seen before.  This is to work
+    ;; around errors like "(cyclic-function-indirection vtable--recompute-numerical)" and "Symbol’s
+    ;; chain of function indirections contains a loop: vtable--recompute-numerical".  Because we
+    ;; also, in the macro `listen-with-vtable-at', dynamically rebind the function
+    ;; `vtable--recompute-numerical' with `cl-letf*', which normally creates a loop, we use
+    ;; `cl-letf' here also, to save a reference to the original function definition, which we make
+    ;; our own alias to.  Then when the expansion of `cl-letf*' in `listen-with-vtable-at' rebinds
+    ;; the function slot of `vtable--recompute-numerical', it binds it to the original function,
+    ;; rather than to the symbol (which would cause the cyclic indirection/loop).
+
+    ;; Now, you may think this is ugly or ridiculous, but it has a legitimate purpose: to provide a
+    ;; fix for users of older Emacs versions, while also being compatible with the Emacs version
+    ;; that has the fix included.  And how many other languages and platforms would even allow this?
+    ;; (Remember that `cl-letf' rebinds the symbol's function slot, so that while the macro's
+    ;; expansion is on the stack, anything else--in the whole system--that calls the rebound
+    ;; function calls our replacement for it--not just where we, ourselves, directly reference it.)
+    (cl-letf ((orig-fn (symbol-function 'vtable--recompute-numerical)))
+      orig-fn)))
 
 ;;;; Footer
 
