@@ -274,7 +274,7 @@ Interactively, read COMMAND and use tracks at point in
       (listen-track-artist item)
       "[unknown artist]"))
 
-(listen-library-define-column "Album" (:align 'right :face listen-album :max-width 30)
+(listen-library-define-column "Album" (:align 'left :face listen-album :max-width 30)
   (or (listen-track-album item)
       "[unknown album]"))
 
