@@ -879,10 +879,11 @@ MAX-PROCESSES limits the number of parallel probing processes."
                                      "-show_entries" "format=duration"
                                      (expand-file-name (listen-track-filename track))))
                       (process (make-process
-                                :name "listen:ffprobe" :noquery t :type 'pipe :buffer (current-buffer)
-                                :sentinel sentinel :command (if listen-queue-nice-p
-                                                                (cons "nice" command)
-                                                              command))))
+                                :name "listen:ffprobe" :noquery t :connection-type 'pipe
+                                :buffer (current-buffer) :sentinel sentinel
+                                :command (if listen-queue-nice-p
+                                             (cons "nice" command)
+                                           command))))
                  process))))
          (probe-more ()
            (while (and tracks (length< processes max-processes))
