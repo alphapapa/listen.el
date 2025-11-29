@@ -24,6 +24,8 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'map)
+(require 'pcase)
 
 ;;;; Macros
 
