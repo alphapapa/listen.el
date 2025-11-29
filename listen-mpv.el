@@ -120,7 +120,7 @@
       (set-process-query-on-exit-flag (listen-player-process player) nil)
       ;; Observe relevant properties.
       (dolist (property '("volume" "mute" "pause" "playback-time" "duration" "path" "metadata"))
-        (listen--send player "observe_property" property)))))
+        (listen--send* player `("observe_property" ,property) :then #'ignore)))))
 
 (cl-defmethod listen--filter ((player listen-player-mpv) proc text)
   (listen-debug :buffer "*listen-mpv*" (listen-player-process player) proc text)
@@ -187,7 +187,7 @@
 (cl-defmethod listen--play ((player listen-player-mpv) file)
   "Play FILE with PLAYER.
 Stops playing, clears playlist, adds FILE, and plays it."
-  (listen--send player "loadfile" (expand-file-name file)))
+  (listen--send* player `("loadfile" ,(expand-file-name file)) :then #'ignore))
 
 ;; (cl-defmethod listen--stop ((player listen-player-mpv))
 ;;   "Stop playing with PLAYER."
@@ -226,16 +226,7 @@ Stops playing, clears playlist, adds FILE, and plays it."
   (listen-player-duration player))
 
 (cl-defmethod listen--send ((player listen-player-mpv) command &rest args)
-  "Send COMMAND to PLAYER and return request ID."
-  (listen--ensure player)
-  (pcase-let* (((cl-struct listen-player (etc (map :network-process))) player)
-               (request-id (cl-incf (map-elt (listen-player-etc player) :request-id))))
-    (let ((json (json-encode `(("command" ,command ,@args)
-                               ("request_id" . ,request-id)))))
-      (listen-debug :buffer "*listen-mpv*" (listen-player-process player) json)
-      (process-send-string network-process json)
-      (process-send-string network-process "\n"))
-    request-id))
+  (error "Method `listen--send' is not implemented for player `listen-player-mpv'; use `listen--send*'"))
 
 (cl-defmethod listen--send* ((player listen-player-mpv) command-args &key then)
   "Send COMMAND-ARGS to PLAYER.
@@ -279,7 +270,7 @@ is returned from this function."
 
 (cl-defmethod listen--seek ((player listen-player-mpv) seconds)
   "Seek PLAYER to SECONDS."
-  (listen--send player "seek" seconds "absolute"))
+  (listen--send* player `("seek" ,seconds "absolute") :then #'ignore))
 
 (cl-defmethod listen--volume ((player listen-player-mpv) &optional volume)
   "Return or set PLAYER's VOLUME.
