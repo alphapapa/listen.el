@@ -158,21 +158,34 @@
                    (map-delete (map-elt (listen-player-etc player) :requests) request_id)))
          (listen-debug :buffer "*listen-mpv*" "No callback for" msg)))
       ("property-change"
+       ;; NOTE: Even though we explicitly observe these properties, if they change as a result of a
+       ;; command that we send, MPV does not send messages for these properties changing (e.g. if we
+       ;; tell it to pause, we don't get a pause property-change event).
        (pcase name
          ("duration" (setf (listen-player-duration player) data))
          ("metadata" (setf (listen-player-metadata player) data))
          ("path" (setf (listen-player-path player) data))
-         ("pause" (listen--status-is
-                   player (pcase data
-                            ('t 'paused)
-                            ('nil 'playing)
-                            (_ (listen-debug :buffer "*listen-mpv*" "Unrecognized pause" data)))))
-         ;; ("playback-time" (setf (listen-player-position player) data))
+         ("pause"
+          (listen--status-is
+           player (pcase data
+                    ('t 'paused)
+                    ('nil 'playing)
+                    (_ (listen-debug :buffer "*listen-mpv*" "Unrecognized pause" data)))))
+         ;; ("playback-time" (setf (listen-player-position player) data
+         ;;                        (listen-player-playback-started-from player) data))
          ("volume" (setf (listen-player-volume player) data))))
       (_ (listen-debug :buffer "*listen-mpv*" "Unrecognized event" event)))))
 
 (cl-defmethod listen--status-is ((player listen-player-mpv) new-status)
-  (setf (listen-player-status player) new-status))
+  "Update PLAYER's status slot according to NEW-STATUS.
+When NEW-STATUS is `playing', updates started-at and started-from slots."
+  (setf (listen-player-status player) new-status)
+  (pcase-exhaustive new-status
+    ('paused nil)
+    ('playing
+     (setf (listen-player-playback-started-at player) (current-time)
+           (listen-player-playback-started-from player)
+           (listen-mpv--get-property player "playback-time")))))
 
 (cl-defmethod listen--play ((player listen-player-mpv) file)
   "Play FILE with PLAYER.
@@ -196,10 +209,10 @@ Stops playing, clears playlist, adds FILE, and plays it."
      player "pause" new-status
      :then (lambda (msg)
              (pcase (map-elt msg 'error)
-               ("success" (setf (listen-player-status player)
-                                (pcase new-status
-                                  ("yes" 'paused)
-                                  ("no" 'playing)))))))))
+               ("success" (listen--status-is
+                           player (pcase-exhaustive new-status ("yes" 'paused) ("no" 'playing))))
+               (_ (display-warning 'listen--pause (format-message "Unexpected response: %S" msg)
+                                   :warning "*listen-mpv*")))))))
 
 (cl-defmethod listen--playing-p ((player listen-player-mpv))
   "Return non-nil if PLAYER is playing."
@@ -207,9 +220,12 @@ Stops playing, clears playlist, adds FILE, and plays it."
 
 (cl-defmethod listen--elapsed ((player listen-player-mpv))
   "Return seconds elapsed for PLAYER's track."
-  (+ (time-to-seconds
-      (time-subtract (current-time) (listen-player-playback-started-at player)))
-     (listen-player-playback-started-from player)))
+  (if (listen--playing-p player)
+      (setf (map-elt (listen-player-etc player) :elapsed)
+            (+ (time-to-seconds
+                (time-subtract (current-time) (listen-player-playback-started-at player)))
+               (listen-player-playback-started-from player)))
+    (map-elt (listen-player-etc player) :elapsed)))
 
 (cl-defmethod listen--length ((player listen-player-mpv))
   "Return length of PLAYER's track in seconds."
