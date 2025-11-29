@@ -26,6 +26,7 @@
 ;;;; Requirements
 
 (require 'cl-lib)
+(require 'json)
 (require 'map)
 
 (require 'listen-lib)
@@ -223,8 +224,6 @@ Stops playing, clears playlist, adds FILE, and plays it."
 (cl-defmethod listen--length ((player listen-player-mpv))
   "Return length of PLAYER's track in seconds."
   (listen-player-duration player))
-
-(require 'json)
 
 (cl-defmethod listen--send ((player listen-player-mpv) command &rest args)
   "Send COMMAND to PLAYER and return request ID."
