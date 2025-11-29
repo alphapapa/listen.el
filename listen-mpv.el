@@ -151,16 +151,14 @@
        (setf (listen-player-playback-started-at player) (current-time)
              (listen-player-playback-started-from player) 0)
        (listen--update-metadata player)
-       (listen-mpv--update-property
-        player (lambda (msg)
-                 (setf (listen-player-duration player)
-                       (map-elt msg 'data)))
-        "duration")
-       (listen-mpv--update-property
-        player (lambda (msg)
-                 (setf (listen-player-volume player)
-                       (map-elt msg 'data)))
-        "volume"))
+       (listen-mpv--get-property "duration"
+                                 (lambda (msg)
+                                   (setf (listen-player-duration player)
+                                         (map-elt msg 'data))))
+       (listen-mpv--get-property "volume"
+                                 (lambda (msg)
+                                   (setf (listen-player-duration player)
+                                         (map-elt msg 'data)))))
       ((or "end-file" "idle") (listen--status-is player 'stopped))
       ((or 'nil "data")
        (if-let ((callback (map-elt (map-elt (listen-player-etc player) :requests) request_id)))
@@ -301,10 +299,6 @@ VOLUME is an integer percentage."
             ;; callback can't make the Transient update itself.
             (setf (listen-player-volume player) new-volume)))
       (listen-player-volume player))))
-
-(cl-defmethod listen-mpv--update-property ((player listen-player-mpv) property &key then)
-  (let ((request-id (listen--send* player "get_property" property)))
-    (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id) callback)))
 
 (cl-defmethod listen-mpv--get-property ((player listen-player-mpv) property &key then)
   (listen--send* player `("get_property" ,property) :then then))
