@@ -232,6 +232,9 @@ Stops playing, clears playlist, adds FILE, and plays it."
   (listen-player-duration player))
 
 (cl-defmethod listen--send ((player listen-player-mpv) command &rest args)
+  "Not implemented for MPV; use `listen--send*'.
+For checkdoc: PLAYER, COMMAND, ARGS."
+  (ignore player command args)
   (error "Method `listen--send' is not implemented for player `listen-player-mpv'; use `listen--send*'"))
 
 (cl-defmethod listen--send* ((player listen-player-mpv) command-args &key then)
@@ -281,18 +284,15 @@ is returned from this function."
 (cl-defmethod listen--volume ((player listen-player-mpv) &optional volume)
   "Return or set PLAYER's VOLUME.
 VOLUME is an integer percentage."
-  (pcase-let (((cl-struct listen-player max-volume) player)
-              (callback (lambda (msg)
-                          (setf (listen-player-volume player) (map-elt msg 'data)))))
+  (pcase-let (((cl-struct listen-player max-volume) player))
     (if volume
         (progn
           (unless (<= 0 volume max-volume)
             (error "VOLUME must be 0-%s" max-volume))
-          (let ((new-volume (listen-mpv--set-property player "volume" volume)))
-            ;; We assume that the command will work, and we set the volume that is being set,
-            ;; because the Transient description uses the value from the player slot, and the
-            ;; callback can't make the Transient update itself.
-            (setf (listen-player-volume player) new-volume)))
+          ;; We assume that the command will work, and we set the volume that is being set,
+          ;; because the Transient description uses the value from the player slot, and the
+          ;; callback can't make the Transient update itself.
+          (setf (listen-player-volume player) (listen-mpv--set-property player "volume" volume)))
       (listen-player-volume player))))
 
 (cl-defmethod listen-mpv--get-property ((player listen-player-mpv) property &key then)
