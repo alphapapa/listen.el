@@ -246,9 +246,9 @@ Interactively, jump to current queue's current track."
 According to `listen-lighter-format', which see."
   (when-let* ((player listen-player)
               ((listen--running-p player))
-              ((pcase (listen-player-status player)
+              ((pcase (listen--status player)
                  ((or 'playing 'paused) t)))
-              (metadata (listen-player-metadata player)))
+              (metadata (listen--info player)))
     (format-spec listen-lighter-format
                  `((?a . ,(lambda ()
                             (propertize (or (alist-get 'artist metadata nil nil #'equal) "")
