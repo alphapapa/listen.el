@@ -298,18 +298,16 @@ According to `listen-lighter-format', which see."
   "Play next track and/or update variable `listen-mode-lighter'."
   (declare-function listen-queue-play "listen-queue")
   (declare-function listen-queue-next-track "listen-queue")
-  (let (playing-next-p)
-    (when (and listen-player (listen--running-p listen-player))
-      (unless (or (listen--playing-p listen-player)
-                  ;; HACK: It seems that sometimes the player gets restarted
-                  ;; even when paused: this extra check should prevent that.
-                  (member (listen--status listen-player) '(playing paused)))
-        (setf playing-next-p
-              (run-hook-with-args 'listen-track-end-functions listen-player))))
-    (setf listen-mode-lighter
-          (when (and listen-player (listen--running-p listen-player))
-            (listen-mode-lighter)))
-    (force-mode-line-update 'all)))
+  (when (and listen-player (listen--running-p listen-player))
+    (unless (or (listen--playing-p listen-player)
+                ;; HACK: It seems that sometimes the player gets restarted
+                ;; even when paused: this extra check should prevent that.
+                (member (listen--status listen-player) '(playing paused)))
+      (run-hook-with-args 'listen-track-end-functions listen-player)))
+  (setf listen-mode-lighter
+        (when (and listen-player (listen--running-p listen-player))
+          (listen-mode-lighter)))
+  (force-mode-line-update 'all))
 
 (defun listen-play-next (player)
   "Play PLAYER's queue's next track and return non-nil if playing."
