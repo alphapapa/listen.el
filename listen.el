@@ -136,9 +136,9 @@ its current track will be the one that just finished playing)."
 Interactively, uses the default player."
   (interactive
    (list (listen-current-player)))
-  (delete-process (listen-player-process player))
   (when (eq player listen-player)
     (setf listen-player nil))
+  (delete-process (listen-player-process player))
   (listen-mode--update))
 
 (defun listen-next (player)
