@@ -242,29 +242,44 @@ Stops playing, clears playlist, adds FILE, and plays it."
     request-id))
 
 (cl-defmethod listen--send* ((player listen-player-mpv) command-args &key then)
-  "Send COMMAND to PLAYER"
+  "Send COMMAND-ARGS to PLAYER.
+The first string in COMMAND-ARGS is the MPV command, and the remaining
+ones are arguments to it.  If THEN is provided, it should be a function
+which will be called asynchronously with the message alist returned by
+MPV, and the request ID number is returned from this function;
+otherwise, the MPV command is called synchronously and the message alist
+is returned from this function."
   (listen--ensure player)
-  (pcase-let* (((cl-struct listen-player (etc (map :network-process))) player)
-               (request-id (cl-incf (map-elt (listen-player-etc player) :request-id)))
-               (`(,command . ,args) command-args)
-               (json (json-encode `(("command" ,command ,@args)
-                                    ("request_id" . ,request-id)))))
-    (listen-debug :buffer "*listen-mpv*" (listen-player-process player) json)
-    (process-send-string network-process json)
-    (process-send-string network-process "\n")
-    ;; TODO: Maybe check for success/error.
-    (if then
-        (progn
-          (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id) then)
-          request-id)
-      (let ((value :unknown))
-        (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id)
-              (lambda (msg)
-                ;; Save the callback's value to the map so we can retrieve it.
-                (setf value (map-elt msg 'data))))
-        (accept-process-output (listen-player-process player) 0.05)
-        ;; Return the then's value.
-        value))))
+  (cl-macrolet
+      ((wrap-callback (callback)
+         `(lambda (msg)
+            (unwind-protect
+                (funcall ,callback msg)
+              (setf (map-elt (listen-player-etc player) :requests)
+                    (map-delete (map-elt (listen-player-etc player) :requests) request-id))))))
+    (pcase-let* (((cl-struct listen-player (etc (map :network-process))) player)
+                 (request-id (cl-incf (map-elt (listen-player-etc player) :request-id)))
+                 (`(,command . ,args) command-args)
+                 (json (json-encode `(("command" ,command ,@args)
+                                      ("request_id" . ,request-id)))))
+      (listen-debug :buffer "*listen-mpv*" (listen-player-process player) json)
+      (process-send-string network-process json)
+      (process-send-string network-process "\n")
+      ;; TODO: Maybe check for success/error.
+      (if then
+          (progn
+            (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id)
+                  (wrap-callback then))
+            request-id)
+        (let ((value :unknown))
+          (setf (map-elt (map-elt (listen-player-etc player) :requests) request-id)
+                (wrap-callback
+                 (lambda (msg)
+                   ;; Save the callback's value to the map so we can retrieve it.
+                   (setf value (map-elt msg 'data)))))
+          (accept-process-output (listen-player-process player) 0.05)
+          ;; Return the then's value.
+          value)))))
 
 (cl-defmethod listen--seek ((player listen-player-mpv) seconds)
   "Seek PLAYER to SECONDS."
