@@ -149,9 +149,8 @@
     (pcase event
       ((or "start-file" "playback-restart")
        (listen--status-is player 'playing)
-       (setf (listen-player-playback-started-at player) (current-time)
-             (listen-player-playback-started-from player) 0)
        (listen--update-metadata player)
+       ;; TODO: Maybe move these to --status-is?
        (setf (listen-player-duration player) (listen-mpv--get-property player "duration"))
        (setf (listen-player-volume player) (listen-mpv--get-property player "volume")))
       ((or "end-file" "idle") (listen--status-is player 'stopped))
