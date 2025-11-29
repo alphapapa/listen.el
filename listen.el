@@ -473,6 +473,86 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 ;;;###autoload
 (defalias 'listen #'listen-menu)
 
+;;;; Status buffer
+
+(cl-defun listen-status (player &key (displayp t))
+  "Show status buffer for PLAYER.
+If DISPLAYP, show the buffer; otherwise just update existing one."
+  (interactive (list listen-player))
+  (cl-macrolet ((with-face (string face)
+                  `(propertize ,string 'face ,face)))
+    (cl-labels ((buffer-for (player)
+                  (let ((buffer-name
+                         (if (eq player listen-player)
+                             ;; Default player.
+                             "*Listen Status*"
+                           (or (cl-loop for buffer in (buffer-list)
+                                        when (eq player (buffer-local-value 'listen-player buffer))
+                                        return (buffer-name buffer))
+                               (concat (generate-new-buffer-name "*Listen Status ") "*")))))
+                    (or (get-buffer buffer-name)
+                        (with-current-buffer (generate-new-buffer buffer-name)
+                          (listen-player-mode)
+                          (current-buffer)))))
+                (metadata (key track)
+                  (or (listen-track-metadata-get key track) "")))
+      (with-current-buffer (buffer-for player)
+        (setq-local listen-player player)
+        (let ((inhibit-read-only t)
+              ;; FIXME: When playing a file without a queue.
+              (track (listen-queue-current (map-elt (listen-player-etc player) :queue)))
+              (pos (point)))
+          (erase-buffer)
+          (if (not (listen--playing-p player))
+              (insert "Not playing")
+            (insert (with-face "Artist: " 'bold)
+                    (with-face (metadata "artist" track) 'listen-artist) "\n")
+            (insert (with-face " Title: " 'bold)
+                    (propertize (metadata "title" track)
+                                'face 'listen-title
+                                'wrap-prefix "        ") "\n")
+            (insert (with-face " Album: " 'bold)
+                    (propertize (metadata "album" track)
+                                'face 'listen-album
+                                'wrap-prefix "        ") "\n")
+            (insert (with-face "  Time: " 'bold) (listen-format-seconds (listen--elapsed player))
+                    " / " (listen-format-seconds (listen-track-duration track))
+                    " (-" (listen-format-seconds (- (listen-track-duration track)
+                                                    (listen--elapsed player))) ")" "\n")
+            (insert (with-face "  File: " 'bold)
+                    (propertize (listen-track-filename track)
+                                'face 'listen-filename
+                                'wrap-prefix "        ")))
+          (goto-char pos))
+        (when displayp
+          (display-buffer (current-buffer)))))))
+
+(defvar-local listen-player-timer nil)
+
+(define-derived-mode listen-player-mode special-mode "Listen-Player"
+  :group 'listen
+  :interactive nil
+  (setq-local buffer-read-only t
+              buffer-undo-list t
+              bookmark-make-record-function
+              (lambda ()
+                (if (eq (default-value 'listen-player)
+                        (buffer-local-value 'listen-player (current-buffer)))
+                    (list "*Listen Player*"
+                          (cons 'handler 'listen-player))
+                  (user-error "Only the default player's buffer may be bookmarked")))
+              revert-buffer-function (lambda (&rest _)
+                                       (interactive)
+                                       (listen-status listen-player :displayp nil)))
+  (add-hook 'kill-buffer-hook (lambda ()
+                                (when (timerp listen-player-timer)
+                                  (cancel-timer listen-player-timer)))
+            nil 'local)
+  (setq-local listen-player-timer (run-at-time nil 1 revert-buffer-function))
+  (visual-line-mode))
+
+;;; Footer:
+
 (provide 'listen)
 
 ;;; listen.el ends here
