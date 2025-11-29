@@ -101,7 +101,8 @@
         (setf (map-elt (listen-player-etc player) :network-process)
               (make-network-process :name "listen-player-mpv-socket" :family 'local
                                     :remote socket :noquery t
-                                    :buffer socket-buffer)
+                                    :buffer socket-buffer
+                                    :service nil)
               (process-filter (map-elt (listen-player-etc player) :network-process))
               (lambda (proc text)
                 (listen--filter player proc text))
