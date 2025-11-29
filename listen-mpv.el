@@ -177,15 +177,17 @@
       (_ (listen-debug :buffer "*listen-mpv*" "Unrecognized event" event)))))
 
 (cl-defmethod listen--status-is ((player listen-player-mpv) new-status)
-  "Update PLAYER's status slot according to NEW-STATUS.
+  "Update PLAYER's status slot according to NEW-STATUS and return it.
 When NEW-STATUS is `playing', updates started-at and started-from slots."
-  (setf (listen-player-status player) new-status)
   (pcase-exhaustive new-status
     ('paused nil)
     ('playing
      (setf (listen-player-playback-started-at player) (current-time)
            (listen-player-playback-started-from player)
-           (listen-mpv--get-property player "playback-time")))))
+           (listen-mpv--get-property player "playback-time")))
+    ('stopped (setf (listen-player-playback-started-at player) nil
+                    (listen-player-playback-started-from player) nil)))
+  (setf (listen-player-status player) new-status))
 
 (cl-defmethod listen--play ((player listen-player-mpv) file)
   "Play FILE with PLAYER.
