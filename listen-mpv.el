@@ -144,21 +144,15 @@
 
 (cl-defmethod listen--act ((player listen-player-mpv) msg)
   (listen-debug :buffer "*listen-mpv*" (listen-player-process player) msg)
-  (pcase-let (((map event request_id reason data error name) msg))
+  (pcase-let (((map event request_id _reason data _error name) msg))
     (pcase event
       ((or "start-file" "playback-restart")
        (listen--status-is player 'playing)
        (setf (listen-player-playback-started-at player) (current-time)
              (listen-player-playback-started-from player) 0)
        (listen--update-metadata player)
-       (listen-mpv--get-property "duration"
-                                 (lambda (msg)
-                                   (setf (listen-player-duration player)
-                                         (map-elt msg 'data))))
-       (listen-mpv--get-property "volume"
-                                 (lambda (msg)
-                                   (setf (listen-player-duration player)
-                                         (map-elt msg 'data)))))
+       (setf (listen-player-duration player) (listen-mpv--get-property player "duration"))
+       (setf (listen-player-volume player) (listen-mpv--get-property player "volume")))
       ((or "end-file" "idle") (listen--status-is player 'stopped))
       ((or 'nil "data")
        (if-let ((callback (map-elt (map-elt (listen-player-etc player) :requests) request_id)))
