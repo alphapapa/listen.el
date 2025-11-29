@@ -294,7 +294,8 @@ VOLUME is an integer percentage."
           ;; We assume that the command will work, and we set the volume that is being set,
           ;; because the Transient description uses the value from the player slot, and the
           ;; callback can't make the Transient update itself.
-          (setf (listen-player-volume player) (listen-mpv--set-property player "volume" volume)))
+          (listen-mpv--set-property player "volume" volume)
+          (setf (listen-player-volume player) volume))
       (listen-player-volume player))))
 
 (cl-defmethod listen-mpv--get-property ((player listen-player-mpv) property &key then)
