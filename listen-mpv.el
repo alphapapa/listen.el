@@ -53,11 +53,6 @@
 
 ;;;; Functions
 
-(cl-defmethod listen--got-property ((player listen-player-mpv) msg)
-  (pcase-let (((map event id reason data error name) msg))
-    (pcase data
-      ("metadata"))))
-
 (cl-defmethod listen--info ((player listen-player-mpv))
   "Return metadata from MPV PLAYER, or nil if a track is not playing."
   (or (listen-player-metadata player)
