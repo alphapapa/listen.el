@@ -48,12 +48,18 @@
 ;;;; Functions
 
 (cl-defmethod listen--info ((player listen-player-vlc))
+  "Return metadata from VLC PLAYER, or nil if a track is not playing."
+  (or (listen-player-metadata player)
+      (listen--update-metadata player)))
+
+(cl-defmethod listen--update-metadata ((player listen-player-vlc))
   (with-temp-buffer
     (save-excursion
       (insert (listen--send player "info")))
-    (cl-loop while (re-search-forward (rx bol "| " (group (1+ (not blank))) ": "
-                                          (group (1+ (not (any ""))))) nil t)
-             collect (cons (match-string 1) (match-string 2)))))
+    (setf (listen-player-metadata player)
+          (cl-loop while (re-search-forward (rx bol "| " (group (1+ (not blank))) ": "
+                                                (group (1+ (not (any ""))))) nil t)
+                   collect (cons (intern (downcase (match-string 1))) (match-string 2))))))
 
 (cl-defmethod listen--filename ((player listen-player-vlc))
   "Return filename of PLAYER's current track."
@@ -86,7 +92,10 @@ Stops playing, clears playlist, adds FILE, and plays it."
 (cl-defmethod listen--status ((player listen-player-vlc))
   (let ((status (listen--send player "status")))
     (when (string-match (rx "( state " (group (1+ alnum)) " )") status)
-      (match-string 1 status))))
+      (pcase (match-string 1 status)
+        ("paused" 'paused)
+        ("playing" 'playing)
+        ("stopped" 'stopped)))))
 
 (cl-defmethod listen--pause ((player listen-player-vlc))
   "Pause playing with PLAYER."
@@ -134,8 +143,9 @@ VOLUME is an integer percentage."
         (progn
           (unless (<= 0 volume max-volume)
             (error "VOLUME must be 0-%s" max-volume))
-          (listen--send player (format "volume %s" (* 255 (/ volume 100.0)))))
-      (* 100 (/ (string-to-number (listen--send player "volume")) 255.0)))))
+          (listen--send player (format "volume %s" (* 255 (/ volume 100.0))))
+          (setf (listen-player-volume player) volume))
+      (listen-player-volume player))))
 
 (provide 'listen-vlc)
 
