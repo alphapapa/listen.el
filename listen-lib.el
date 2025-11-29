@@ -107,7 +107,8 @@ keywords are supported:
   ;; TODO: Add queue slot.
   process command args
   (status
-   nil :documentation "Symbol representing player's playback status (e.g. `playing', `paused', `stopped', or nil if unknown).")
+   nil :documentation "Symbol representing player's playback status.
+For example, `playing', `paused', `stopped', or nil if unknown.")
   (etc nil :documentation "Alist used to store other information about the player.")
   (path nil :documentation "Filename path or URL to currently playing track, if any.")
   (metadata nil :documentation "Metadata alist.")
@@ -117,7 +118,8 @@ keywords are supported:
   (playback-started-at
    nil :documentation "Time at which playback started (used to compute elapsed/remaining).")
   (playback-started-from
-   nil :documentation "Track position at which playback last started/unpaused, in seconds (used to compute elapsed/remaining).")
+   nil :documentation "Track position at which playback last started/unpaused, in seconds.
+Used to compute elapsed/remaining.")
   (duration
    nil :documentation "Duration of current track, in seconds (used to compute elapsed/remaining)."))
 

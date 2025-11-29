@@ -826,9 +826,9 @@ If there is no such identifier, return nil."
 
 (defun listen-info--read-id3v2-frame-data (filename begin num-bytes unsync)
   "Read NUM-BYTES of raw id3v2 frame data from FILENAME.
-Start reading from offset BEGIN.  If UNSYNC is t, all 'FF 00'
-byte combinations are replaced by 'FF'.  Replaced byte pairs are
-counted as one, instead of two, towards NUM-BYTES.
+Start reading from offset BEGIN.  If UNSYNC is t, all \"FF 00\" byte
+combinations are replaced by \"FF\".  Replaced byte pairs are counted as
+one, instead of two, towards NUM-BYTES.
 
 Return a cons cell (OFFSET . DATA), where OFFSET is the byte
 offset after NUM-BYTES bytes have been read, and DATA is the raw
