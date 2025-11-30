@@ -444,7 +444,7 @@ variable slot and cancel it."
   ["Listen"
    :description
    ;; TODO: Try using `transient-info' class for this line.
-   listen-menu-now-playing
+   listen-menu--now-playing
    ;; Getting this layout to work required a lot of trial-and-error.
    [("Q" "Quit" listen-quit
      :inapt-if-not (lambda ()
