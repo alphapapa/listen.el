@@ -93,7 +93,7 @@ happens, this option truncates before that format spec is applied
 and adds an ellipsis where it occurs."
   :type 'natnum)
 
-(defcustom listen-lighter-format "🎵:%s %a: %t (%r)%E "
+(defcustom listen-lighter-format "🎵:%s %a: %t %R%E "
   "Format for mode line lighter.
 Uses `format-spec', which see.  These format specs are available:
 
@@ -102,7 +102,8 @@ Uses `format-spec', which see.  These format specs are available:
 %t: Title
 
 %e: Elapsed time
-%r: Remaining time
+%r: Remaining time (i.e. \"-1:32\")
+%R: SVG time indicator
 %s: Player status icon
 
 %E: Extra data specified in `listen-lighter-extra-functions',
@@ -272,6 +273,16 @@ According to `listen-lighter-format', which see."
                                                      (- (listen--length listen-player)
                                                         (listen--elapsed listen-player))))
                                         'face 'listen-lighter-time)))
+                   (?R . ,(lambda ()
+                            (let* ((elap (listen--elapsed (listen-current-player)))
+                                   (len (listen--length (listen-current-player)))
+                                   (elap-str (listen-format-seconds elap))
+                                   (len-str (listen-format-seconds len))
+                                   (progress (/ elap len))
+                                   (svg-bar (svg-lib-progress-pie progress 'mode-line
+                                                                  :margin 1 :stroke 2
+                                                                  :padding 1)))
+                              (propertize " " 'display svg-bar))))
                    (?s . ,(lambda ()
                             (propertize (pcase (listen--status listen-player)
                                           ("playing" "▶")
