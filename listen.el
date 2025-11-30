@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Maintainer: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
-;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13") (transient "0.5.3"))
+;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13") (transient "0.5.3") (svg-lib "0.3"))
 ;; Version: 0.10-pre
 ;; URL: https://github.com/alphapapa/listen.el
 
@@ -388,7 +388,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
        lines
        "\n"))))
 
-(defun listen-menu-now-playing ()
+(defun listen-menu--now-playing ()
   "Return a propertized string showing track name, artist, time and a
 progress bar for the current song."
   (when-let* ((elap (listen--elapsed (listen-current-player)))
@@ -428,10 +428,9 @@ progress bar for the current song."
      (propertize " " 'display svg-bar)
      len-str)))
 
-;; Attempt to get the menu to auto update once per second
-;; Attaches a timer directly into the listen-menu symbol (is this horrible or fine?)
 (defun listen-menu--timer-cleanup ()
-  "Get the transient updating timer from the `listen-menu' symbol and cancel it."
+  "Get the transient updating timer from the `listen-menu' symbol's
+variable slot and cancel it."
   (let ((timer (get 'listen-menu :timer)))
     (when timer
       (cancel-timer timer)
@@ -544,9 +543,9 @@ progress bar for the current song."
      :transient t)]]
   ;; BODY
   (interactive)
-  (listen-menu--timer-cleanup) ; Just making sure the timer is gone
+  (listen-menu--timer-cleanup) ; Make sure the timer is gone
   (add-hook 'transient-exit-hook #'listen-menu--timer-cleanup)
-  ;; Start updater timer
+  ;; Start transient updating timer
   (put 'listen-menu :timer
        (run-at-time 0.1 1.0 (lambda () (ignore-errors (transient--show)))))
   (transient-setup 'listen-menu))
