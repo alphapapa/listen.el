@@ -19,7 +19,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -230,7 +230,7 @@ Stops playing, clears playlist, adds FILE, and plays it."
       (setf (map-elt (listen-player-etc player) :elapsed)
             (+ (time-to-seconds
                 (time-subtract (current-time) (listen-player-playback-started-at player)))
-               (listen-player-playback-started-from player)))
+               (or (listen-player-playback-started-from player) 0)))
     (map-elt (listen-player-etc player) :elapsed)))
 
 (cl-defmethod listen--length ((player listen-player-mpv))
