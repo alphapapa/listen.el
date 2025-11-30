@@ -368,18 +368,6 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 
 (defvar listen-queue-repeat-mode)
 
-;; TODO(someday): Simplify autoload when requiring Emacs 30.  See
-;; <https://github.com/magit/transient/issues/280>.
-
-(defun listen-toggle-video ()
-  "Toggle video."
-  (interactive)
-  (setf listen-show-video (not listen-show-video))
-  ;; (when (listen--playing-p listen-player)
-  ;;   (listen-quit listen-player)
-  ;;   ())
-  )
-
 ;; Scrub bar stuff
 (defun listen-center-and-fill (str width)
   "Wrap STR using `fill-region' to WIDTH."
@@ -445,6 +433,8 @@ variable slot and cancel it."
       (cancel-timer timer)
       (put 'listen-menu :timer nil))))
 
+;; TODO(someday): Simplify autoload when requiring Emacs 30.  See
+;; <https://github.com/magit/transient/issues/280>.
 ;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
