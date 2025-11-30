@@ -275,8 +275,8 @@ According to `listen-lighter-format', which see."
                                                         (listen--elapsed listen-player))))
                                         'face 'listen-lighter-time)))
                    (?R . ,(lambda ()
-                            (let* ((elap (listen--elapsed (listen-current-player)))
-                                   (len (listen--length (listen-current-player)))
+                            (let* ((elap (listen--elapsed listen-player))
+                                   (len (listen--length listen-player))
                                    (elap-str (listen-format-seconds elap))
                                    (len-str (listen-format-seconds len))
                                    (progress (/ elap len))
@@ -399,8 +399,8 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 (defun listen-menu--now-playing ()
   "Return a propertized string showing track name, artist, time and a
 progress bar for the current song."
-  (when-let* ((elap (listen--elapsed (listen-current-player)))
-              (len (listen--length (listen-current-player)))
+  (when-let* ((elap (listen--elapsed listen-player))
+              (len (listen--length listen-player))
               (elap-str (listen-format-seconds elap))
               (len-str (listen-format-seconds len))
               (bar-width 20)
@@ -414,21 +414,21 @@ progress bar for the current song."
                                              :stroke 2 :padding 2
                                              :height 0.5))
               (status (pcase (listen--status listen-player)
-                        ("playing" '(listen-title . listen-artist))
-                        ("paused" '(shadow . shadow))
-                        ("stopped" '(shadow . shadow))
+                        ('playing '(listen-title . listen-artist))
+                        ('paused '(shadow . shadow))
+                        ('stopped '(shadow . shadow))
                         (_ "")))
               (info (listen--info listen-player)))
     (format
      " %s \n %s \n %s %s %s"
      ;; Title
      (propertize
-      (listen-center-and-fill (alist-get "title" info nil nil #'equal)
+      (listen-center-and-fill (alist-get 'title info nil nil #'equal)
                               prog-bar-len)
       'face (car status))
      ;; Artist
      (propertize
-      (listen-center-and-fill (alist-get "artist" info nil nil #'equal)
+      (listen-center-and-fill (alist-get 'artist info nil nil #'equal)
                               prog-bar-len)
       'face (cdr status))
      ;; Progress bar
