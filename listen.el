@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Maintainer: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
-;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13") (transient "0.5.3"))
+;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13") (transient "0.5.3") (svg-lib "0.3"))
 ;; Version: 0.10-pre
 ;; URL: https://github.com/alphapapa/listen.el
 
@@ -59,6 +59,8 @@
 (require 'cl-lib)
 (require 'map)
 
+(require 'svg-lib)
+
 (require 'listen-lib)
 ;; TODO: Can we load these as-needed?
 (require 'listen-mpv)
@@ -91,7 +93,7 @@ happens, this option truncates before that format spec is applied
 and adds an ellipsis where it occurs."
   :type 'natnum)
 
-(defcustom listen-lighter-format "🎵:%s %a: %t (%r)%E "
+(defcustom listen-lighter-format "🎵:%s %a: %t %R%E "
   "Format for mode line lighter.
 Uses `format-spec', which see.  These format specs are available:
 
@@ -100,7 +102,8 @@ Uses `format-spec', which see.  These format specs are available:
 %t: Title
 
 %e: Elapsed time
-%r: Remaining time
+%r: Remaining time (i.e. \"-1:32\")
+%R: SVG time indicator
 %s: Player status icon
 
 %E: Extra data specified in `listen-lighter-extra-functions',
@@ -271,6 +274,16 @@ According to `listen-lighter-format', which see."
                                                      (- (listen--length listen-player)
                                                         (listen--elapsed listen-player))))
                                         'face 'listen-lighter-time)))
+                   (?R . ,(lambda ()
+                            (let* ((elap (listen--elapsed player))
+                                   (len (listen--length player))
+                                   (elap-str (listen-format-seconds elap))
+                                   (len-str (listen-format-seconds len))
+                                   (progress (/ elap len))
+                                   (svg-bar (svg-lib-progress-pie progress 'mode-line
+                                                                  :margin 1 :stroke 2
+                                                                  :padding 1)))
+                              (propertize " " 'display svg-bar))))
                    (?s . ,(lambda ()
                             (propertize (pcase (listen--status listen-player)
                                           ('playing "▶")
@@ -355,9 +368,73 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 
 (defvar listen-queue-repeat-mode)
 
+;; Scrub bar stuff
+(defun listen-center-and-fill (str width)
+  "Wrap STR using `fill-region' to WIDTH."
+  (with-temp-buffer
+    (insert str)
+    (setq fill-column width)
+    (fill-region (point-min) (point-max))
+    (let ((lines (split-string (buffer-string) "\n")))
+      (mapconcat
+       (lambda (line)
+         (let* ((len (length line))
+                (padding (max 0 (/ (- width len) 2))))
+           (concat (make-string padding ?\s) line)))
+       lines
+       "\n"))))
+
+(defun listen-menu--now-playing ()
+  "Return a propertized string showing track name, artist, time and a
+progress bar for the current song."
+  (when-let* ((player listen-player)
+              (elap (listen--elapsed player))
+              (len (listen--length player))
+              (elap-str (listen-format-seconds elap))
+              (len-str (listen-format-seconds len))
+              (bar-width 20)
+              (prog-bar-len (+ (length elap-str)
+                               (length len-str)
+                               bar-width
+                               4)) ; 4 spaces
+              (progress (/ elap len))
+              (svg-bar (svg-lib-progress-bar progress nil
+                                             :width bar-width :margin 1
+                                             :stroke 2 :padding 2
+                                             :height 0.5))
+              (status (pcase (listen--status player)
+                        ('playing '(listen-title . listen-artist))
+                        ('paused '(shadow . shadow))
+                        ('stopped '(shadow . shadow))
+                        (_ "")))
+              (info (listen--info player)))
+    (format
+     " %s \n %s \n %s %s %s"
+     ;; Title
+     (propertize
+      (listen-center-and-fill (alist-get 'title info nil nil #'equal)
+                              prog-bar-len)
+      'face (car status))
+     ;; Artist
+     (propertize
+      (listen-center-and-fill (alist-get 'artist info nil nil #'equal)
+                              prog-bar-len)
+      'face (cdr status))
+     ;; Progress bar
+     elap-str
+     (propertize " " 'display svg-bar)
+     len-str)))
+
+(defun listen-menu--timer-cleanup ()
+  "Get the transient updating timer from the `listen-menu' symbol's
+variable slot and cancel it."
+  (let ((timer (get 'listen-menu :timer)))
+    (when timer
+      (cancel-timer timer)
+      (put 'listen-menu :timer nil))))
+
 ;; TODO(someday): Simplify autoload when requiring Emacs 30.  See
 ;; <https://github.com/magit/transient/issues/280>.
-
 ;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
   "Show Listen menu."
@@ -366,10 +443,7 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
   ["Listen"
    :description
    ;; TODO: Try using `transient-info' class for this line.
-   (lambda ()
-     (if listen-player
-         (concat "Listening: " (listen-mode-lighter))
-       "Not listening"))
+   listen-menu--now-playing
    ;; Getting this layout to work required a lot of trial-and-error.
    [("Q" "Quit" listen-quit
      :inapt-if-not (lambda ()
@@ -466,7 +540,15 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
     ("qam" "from MPD" listen-queue-add-from-mpd
      :transient t)
     ("qap" "from playlist file" listen-queue-add-from-playlist-file
-     :transient t)]])
+     :transient t)]]
+  ;; BODY
+  (interactive)
+  (listen-menu--timer-cleanup) ; Make sure the timer is gone
+  (add-hook 'transient-exit-hook #'listen-menu--timer-cleanup)
+  ;; Start transient updating timer
+  (put 'listen-menu :timer
+       (run-at-time 0.1 1.0 (lambda () (ignore-errors (transient--show)))))
+  (transient-setup 'listen-menu))
 
 ;; NOTE: This alias must come after the command it refers to, otherwise the autoload file fails to
 ;; finish loading (without warning), which breaks a lot of things!
@@ -515,10 +597,19 @@ If DISPLAYP, show the buffer; otherwise just update existing one."
                     (propertize (metadata "album" track)
                                 'face 'listen-album
                                 'wrap-prefix "        ") "\n")
-            (insert (with-face "  Time: " 'bold) (listen-format-seconds (listen--elapsed player))
-                    " / " (listen-format-seconds (listen-track-duration track))
-                    " (-" (listen-format-seconds (- (listen-track-duration track)
-                                                    (listen--elapsed player))) ")" "\n")
+            (let* ((elap (listen--elapsed player))
+                   (len (listen--length player))
+                   (progress (/ elap len))
+                   (svg-bar (svg-lib-progress-bar progress nil
+                                             :width 20 :margin 1
+                                             :stroke 2 :padding 2
+                                             :height 0.5)))
+              (insert (with-face "  Time: " 'bold)
+                      (listen-format-seconds (listen--elapsed player))
+                      " " (propertize " " 'display svg-bar)
+                      " " (listen-format-seconds (listen-track-duration track))
+                      " (-" (listen-format-seconds (- (listen-track-duration track)
+                                                      (listen--elapsed player))) ")" "\n"))
             (insert (with-face "  File: " 'bold)
                     (propertize (listen-track-filename track)
                                 'face 'listen-filename
