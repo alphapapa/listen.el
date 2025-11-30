@@ -597,10 +597,19 @@ If DISPLAYP, show the buffer; otherwise just update existing one."
                     (propertize (metadata "album" track)
                                 'face 'listen-album
                                 'wrap-prefix "        ") "\n")
-            (insert (with-face "  Time: " 'bold) (listen-format-seconds (listen--elapsed player))
-                    " / " (listen-format-seconds (listen-track-duration track))
-                    " (-" (listen-format-seconds (- (listen-track-duration track)
-                                                    (listen--elapsed player))) ")" "\n")
+            (let* ((elap (listen--elapsed player))
+                   (len (listen--length player))
+                   (progress (/ elap len))
+                   (svg-bar (svg-lib-progress-bar progress nil
+                                             :width 20 :margin 1
+                                             :stroke 2 :padding 2
+                                             :height 0.5)))
+              (insert (with-face "  Time: " 'bold)
+                      (listen-format-seconds (listen--elapsed player))
+                      " " (propertize " " 'display svg-bar)
+                      " " (listen-format-seconds (listen-track-duration track))
+                      " (-" (listen-format-seconds (- (listen-track-duration track)
+                                                      (listen--elapsed player))) ")" "\n"))
             (insert (with-face "  File: " 'bold)
                     (propertize (listen-track-filename track)
                                 'face 'listen-filename
