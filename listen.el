@@ -399,8 +399,9 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 (defun listen-menu--now-playing ()
   "Return a propertized string showing track name, artist, time and a
 progress bar for the current song."
-  (when-let* ((elap (listen--elapsed listen-player))
-              (len (listen--length listen-player))
+  (when-let* ((player listen-player)
+              (elap (listen--elapsed player))
+              (len (listen--length player))
               (elap-str (listen-format-seconds elap))
               (len-str (listen-format-seconds len))
               (bar-width 20)
@@ -413,12 +414,12 @@ progress bar for the current song."
                                              :width bar-width :margin 1
                                              :stroke 2 :padding 2
                                              :height 0.5))
-              (status (pcase (listen--status listen-player)
+              (status (pcase (listen--status player)
                         ('playing '(listen-title . listen-artist))
                         ('paused '(shadow . shadow))
                         ('stopped '(shadow . shadow))
                         (_ "")))
-              (info (listen--info listen-player)))
+              (info (listen--info player)))
     (format
      " %s \n %s \n %s %s %s"
      ;; Title
