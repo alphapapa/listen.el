@@ -57,7 +57,7 @@ applied to the buffer."
   (listen-library tracks :name name))
 
 (declare-function listen-queue-add-files "listen-queue")
-(declare-function listen-queue-complete "listen-queue-complete")
+(declare-function listen-queue-complete "listen-queue")
 ;;;###autoload
 (cl-defun listen-queue-add-from-mpd (tracks queue)
   "Add TRACKS (selected from MPD library) to QUEUE."

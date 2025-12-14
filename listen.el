@@ -6,7 +6,7 @@
 ;; Maintainer: Adam Porter <adam@alphapapa.net>
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "29.1") (persist "0.6") (taxy "0.10") (taxy-magit-section "0.13") (transient "0.5.3"))
-;; Version: 0.9
+;; Version: 0.10
 ;; URL: https://github.com/alphapapa/listen.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -60,6 +60,8 @@
 (require 'map)
 
 (require 'listen-lib)
+;; TODO: Can we load these as-needed?
+(require 'listen-mpv)
 (require 'listen-vlc)
 
 ;;;; Variables
@@ -119,6 +121,14 @@ Called with one argument, the player (if the player has a queue,
 its current track will be the one that just finished playing)."
   :type 'hook)
 
+(defcustom listen-backend
+  (cond ((executable-find "mpv") #'make-listen-player-mpv)
+        ((executable-find "vlc") #'make-listen-player-vlc)
+        (t (display-warning 'listen-backend "Unable to find MPV or VLC." :error)))
+  "Player backend."
+  :type '(choice (const :tag "MPV" make-listen-player-mpv)
+                 (const :tag "VLC" make-listen-player-vlc)))
+
 ;;;; Commands
 
 (defun listen-quit (player)
@@ -126,16 +136,16 @@ its current track will be the one that just finished playing)."
 Interactively, uses the default player."
   (interactive
    (list (listen-current-player)))
-  (delete-process (listen-player-process player))
   (when (eq player listen-player)
     (setf listen-player nil))
+  (delete-process (listen-player-process player))
   (listen-mode--update))
 
-(declare-function listen-queue-next "listen-queue")
 (defun listen-next (player)
   "Play next track in PLAYER's queue.
 Interactively, uses the default player."
   (interactive (list (listen-current-player)))
+  (declare-function listen-queue-next "listen-queue")
   (listen-queue-next (map-elt (listen-player-etc player) :queue)))
 
 (defun listen-pause (player)
@@ -208,6 +218,9 @@ Interactively, jump to current queue's current track."
 ;;;; Mode
 
 (defvar listen-mode-lighter nil)
+;; Setting this symbol property allows faces and display properties to affect the lighter in the
+;; mode line and tab bar.
+(put 'listen-mode-lighter 'risky-local-variable t)
 
 ;;;###autoload
 (define-minor-mode listen-mode
@@ -231,35 +244,44 @@ Interactively, jump to current queue's current track."
 (defun listen-mode-lighter ()
   "Return lighter for `listen-mode'.
 According to `listen-lighter-format', which see."
-  (when-let ((listen-player)
-             ((listen--running-p listen-player))
-             ((listen--playing-p listen-player))
-             (info (listen--info listen-player)))
+  (when-let* ((player listen-player)
+              ((listen--running-p player))
+              ((pcase (listen--status player)
+                 ((or 'playing 'paused) t)))
+              (metadata (listen--info player)))
     (format-spec listen-lighter-format
                  `((?a . ,(lambda ()
-                            (or (alist-get "artist" info nil nil #'equal) "")))
+                            (propertize (or (alist-get 'artist metadata nil nil #'equal) "")
+                                        'face 'listen-lighter-artist)))
                    (?A . ,(lambda ()
-                            (or (alist-get "album" info nil nil #'equal) "")))
+                            (propertize (or (alist-get 'album metadata nil nil #'equal) "")
+                                        'face 'listen-lighter-album)))
                    (?t . ,(lambda ()
-                            (if-let ((title (alist-get "title" info nil nil #'equal)))
-                                (truncate-string-to-width title listen-lighter-title-max-length
-                                                          nil nil t)
+                            (if-let ((title (alist-get 'title metadata nil nil #'equal)))
+                                (propertize
+                                 (truncate-string-to-width title listen-lighter-title-max-length
+                                                           nil nil t)
+                                 'face 'listen-lighter-title)
                               "")))
                    (?e . ,(lambda ()
-                            (listen-format-seconds (listen--elapsed listen-player))))
+                            (propertize (listen-format-seconds (listen--elapsed listen-player))
+                                        'face 'listen-lighter-time)))
                    (?r . ,(lambda ()
-                            (concat "-" (listen-format-seconds
-                                         (- (listen--length listen-player)
-                                            (listen--elapsed listen-player))))))
+                            (propertize (concat "-" (listen-format-seconds
+                                                     (- (listen--length listen-player)
+                                                        (listen--elapsed listen-player))))
+                                        'face 'listen-lighter-time)))
                    (?s . ,(lambda ()
-                            (pcase (listen--status listen-player)
-                              ("playing" "▶")
-                              ("paused" "⏸")
-                              ("stopped" "■")
-                              (_ ""))))
+                            (propertize (pcase (listen--status listen-player)
+                                          ('playing "▶")
+                                          ('paused "⏸")
+                                          ('stopped "■")
+                                          (_ ""))
+                                        'face 'bold)))
                    (?E . ,(lambda ()
                             (if-let ((extra (mapconcat #'funcall listen-lighter-extra-functions " ")))
-                                (concat " " extra)
+                                (propertize (concat " " extra)
+                                            'face 'listen-lighter-extra)
                               "")))))))
 
 (defun listen-lighter-format-rating ()
@@ -272,24 +294,20 @@ According to `listen-lighter-format', which see."
     (unless (equal "-1" rating)
       (format "[%s]" (* 5 (string-to-number rating))))))
 
-(declare-function listen-queue-play "listen-queue")
-(declare-function listen-queue-next-track "listen-queue")
 (defun listen-mode--update (&rest _ignore)
   "Play next track and/or update variable `listen-mode-lighter'."
-  (let (playing-next-p)
-    (when listen-player
-      (unless (or (listen--playing-p listen-player)
-                  ;; HACK: It seems that sometimes the player gets restarted
-                  ;; even when paused: this extra check should prevent that.
-                  (member (listen--status listen-player) '("playing" "paused")))
-        (setf playing-next-p
-              (run-hook-with-args 'listen-track-end-functions listen-player))))
-    (setf listen-mode-lighter
-          (when (and listen-player (listen--running-p listen-player))
-            (listen-mode-lighter)))
-    (when playing-next-p
-      ;; TODO: Remove this (I think it's not necessary anymore).
-      (force-mode-line-update 'all))))
+  (declare-function listen-queue-play "listen-queue")
+  (declare-function listen-queue-next-track "listen-queue")
+  (when (and listen-player (listen--running-p listen-player))
+    (unless (or (listen--playing-p listen-player)
+                ;; HACK: It seems that sometimes the player gets restarted
+                ;; even when paused: this extra check should prevent that.
+                (member (listen--status listen-player) '(playing paused)))
+      (run-hook-with-args 'listen-track-end-functions listen-player)))
+  (setf listen-mode-lighter
+        (when (and listen-player (listen--running-p listen-player))
+          (listen-mode-lighter)))
+  (force-mode-line-update 'all))
 
 (defun listen-play-next (player)
   "Play PLAYER's queue's next track and return non-nil if playing."
@@ -337,8 +355,8 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 
 (defvar listen-queue-repeat-mode)
 
-;; It seems that autoloading the transient prefix command doesn't work
-;; as expected, so we'll try this workaround.
+;; TODO(someday): Simplify autoload when requiring Emacs 30.  See
+;; <https://github.com/magit/transient/issues/280>.
 
 ;;;###autoload (autoload 'listen-menu "listen" nil t)
 (transient-define-prefix listen-menu ()
@@ -373,8 +391,9 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
           listen-player)
     :description
     (lambda ()
-      (if listen-player
-          (format "Volume: %.0f%%" (listen--volume listen-player))
+      (if-let ((listen-player)
+               (volume (listen--volume listen-player)))
+          (format "Volume: %.0f%%" volume)
         "Volume: N/A"))
     ("=" "Set" listen-volume)
     ("v" "Down" (lambda ()
@@ -453,6 +472,86 @@ TIME is a string like \"SS\", \"MM:SS\", or \"HH:MM:SS\"."
 ;; finish loading (without warning), which breaks a lot of things!
 ;;;###autoload
 (defalias 'listen #'listen-menu)
+
+;;;; Status buffer
+
+(cl-defun listen-status (player &key (displayp t))
+  "Show status buffer for PLAYER.
+If DISPLAYP, show the buffer; otherwise just update existing one."
+  (interactive (list listen-player))
+  (cl-macrolet ((with-face (string face)
+                  `(propertize ,string 'face ,face)))
+    (cl-labels ((buffer-for (player)
+                  (let ((buffer-name
+                         (if (eq player listen-player)
+                             ;; Default player.
+                             "*Listen Status*"
+                           (or (cl-loop for buffer in (buffer-list)
+                                        when (eq player (buffer-local-value 'listen-player buffer))
+                                        return (buffer-name buffer))
+                               (concat (generate-new-buffer-name "*Listen Status ") "*")))))
+                    (or (get-buffer buffer-name)
+                        (with-current-buffer (generate-new-buffer buffer-name)
+                          (listen-player-mode)
+                          (current-buffer)))))
+                (metadata (key track)
+                  (or (listen-track-metadata-get key track) "")))
+      (with-current-buffer (buffer-for player)
+        (setq-local listen-player player)
+        (let ((inhibit-read-only t)
+              ;; FIXME: When playing a file without a queue.
+              (track (listen-queue-current (map-elt (listen-player-etc player) :queue)))
+              (pos (point)))
+          (erase-buffer)
+          (if (not (listen--playing-p player))
+              (insert "Not playing")
+            (insert (with-face "Artist: " 'bold)
+                    (with-face (metadata "artist" track) 'listen-artist) "\n")
+            (insert (with-face " Title: " 'bold)
+                    (propertize (metadata "title" track)
+                                'face 'listen-title
+                                'wrap-prefix "        ") "\n")
+            (insert (with-face " Album: " 'bold)
+                    (propertize (metadata "album" track)
+                                'face 'listen-album
+                                'wrap-prefix "        ") "\n")
+            (insert (with-face "  Time: " 'bold) (listen-format-seconds (listen--elapsed player))
+                    " / " (listen-format-seconds (listen-track-duration track))
+                    " (-" (listen-format-seconds (- (listen-track-duration track)
+                                                    (listen--elapsed player))) ")" "\n")
+            (insert (with-face "  File: " 'bold)
+                    (propertize (listen-track-filename track)
+                                'face 'listen-filename
+                                'wrap-prefix "        ")))
+          (goto-char pos))
+        (when displayp
+          (display-buffer (current-buffer)))))))
+
+(defvar-local listen-player-timer nil)
+
+(define-derived-mode listen-player-mode special-mode "Listen-Player"
+  :group 'listen
+  :interactive nil
+  (setq-local buffer-read-only t
+              buffer-undo-list t
+              bookmark-make-record-function
+              (lambda ()
+                (if (eq (default-value 'listen-player)
+                        (buffer-local-value 'listen-player (current-buffer)))
+                    (list "*Listen Player*"
+                          (cons 'handler 'listen-player))
+                  (user-error "Only the default player's buffer may be bookmarked")))
+              revert-buffer-function (lambda (&rest _)
+                                       (interactive)
+                                       (listen-status listen-player :displayp nil)))
+  (add-hook 'kill-buffer-hook (lambda ()
+                                (when (timerp listen-player-timer)
+                                  (cancel-timer listen-player-timer)))
+            nil 'local)
+  (setq-local listen-player-timer (run-at-time nil 1 revert-buffer-function))
+  (visual-line-mode))
+
+;;; Footer:
 
 (provide 'listen)
 
