@@ -168,7 +168,7 @@ Useful for when `save-excursion' does not preserve point."
                            " ")))
                  (list :name "#" :primary 'descend
                        :getter (lambda (track _table)
-                                 (cl-position track (listen-queue-tracks queue))))
+                                 (+ 1 (cl-position track (listen-queue-tracks queue)))))
                  (list :name "Duration"
                        :getter (lambda (track _table)
                                  (when-let ((duration (listen-track-duration track)))
